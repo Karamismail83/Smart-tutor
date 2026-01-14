@@ -1,116 +1,314 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tutor Pro | متابعة الحصص والدفع</title>
-    <style>
-        :root { --bg: #09090b; --card: #141417; --accent: #6366f1; --text: #fafafa; }
-        body { background: var(--bg); color: var(--text); font-family: system-ui; margin: 0; padding: 15px; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #27272a; }
-        h1 { color: var(--accent); text-align: center; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #27272a; color: #fff; border-radius: 12px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-main { background: var(--accent); color: white; width: 100%; padding: 15px; }
-        .student-item { background: #1c1c20; padding: 15px; border-radius: 15px; margin-top: 10px; border: 1px solid #27272a; }
-        .weeks-tracker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .week-box { text-align: center; padding: 8px; border-radius: 8px; font-size: 10px; background: #27272a; color: #71717a; border: 1px solid #3f3f46; }
-        .week-passed { background: #10b981; color: white; border-color: #059669; }
-        .payment-status { margin-top: 15px; padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; cursor: pointer; }
-        .unpaid { background: #450a0a; color: #fecaca; border: 1px solid #991b1b; }
-        .paid { background: #064e3b; color: #d1fae5; border: 1px solid #065f46; }
-        .session-btn { background: #3f3f46; color: white; font-size: 12px; margin-top: 10px; width: auto; padding: 8px 15px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ultimate</title>
+
+<style>
+:root{
+  --bg:#0b0b0f;
+  --card:#15151c;
+  --border:#27272f;
+  --text:#f5f5f5;
+  --muted:#a1a1aa;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system;
+  display:flex;
+  justify-content:center;
+}
+
+.app{
+  width:100%;
+  max-width:480px;
+  padding:15px;
+}
+
+/* ===== HEADER ===== */
+header{
+  text-align:center;
+  padding:20px 0;
+}
+header h1{
+  margin:0;
+  font-size:28px;
+  background:linear-gradient(90deg,#6366f1,#22d3ee,#10b981,#f59e0b,#ef4444);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* ===== CARD ===== */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+}
+.card h3{
+  margin:0 0 12px;
+  color:#818cf8;
+  font-size:14px;
+}
+
+/* ===== INPUTS ===== */
+input,select{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#000;
+  color:white;
+}
+
+/* ===== BUTTON ===== */
+button{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+}
+.primary{background:#6366f1;color:white}
+.success{background:#10b981;color:white}
+
+/* ===== COLOR PALETTE ===== */
+.palette{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:8px;
+  margin-bottom:10px;
+}
+.color{
+  aspect-ratio:1;
+  border-radius:50%;
+  cursor:pointer;
+  border:2px solid transparent;
+}
+.color.active{
+  border-color:white;
+  transform:scale(1.15);
+}
+
+/* ===== STUDENT ===== */
+.student{
+  background:#1b1b24;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+  margin-bottom:10px;
+}
+.student-name{font-weight:800}
+.student-weeks{
+  display:flex;
+  gap:6px;
+  margin-top:8px;
+}
+.week{
+  flex:1;
+  padding:6px;
+  border-radius:8px;
+  text-align:center;
+  font-size:11px;
+  background:#27272f;
+  color:#aaa;
+}
+.week.done{background:#10b981;color:white}
+
+/* ===== STATUS BAR ===== */
+.status{
+  margin-top:10px;
+  padding:10px;
+  border-radius:12px;
+  text-align:center;
+  font-weight:800;
+  cursor:pointer;
+}
+.status.wait{background:#27272f;color:#aaa}
+.status.alert{background:#7f1d1d;color:#fff}
+.status.paid{background:#065f46;color:#fff}
+
+/* ===== SCHEDULE ===== */
+.day{
+  margin-top:10px;
+}
+.day h4{
+  margin:0 0 6px;
+  font-size:12px;
+  color:var(--muted);
+}
+.slots{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+}
+.slot{
+  min-width:80px;
+  padding:8px;
+  border-radius:12px;
+  font-size:11px;
+  color:white;
+  text-align:center;
+}
+.slot.done{opacity:0.4;text-decoration:line-through}
+</style>
 </head>
+
 <body>
+<div class="app">
 
-    <h1>Smart Tutor Pro 🎓</h1>
+<header>
+  <h1>Smart Tutor</h1>
+</header>
 
-    <div class="card">
-        <h3>➕ إضافة طالب جديد</h3>
-        <input type="text" id="sName" placeholder="اسم الطالب">
-        <input type="number" id="sPrice" placeholder="المبلغ المطلوب (دورة 4 أسابيع)">
-        <button class="btn-main" onclick="saveStudent()">حفظ الطالب وبدء الدورة</button>
-    </div>
+<!-- ADD STUDENT -->
+<div class="card">
+<h3>👤 إضافة طالب</h3>
+<input id="name" placeholder="اسم الطالب">
 
-    <div id="list"></div>
+<div class="palette" id="palette"></div>
 
-    <script>
-        function saveStudent() {
-            const name = document.getElementById('sName').value;
-            const price = document.getElementById('sPrice').value;
-            if(!name || !price) return;
+<button class="primary" onclick="addStudent()">حفظ الطالب</button>
+</div>
 
-            const students = JSON.parse(localStorage.getItem('smart_students') || '[]');
-            students.push({
-                name,
-                price,
-                startDate: new Date().getTime(),
-                sessionsCount: 0, // عدد الحصص التي حضرها
-                paid: false
-            });
-            localStorage.setItem('smart_students', JSON.stringify(students));
-            document.getElementById('sName').value = '';
-            document.getElementById('sPrice').value = '';
-            renderStudents();
-        }
+<!-- ADD SCHEDULE -->
+<div class="card">
+<h3>⏰ إضافة موعد</h3>
+<select id="studentSelect"></select>
+<input type="time" id="time">
+<select id="day">
+  <option>السبت</option><option>الأحد</option><option>الاثنين</option>
+  <option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option>
+</select>
+<button class="success" onclick="addSchedule()">إضافة</button>
+</div>
 
-        function addSession(index) {
-            let students = JSON.parse(localStorage.getItem('smart_students'));
-            if(students[index].sessionsCount < 8) { // نفترض حصتين في الأسبوع x 4 أسابيع = 8 حصص
-                students[index].sessionsCount++;
-                localStorage.setItem('smart_students', JSON.stringify(students));
-                renderStudents();
-            }
-        }
+<!-- STUDENTS -->
+<div class="card">
+<h3>📋 الطلاب</h3>
+<div id="students"></div>
+</div>
 
-        function togglePaid(index) {
-            let students = JSON.parse(localStorage.getItem('smart_students'));
-            students[index].paid = !students[index].paid;
-            // إذا دفع، نصفر الحصص لبدء دورة جديدة (اختياري)
-            if(students[index].paid) {
-                // يمكنك تفعيل هذا السطر إذا أردت بدء دورة جديدة فور الدفع
-                // students[index].sessionsCount = 0; 
-                // students[index].startDate = new Date().getTime();
-            }
-            localStorage.setItem('smart_students', JSON.stringify(students));
-            renderStudents();
-        }
+</div>
 
-        function renderStudents() {
-            const list = document.getElementById('list');
-            const students = JSON.parse(localStorage.getItem('smart_students') || '[]');
+<script>
+let students=JSON.parse(localStorage.getItem("SMART"))||[];
+let activeColor="#6366f1";
 
-            list.innerHTML = students.map((s, i) => {
-                // حساب الأسبوع بناءً على عدد الحصص (كل حصتين أسبوع)
-                const currentWeek = Math.ceil(s.sessionsCount / 2) || 1;
-                const isFinished = s.sessionsCount >= 8; // نهاية الحصة الأخيرة في الأسبوع الرابع
+const colors=[
+"#6366f1","#4f46e5","#3b82f6","#0ea5e9","#06b6d4","#14b8a6","#10b981",
+"#84cc16","#eab308","#f59e0b","#f97316","#ef4444","#f43f5e","#ec4899",
+"#d946ef","#a855f7","#8b5cf6","#64748b"
+];
 
-                return `
-                    <div class="card student-item">
-                        <div style="display:flex; justify-content:between; align-items:center">
-                            <strong>👤 ${s.name}</strong>
-                            <span style="margin-right:auto; color:#a1a1aa; font-size:12px">حصة: ${s.sessionsCount} / 8</span>
-                        </div>
-                        
-                        <div class="weeks-tracker">
-                            <div class="week-box ${s.sessionsCount >= 2 ? 'week-passed' : ''}">الأسبوع 1 ${s.sessionsCount >= 2 ? '✅' : ''}</div>
-                            <div class="week-box ${s.sessionsCount >= 4 ? 'week-passed' : ''}">الأسبوع 2 ${s.sessionsCount >= 4 ? '✅' : ''}</div>
-                            <div class="week-box ${s.sessionsCount >= 6 ? 'week-passed' : ''}">الأسبوع 3 ${s.sessionsCount >= 6 ? '✅' : ''}</div>
-                            <div class="week-box ${s.sessionsCount >= 8 ? 'week-passed' : ''}">الأسبوع 4 ${s.sessionsCount >= 8 ? '✅' : ''}</div>
-                        </div>
+function initPalette(){
+  palette.innerHTML="";
+  colors.forEach(c=>{
+    let d=document.createElement("div");
+    d.className="color"+(c===activeColor?" active":"");
+    d.style.background=c;
+    d.onclick=()=>{
+      activeColor=c;
+      initPalette();
+    };
+    palette.appendChild(d);
+  });
+}
 
-                        <button class="session-btn" onclick="addSession(${i})">➕ تسجيل حصة اليوم</button>
+function addStudent(){
+  let name=document.getElementById("name").value.trim();
+  if(!name)return;
+  students.push({
+    id:Date.now(),
+    name,
+    color:activeColor,
+    schedules:[],
+    lessons:0,
+    paid:false
+  });
+  save();
+  name.value="";
+}
 
-                        <div class="payment-status ${s.paid ? 'paid' : 'unpaid'}" onclick="togglePaid(${i})">
-                            ${isFinished ? (s.paid ? '✅ تم دفع الاشتراك' : '🚨 انتهت الحصص - اطلب الحساب') : '⏳ الدورة مستمرة'}
-                        </div>
-                        <center><small style="color:#71717a; font-size:10px">تاريخ البدء: ${new Date(s.startDate).toLocaleDateString('ar-EG')}</small></center>
-                    </div>
-                `;
-            }).join('');
-        }
-        renderStudents();
-    </script>
+function addSchedule(){
+  let id=+studentSelect.value;
+  let time=document.getElementById("time").value;
+  let day=document.getElementById("day").value;
+  if(!id||!time)return;
+  let s=students.find(x=>x.id===id);
+  s.schedules.push({day,time,done:false});
+  save();
+}
+
+function toggleLesson(s){
+  if(s.lessons<16){
+    s.lessons++;
+  }
+  save();
+}
+
+function togglePay(s){
+  s.paid=true;
+  save();
+}
+
+function save(){
+  localStorage.setItem("SMART",JSON.stringify(students));
+  render();
+}
+
+function render(){
+  studentsDiv.innerHTML="";
+  studentSelect.innerHTML="<option value=''>اختر طالب</option>";
+
+  students.forEach(s=>{
+    studentSelect.innerHTML+=`<option value="${s.id}">${s.name}</option>`;
+
+    let weeks="";
+    for(let i=1;i<=4;i++){
+      weeks+=`<div class="week ${s.lessons>=i*4?"done":""}">أسبوع ${i}</div>`;
+    }
+
+    let statusClass="wait";
+    let statusText="جاري الحصص";
+    if(s.lessons>=16&&!s.paid){
+      statusClass="alert";
+      statusText="انتهت الحصص - اطلب الحساب";
+    }
+    if(s.paid){
+      statusClass="paid";
+      statusText="تم الدفع ✔";
+    }
+
+    studentsDiv.innerHTML+=`
+    <div class="student">
+      <div class="student-name">${s.name}</div>
+      <div class="student-weeks">${weeks}</div>
+
+      <div class="status ${statusClass}" onclick="${statusClass==='alert'?'togglePay(students.find(x=>x.id==='+s.id+'))':''}">
+        ${statusText}
+      </div>
+
+      <button class="primary" style="margin-top:8px;background:${s.color}"
+        onclick="toggleLesson(students.find(x=>x.id===${s.id}))">
+        تسجيل حصة
+      </button>
+    </div>`;
+  });
+}
+
+initPalette();
+render();
+</script>
+
 </body>
 </html>
