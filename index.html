@@ -1,310 +1,116 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Smart Tutor Pro | المنظم الذكي</title>
-
-<!-- =================== CSS =================== -->
-<style>
-:root {
-  --bg-dark: #09090b; --card-bg: #141417; --text-main: #fafafa;
-  --text-dim: #a1a1aa; --border: #27272a; --accent: #6366f1;
-}
-
-body {
-  margin: 0; background: var(--bg-dark); color: var(--text-main);
-  font-family: system-ui, -apple-system, sans-serif; direction: rtl;
-  display: flex; justify-content: center;
-}
-
-.container { width: 100%; max-width: 480px; padding: 15px; box-sizing: border-box; }
-
-header { padding: 20px 0; text-align: center; }
-header h1 { font-size: 30px; margin: 0; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-.btn-print-top { background: #27272a; color: #fff; border: 1px solid var(--border); padding: 8px 16px; border-radius: 12px; margin-top: 15px; cursor: pointer; }
-
-.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-.card h3 { font-size: 14px; color: var(--accent); margin-bottom: 15px; }
-
-.upload-area { width: 100%; height: 100px; border: 2px dashed var(--border); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; cursor: pointer; background: #000; overflow: hidden; }
-.upload-area img { width: 100%; height: 100%; object-fit: cover; }
-
-input, select { width: 100%; padding: 12px; margin-bottom: 10px; background: #000; border: 1px solid var(--border); border-radius: 12px; color: #fff; box-sizing: border-box; }
-.row-inputs { display: flex; gap: 8px; margin-bottom: 10px; }
-
-.palette-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px; }
-.color-swatch { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-.color-swatch.active { border-color: #fff; transform: scale(1.1); }
-
-button { border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
-.btn-primary { width: 100%; padding: 15px; background: var(--accent); color: white; }
-.btn-success { width: 100%; padding: 15px; background: #10b981; color: white; }
-.btn-outline { flex: 1; padding: 10px; background: transparent; border: 1px solid var(--accent); color: var(--accent); font-size: 11px; }
-
-.student { display: flex; align-items: center; gap: 12px; padding: 12px; background: #1c1c20; border-radius: 18px; margin-bottom: 10px; border: 1px solid var(--border); }
-.student-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #333; }
-.student-info { flex: 1; }
-.student-sub { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
-
-.day-row { display: flex; align-items: center; border-bottom: 1px solid var(--border); min-height: 60px; }
-.day-label { width: 50px; font-size: 11px; font-weight: 800; color: var(--text-dim); text-align: center; }
-.slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 10px; scrollbar-width: none; }
-
-.slot { flex-shrink: 0; min-width: 80px; padding: 8px; border-radius: 12px; color: white; text-align: center; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-.slot .time { font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px; }
-
-.print-header { display: none; }
-
-/* 🖨️ أوامر الطباعة PDF */
-@media print {
-  body { background: white; color: black; }
-  .no-print { display: none !important; }
-  .print-header { display: block; text-align: center; color: black; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-  .container { max-width: 100%; }
-  .card { border: 1px solid #ddd; background: white; box-shadow: none; color: black; }
-  .day-label { color: black; }
-  .slot { background: #f0f0f0 !important; color: black !important; border: 1px solid #ccc !important; box-shadow: none; }
-  .slot .time { border-bottom: 1px solid #ccc; color: black; }
-  .student { background: white !important; border: 1px solid #eee; color: black; page-break-inside: avoid; }
-}
-
-.animate-in { animation: fadeInUp 0.4s ease-out; }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tutor Pro | متابعة الحصص والدفع</title>
+    <style>
+        :root { --bg: #09090b; --card: #141417; --accent: #6366f1; --text: #fafafa; }
+        body { background: var(--bg); color: var(--text); font-family: system-ui; margin: 0; padding: 15px; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #27272a; }
+        h1 { color: var(--accent); text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #27272a; color: #fff; border-radius: 12px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-main { background: var(--accent); color: white; width: 100%; padding: 15px; }
+        .student-item { background: #1c1c20; padding: 15px; border-radius: 15px; margin-top: 10px; border: 1px solid #27272a; }
+        .weeks-tracker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .week-box { text-align: center; padding: 8px; border-radius: 8px; font-size: 10px; background: #27272a; color: #71717a; border: 1px solid #3f3f46; }
+        .week-passed { background: #10b981; color: white; border-color: #059669; }
+        .payment-status { margin-top: 15px; padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .unpaid { background: #450a0a; color: #fecaca; border: 1px solid #991b1b; }
+        .paid { background: #064e3b; color: #d1fae5; border: 1px solid #065f46; }
+        .session-btn { background: #3f3f46; color: white; font-size: 12px; margin-top: 10px; width: auto; padding: 8px 15px; }
+    </style>
 </head>
-
 <body>
-<div class="container">
-<header class="no-print">
-<h1>Smart Tutor</h1>
-<p>الإدارة الاحترافية للمواعيد والطلاب</p>
-<button onclick="window.print()" class="btn-print-top">🖨️ تصدير الجدول PDF</button>
-</header>
 
-<div class="print-header">
-<h1>تقرير المواعيد والطلاب - Smart Tutor</h1>
-<p>تاريخ التقرير: <span id="printDate"></span></p>
-</div>
+    <h1>Smart Tutor Pro 🎓</h1>
 
-<section class="card no-print animate-in" id="inputSection">
-<h3 id="formTitle">👤 بيانات الطالب الجديد</h3>
-<div class="upload-area" onclick="document.getElementById('image').click()">
-<input type="file" id="image" accept="image/*" hidden onchange="previewImage(this)">
-<div id="imgPreview">📸 اضغط لإضافة صورة</div>
-</div>
+    <div class="card">
+        <h3>➕ إضافة طالب جديد</h3>
+        <input type="text" id="sName" placeholder="اسم الطالب">
+        <input type="number" id="sPrice" placeholder="المبلغ المطلوب (دورة 4 أسابيع)">
+        <button class="btn-main" onclick="saveStudent()">حفظ الطالب وبدء الدورة</button>
+    </div>
 
-<div class="input-grid">
-<input id="name" placeholder="اسم الطالب">
-<input id="phone" type="tel" placeholder="رقم الجوال">
-<input id="location" placeholder="الموقع (الحي/المدينة)">
-<input id="conditions" placeholder="ملاحظات أو ظروف خاصة">
-</div>
+    <div id="list"></div>
 
-<div class="color-picker-section">
-<label>لون التميز في الجدول:</label>
-<div class="palette-grid" id="presetPalette"></div>
-</div>
+    <script>
+        function saveStudent() {
+            const name = document.getElementById('sName').value;
+            const price = document.getElementById('sPrice').value;
+            if(!name || !price) return;
 
-<div class="button-group">
-<button id="submitBtn" onclick="addStudent()" class="btn-primary">حفظ بيانات الطالب</button>
-<button id="cancelEditBtn" onclick="resetForm()" class="btn-cancel hidden">إلغاء التعديل</button>
-</div>
-</section>
+            const students = JSON.parse(localStorage.getItem('smart_students') || '[]');
+            students.push({
+                name,
+                price,
+                startDate: new Date().getTime(),
+                sessionsCount: 0, // عدد الحصص التي حضرها
+                paid: false
+            });
+            localStorage.setItem('smart_students', JSON.stringify(students));
+            document.getElementById('sName').value = '';
+            document.getElementById('sPrice').value = '';
+            renderStudents();
+        }
 
-<section class="card no-print animate-in">
-<h3>🤖 أدوات التنظيم الذكي</h3>
-<div class="row-inputs">
-<button onclick="sortByLocation()" class="btn-outline">ترتيب حسب الموقع 📍</button>
-<button onclick="sortByConditions()" class="btn-outline">ترتيب حسب الملاحظات ⚡</button>
-</div>
-</section>
+        function addSession(index) {
+            let students = JSON.parse(localStorage.getItem('smart_students'));
+            if(students[index].sessionsCount < 8) { // نفترض حصتين في الأسبوع x 4 أسابيع = 8 حصص
+                students[index].sessionsCount++;
+                localStorage.setItem('smart_students', JSON.stringify(students));
+                renderStudents();
+            }
+        }
 
-<section class="card no-print animate-in">
-<h3>⏰ حجز موعد جديد</h3>
-<select id="studentSelect"></select>
-<div class="row-inputs">
-<input type="time" id="time">
-<select id="day">
-<option value="Sat">السبت</option><option value="Sun">الأحد</option>
-<option value="Mon">الاثنين</option><option value="Tues">الثلاثاء</option>
-<option value="Wed">الأربعاء</option><option value="Thurs">الخميس</option>
-</select>
-</div>
-<button onclick="addSchedule()" class="btn-success">تثبيت الموعد</button>
-</section>
+        function togglePaid(index) {
+            let students = JSON.parse(localStorage.getItem('smart_students'));
+            students[index].paid = !students[index].paid;
+            // إذا دفع، نصفر الحصص لبدء دورة جديدة (اختياري)
+            if(students[index].paid) {
+                // يمكنك تفعيل هذا السطر إذا أردت بدء دورة جديدة فور الدفع
+                // students[index].sessionsCount = 0; 
+                // students[index].startDate = new Date().getTime();
+            }
+            localStorage.setItem('smart_students', JSON.stringify(students));
+            renderStudents();
+        }
 
-<section class="time-grid card animate-in">
-<h3>📅 جدول الحصص الأسبوعي</h3>
-<div class="day-row" data-day="Sat"><div class="day-label">السبت</div><div class="slots"></div></div>
-<div class="day-row" data-day="Sun"><div class="day-label">الأحد</div><div class="slots"></div></div>
-<div class="day-row" data-day="Mon"><div class="day-label">الاثنين</div><div class="slots"></div></div>
-<div class="day-row" data-day="Tues"><div class="day-label">الثلاثاء</div><div class="slots"></div></div>
-<div class="day-row" data-day="Wed"><div class="day-label">الأربعاء</div><div class="slots"></div></div>
-<div class="day-row" data-day="Thurs"><div class="day-label">الخميس</div><div class="slots"></div></div>
-</section>
+        function renderStudents() {
+            const list = document.getElementById('list');
+            const students = JSON.parse(localStorage.getItem('smart_students') || '[]');
 
-<section class="card animate-in">
-<h3>👥 إدارة ملفات الطلاب</h3>
-<div id="students"></div>
-</section>
-</div>
+            list.innerHTML = students.map((s, i) => {
+                // حساب الأسبوع بناءً على عدد الحصص (كل حصتين أسبوع)
+                const currentWeek = Math.ceil(s.sessionsCount / 2) || 1;
+                const isFinished = s.sessionsCount >= 8; // نهاية الحصة الأخيرة في الأسبوع الرابع
 
-<!-- =================== JS =================== -->
-<script>
-let students = JSON.parse(localStorage.getItem('smartTutor_v4')) || [];
-let activeColor = "#6366f1";
-let currentImageData = "";
-let editingId = null;
+                return `
+                    <div class="card student-item">
+                        <div style="display:flex; justify-content:between; align-items:center">
+                            <strong>👤 ${s.name}</strong>
+                            <span style="margin-right:auto; color:#a1a1aa; font-size:12px">حصة: ${s.sessionsCount} / 8</span>
+                        </div>
+                        
+                        <div class="weeks-tracker">
+                            <div class="week-box ${s.sessionsCount >= 2 ? 'week-passed' : ''}">الأسبوع 1 ${s.sessionsCount >= 2 ? '✅' : ''}</div>
+                            <div class="week-box ${s.sessionsCount >= 4 ? 'week-passed' : ''}">الأسبوع 2 ${s.sessionsCount >= 4 ? '✅' : ''}</div>
+                            <div class="week-box ${s.sessionsCount >= 6 ? 'week-passed' : ''}">الأسبوع 3 ${s.sessionsCount >= 6 ? '✅' : ''}</div>
+                            <div class="week-box ${s.sessionsCount >= 8 ? 'week-passed' : ''}">الأسبوع 4 ${s.sessionsCount >= 8 ? '✅' : ''}</div>
+                        </div>
 
-const modernColors = ["#6366f1", "#4f46e5", "#3b82f6", "#0ea5e9", "#06b6d4", "#2dd4bf", "#10b981", "#84cc16", "#eab308", "#f59e0b", "#f97316", "#ef4444", "#f43f5e", "#ec4899", "#d946ef", "#a855f7", "#8b5cf6", "#64748b"];
+                        <button class="session-btn" onclick="addSession(${i})">➕ تسجيل حصة اليوم</button>
 
-function initPalette() {
-    const palette = document.getElementById('presetPalette');
-    palette.innerHTML = '';
-    modernColors.forEach(color => {
-        const div = document.createElement('div');
-        div.className = `color-swatch ${color === activeColor ? 'active' : ''}`;
-        div.style.backgroundColor = color;
-        div.onclick = () => {
-            activeColor = color;
-            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-            div.classList.add('active');
-        };
-        palette.appendChild(div);
-    });
-}
-
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            currentImageData = e.target.result;
-            document.getElementById('imgPreview').innerHTML = `<img src="${currentImageData}">`;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function addStudent() {
-    const name = document.getElementById('name').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const location = document.getElementById('location').value.trim();
-    const cond = document.getElementById('conditions').value.trim();
-
-    if (!name) return alert("الاسم مطلوب");
-
-    if (editingId) {
-        const s = students.find(x => x.id === editingId);
-        Object.assign(s, { name, phone, location, conditions: cond, color: activeColor, image: currentImageData });
-        editingId = null;
-    } else {
-        students.push({ id: Date.now(), name, phone, location, conditions: cond, color: activeColor, image: currentImageData, schedules: [] });
-    }
-    saveAndRender();
-    resetForm();
-}
-
-function startEdit(id) {
-    const s = students.find(x => x.id === id);
-    editingId = id;
-    document.getElementById('name').value = s.name;
-    document.getElementById('phone').value = s.phone;
-    document.getElementById('location').value = s.location;
-    document.getElementById('conditions').value = s.conditions || "";
-    activeColor = s.color;
-    currentImageData = s.image;
-    document.getElementById('imgPreview').innerHTML = s.image ? `<img src="${s.image}">` : "📸";
-    document.getElementById('formTitle').innerText = "📝 تعديل بيانات الطالب";
-    document.getElementById('submitBtn').innerText = "تحديث البيانات";
-    document.getElementById('cancelEditBtn').classList.remove('hidden');
-    initPalette();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function resetForm() {
-    editingId = null;
-    currentImageData = "";
-    document.getElementById('name').value = '';
-    document.getElementById('phone').value = '';
-    document.getElementById('location').value = '';
-    document.getElementById('conditions').value = '';
-    document.getElementById('imgPreview').innerHTML = "📸";
-    document.getElementById('formTitle').innerText = "👤 إضافة طالب جديد";
-    document.getElementById('submitBtn').innerText = "حفظ بيانات الطالب";
-    document.getElementById('cancelEditBtn').classList.add('hidden');
-}
-
-function sortByLocation() {
-    students.sort((a, b) => (a.location || "").localeCompare(b.location || ""));
-    render();
-    alert("تم ترتيب المواعيد حسب الموقع الجغرافي");
-}
-
-function sortByConditions() {
-    students.sort((a, b) => (a.conditions || "").length - (b.conditions || "").length);
-    render();
-}
-
-function addSchedule() {
-    const id = +document.getElementById('studentSelect').value;
-    const time = document.getElementById('time').value;
-    const day = document.getElementById('day').value;
-    if (!id || !time) return;
-    const s = students.find(x => x.id === id);
-    s.schedules.push({ day, time, id: Date.now() });
-    s.schedules.sort((a, b) => a.time.localeCompare(b.time));
-    saveAndRender();
-}
-
-function deleteStudent(id) {
-    if (confirm("حذف الطالب؟")) {
-        students = students.filter(x => x.id !== id);
-        saveAndRender();
-    }
-}
-
-function render() {
-    document.getElementById('students').innerHTML = '';
-    document.getElementById('studentSelect').innerHTML = '<option value="">اختر طالب</option>';
-    document.querySelectorAll('.slots').forEach(s => s.innerHTML = '');
-    document.getElementById('printDate').innerText = new Date().toLocaleDateString('ar-EG');
-
-    students.forEach(s => {
-        document.getElementById('students').innerHTML += `
-            <div class="student animate-in">
-                <img class="student-img" src="${s.image || 'https://via.placeholder.com/50'}">
-                <div class="student-info">
-                    <div style="font-weight:700">${s.name}</div>
-                    <div class="student-sub">📞 ${s.phone || '--'} | 📍 ${s.location || '--'}</div>
-                    <div class="student-sub" style="color:var(--accent)">💡 ${s.conditions || ''}</div>
-                </div>
-                <button onclick="startEdit(${s.id})" style="width:auto; background:none; color:var(--accent)">✎</button>
-                <button onclick="deleteStudent(${s.id})" style="width:auto; background:none; color:#ef4444">🗑️</button>
-            </div>`;
-        
-        document.getElementById('studentSelect').innerHTML += `<option value="${s.id}">${s.name}</option>`;
-
-        s.schedules.forEach(sc => {
-            const slot = document.createElement('div');
-            slot.className = 'slot';
-            slot.style.background = `linear-gradient(135deg, ${s.color}CC, ${s.color})`;
-            slot.innerHTML = `<div class="time">${sc.time}</div><div>${s.name}</div>`;
-            const cell = document.querySelector(`.day-row[data-day="${sc.day}"] .slots`);
-            if (cell) cell.appendChild(slot);
-        });
-    });
-}
-
-function saveAndRender() {
-    localStorage.setItem('smartTutor_v4', JSON.stringify(students));
-    render();
-}
-
-initPalette();
-render();
-</script>
-
+                        <div class="payment-status ${s.paid ? 'paid' : 'unpaid'}" onclick="togglePaid(${i})">
+                            ${isFinished ? (s.paid ? '✅ تم دفع الاشتراك' : '🚨 انتهت الحصص - اطلب الحساب') : '⏳ الدورة مستمرة'}
+                        </div>
+                        <center><small style="color:#71717a; font-size:10px">تاريخ البدء: ${new Date(s.startDate).toLocaleDateString('ar-EG')}</small></center>
+                    </div>
+                `;
+            }).join('');
+        }
+        renderStudents();
+    </script>
 </body>
 </html>
