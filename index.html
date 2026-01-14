@@ -3,312 +3,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Tutor Ultimate</title>
-
+<title>Smart Tutor Pro | النسخة المتقدمة</title>
 <style>
-:root{
-  --bg:#0b0b0f;
-  --card:#15151c;
-  --border:#27272f;
-  --text:#f5f5f5;
-  --muted:#a1a1aa;
+:root {
+  --bg-dark:#09090b; --card-bg:#141417; --text-main:#fafafa;
+  --text-dim:#a1a1aa; --border:#27272a; --accent:#6366f1;
+  --green:#10b981; --red:#ef4444; --orange:#f97316;
 }
 
-*{box-sizing:border-box}
+body { margin:0; background:var(--bg-dark); color:var(--text-main);
+font-family:system-ui,-apple-system,sans-serif; display:flex; justify-content:center; }
+.container { width:100%; max-width:480px; padding:15px; box-sizing:border-box; }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui,-apple-system;
-  display:flex;
-  justify-content:center;
-}
+header { text-align:center; padding:20px 0; }
+header h1 { font-size:30px; margin:0; background:linear-gradient(to right,#818cf8,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 
-.app{
-  width:100%;
-  max-width:480px;
-  padding:15px;
-}
+.card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:15px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.3);}
+.card h3 { color:var(--accent); font-size:14px; margin-bottom:10px; }
 
-/* ===== HEADER ===== */
-header{
-  text-align:center;
-  padding:20px 0;
-}
-header h1{
-  margin:0;
-  font-size:28px;
-  background:linear-gradient(90deg,#6366f1,#22d3ee,#10b981,#f59e0b,#ef4444);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
+input, select, button { width:100%; padding:12px; margin-bottom:10px; border-radius:12px; border:1px solid var(--border); background:#000; color:#fff; box-sizing:border-box; }
+button { cursor:pointer; font-weight:700; transition:0.2s; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-success { background:var(--green); color:#fff; }
+.btn-outline { background:transparent; border:1px solid var(--accent); color:var(--accent); }
 
-/* ===== CARD ===== */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:14px;
-}
-.card h3{
-  margin:0 0 12px;
-  color:#818cf8;
-  font-size:14px;
-}
+.palette-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:10px; }
+.color-swatch { aspect-ratio:1; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+.color-swatch.active { border-color:#fff; transform:scale(1.1); }
 
-/* ===== INPUTS ===== */
-input,select{
-  width:100%;
-  padding:12px;
-  margin-bottom:10px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#000;
-  color:white;
-}
+.student { display:flex; align-items:center; gap:10px; padding:10px; background:#1c1c20; border-radius:15px; margin-bottom:10px; border:1px solid var(--border); }
+.student img { width:40px; height:40px; border-radius:50%; object-fit:cover; }
+.student-info { flex:1; }
+.student-sub { font-size:10px; color:var(--text-dim); }
 
-/* ===== BUTTON ===== */
-button{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  font-weight:800;
-  cursor:pointer;
-}
-.primary{background:#6366f1;color:white}
-.success{background:#10b981;color:white}
+.time-grid { border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:10px; }
+.day-row { display:flex; align-items:center; border-bottom:1px solid var(--border); min-height:60px; }
+.day-label { width:50px; font-size:11px; font-weight:700; color:var(--text-dim); text-align:center; }
+.slots { flex:1; display:flex; overflow-x:auto; gap:6px; padding:6px; }
 
-/* ===== COLOR PALETTE ===== */
-.palette{
-  display:grid;
-  grid-template-columns:repeat(8,1fr);
-  gap:8px;
-  margin-bottom:10px;
-}
-.color{
-  aspect-ratio:1;
-  border-radius:50%;
-  cursor:pointer;
-  border:2px solid transparent;
-}
-.color.active{
-  border-color:white;
-  transform:scale(1.15);
-}
+.slot { flex-shrink:0; min-width:80px; padding:6px; border-radius:12px; text-align:center; color:#fff; font-size:11px; cursor:pointer; transition:0.3s; }
+.slot .time { font-weight:700; border-bottom:1px solid rgba(255,255,255,0.2); margin-bottom:4px; }
 
-/* ===== STUDENT ===== */
-.student{
-  background:#1b1b24;
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:12px;
-  margin-bottom:10px;
-}
-.student-name{font-weight:800}
-.student-weeks{
-  display:flex;
-  gap:6px;
-  margin-top:8px;
-}
-.week{
-  flex:1;
-  padding:6px;
-  border-radius:8px;
-  text-align:center;
-  font-size:11px;
-  background:#27272f;
-  color:#aaa;
-}
-.week.done{background:#10b981;color:white}
+.week-control { display:flex; justify-content:space-between; margin-top:10px; }
+.week-btn { flex:1; margin:0 3px; padding:8px; border-radius:12px; color:#fff; font-weight:700; cursor:pointer; text-align:center; }
 
-/* ===== STATUS BAR ===== */
-.status{
-  margin-top:10px;
-  padding:10px;
-  border-radius:12px;
-  text-align:center;
-  font-weight:800;
-  cursor:pointer;
-}
-.status.wait{background:#27272f;color:#aaa}
-.status.alert{background:#7f1d1d;color:#fff}
-.status.paid{background:#065f46;color:#fff}
+.status-bar { height:25px; border-radius:12px; background:var(--red); color:#fff; text-align:center; line-height:25px; font-weight:700; margin-top:10px; cursor:pointer; }
 
-/* ===== SCHEDULE ===== */
-.day{
-  margin-top:10px;
-}
-.day h4{
-  margin:0 0 6px;
-  font-size:12px;
-  color:var(--muted);
-}
-.slots{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-}
-.slot{
-  min-width:80px;
-  padding:8px;
-  border-radius:12px;
-  font-size:11px;
-  color:white;
-  text-align:center;
-}
-.slot.done{opacity:0.4;text-decoration:line-through}
+.animate-in { animation:fadeInUp 0.4s ease-out; }
+@keyframes fadeInUp { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+
+.upload-area { width:100%; height:100px; border:2px dashed var(--border); border-radius:18px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; cursor:pointer; background:#000; overflow:hidden; }
+.upload-area img { width:100%; height:100%; object-fit:cover; }
+
 </style>
 </head>
-
 <body>
-<div class="app">
-
+<div class="container">
 <header>
-  <h1>Smart Tutor</h1>
+<h1>Smart Tutor Pro</h1>
+<p>إدارة الطلاب والحصص مع إشعارات ذكية</p>
 </header>
 
-<!-- ADD STUDENT -->
-<div class="card">
-<h3>👤 إضافة طالب</h3>
+<section class="card animate-in">
+<h3>👤 بيانات الطالب الجديد</h3>
+<div class="upload-area" onclick="document.getElementById('image').click()">
+<input type="file" id="image" accept="image/*" hidden onchange="previewImage(this)">
+<div id="imgPreview">📸 اضغط لإضافة صورة</div>
+</div>
 <input id="name" placeholder="اسم الطالب">
+<input id="phone" placeholder="رقم الجوال">
+<input id="location" placeholder="الموقع">
+<input id="conditions" placeholder="ملاحظات أو ظروف خاصة">
 
-<div class="palette" id="palette"></div>
-
-<button class="primary" onclick="addStudent()">حفظ الطالب</button>
+<div class="color-picker-section">
+<label>لون التميز:</label>
+<div class="palette-grid" id="presetPalette"></div>
 </div>
 
-<!-- ADD SCHEDULE -->
-<div class="card">
-<h3>⏰ إضافة موعد</h3>
+<button class="btn-primary" onclick="addStudent()">حفظ بيانات الطالب</button>
+</section>
+
+<section class="card animate-in">
+<h3>⏰ حجز موعد جديد</h3>
 <select id="studentSelect"></select>
+<div style="display:flex; gap:5px;">
 <input type="time" id="time">
 <select id="day">
-  <option>السبت</option><option>الأحد</option><option>الاثنين</option>
-  <option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option>
+<option value="Sat">السبت</option><option value="Sun">الأحد</option>
+<option value="Mon">الاثنين</option><option value="Tues">الثلاثاء</option>
+<option value="Wed">الأربعاء</option><option value="Thurs">الخميس</option>
 </select>
-<button class="success" onclick="addSchedule()">إضافة</button>
+</div>
+<button class="btn-success" onclick="addSchedule()">تثبيت الموعد</button>
+</section>
+
+<section class="card animate-in">
+<h3>📅 جدول الحصص الأسبوعي</h3>
+<div class="time-grid">
+<div class="day-row" data-day="Sat"><div class="day-label">السبت</div><div class="slots"></div></div>
+<div class="day-row" data-day="Sun"><div class="day-label">الأحد</div><div class="slots"></div></div>
+<div class="day-row" data-day="Mon"><div class="day-label">الاثنين</div><div class="slots"></div></div>
+<div class="day-row" data-day="Tues"><div class="day-label">الثلاثاء</div><div class="slots"></div></div>
+<div class="day-row" data-day="Wed"><div class="day-label">الأربعاء</div><div class="slots"></div></div>
+<div class="day-row" data-day="Thurs"><div class="day-label">الخميس</div><div class="slots"></div></div>
 </div>
 
-<!-- STUDENTS -->
-<div class="card">
-<h3>📋 الطلاب</h3>
+<div class="week-control">
+<div class="week-btn" id="week1" onclick="markWeek(1)">الأسبوع 1</div>
+<div class="week-btn" id="week2" onclick="markWeek(2)">الأسبوع 2</div>
+<div class="week-btn" id="week3" onclick="markWeek(3)">الأسبوع 3</div>
+<div class="week-btn" id="week4" onclick="markWeek(4)">الأسبوع 4</div>
+</div>
+
+<div class="status-bar" id="statusBar" onclick="confirmPayment()">انتهت الحصص - اطلب الحساب</div>
+</section>
+
+<section class="card animate-in">
+<h3>👥 إدارة الطلاب</h3>
 <div id="students"></div>
-</div>
-
+</section>
 </div>
 
 <script>
-let students=JSON.parse(localStorage.getItem("SMART"))||[];
+let students = JSON.parse(localStorage.getItem('smartTutor_v6'))||[];
 let activeColor="#6366f1";
+let currentImage="";
+const colors=["#6366f1","#4f46e5","#3b82f6","#0ea5e9","#06b6d4","#2dd4bf","#10b981","#84cc16","#eab308","#f59e0b","#f97316","#ef4444","#f43f5e","#ec4899","#d946ef","#a855f7","#8b5cf6","#64748b"];
 
-const colors=[
-"#6366f1","#4f46e5","#3b82f6","#0ea5e9","#06b6d4","#14b8a6","#10b981",
-"#84cc16","#eab308","#f59e0b","#f97316","#ef4444","#f43f5e","#ec4899",
-"#d946ef","#a855f7","#8b5cf6","#64748b"
-];
-
-function initPalette(){
-  palette.innerHTML="";
+function initPalette() {
+  const palette=document.getElementById('presetPalette');
+  palette.innerHTML='';
   colors.forEach(c=>{
-    let d=document.createElement("div");
-    d.className="color"+(c===activeColor?" active":"");
-    d.style.background=c;
-    d.onclick=()=>{
-      activeColor=c;
-      initPalette();
-    };
-    palette.appendChild(d);
+    const div=document.createElement('div');
+    div.className='color-swatch'+(c===activeColor?' active':'');
+    div.style.background=c;
+    div.onclick=()=>{activeColor=c; document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active')); div.classList.add('active');};
+    palette.appendChild(div);
   });
+}
+
+function previewImage(input){
+  if(input.files && input.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>{currentImage=e.target.result; document.getElementById('imgPreview').innerHTML=`<img src="${currentImage}">`;};
+    reader.readAsDataURL(input.files[0]);
+  }
 }
 
 function addStudent(){
-  let name=document.getElementById("name").value.trim();
-  if(!name)return;
-  students.push({
-    id:Date.now(),
-    name,
-    color:activeColor,
-    schedules:[],
-    lessons:0,
-    paid:false
-  });
-  save();
-  name.value="";
+  const name=document.getElementById('name').value.trim();
+  if(!name)return alert('الاسم مطلوب');
+  const phone=document.getElementById('phone').value.trim();
+  const location=document.getElementById('location').value.trim();
+  const cond=document.getElementById('conditions').value.trim();
+  students.push({id:Date.now(),name,phone,location,conditions:cond,color:activeColor,image:currentImage,schedules:[]});
+  saveRender(); resetForm();
 }
+
+function resetForm(){ document.getElementById('name').value=''; document.getElementById('phone').value=''; document.getElementById('location').value=''; document.getElementById('conditions').value=''; currentImage=''; document.getElementById('imgPreview').innerHTML='📸 اضغط لإضافة صورة';}
 
 function addSchedule(){
-  let id=+studentSelect.value;
-  let time=document.getElementById("time").value;
-  let day=document.getElementById("day").value;
+  const id=+document.getElementById('studentSelect').value;
+  const time=document.getElementById('time').value;
+  const day=document.getElementById('day').value;
   if(!id||!time)return;
-  let s=students.find(x=>x.id===id);
-  s.schedules.push({day,time,done:false});
-  save();
+  const s=students.find(x=>x.id===id);
+  s.schedules.push({day,time});
+  s.schedules.sort((a,b)=>a.time.localeCompare(b.time));
+  saveRender();
 }
 
-function toggleLesson(s){
-  if(s.lessons<16){
-    s.lessons++;
-  }
-  save();
+function markWeek(w){
+  if(w===4) document.getElementById('week4').style.background='green';
+  document.getElementById('statusBar').style.background='var(--red)';
+  document.getElementById('statusBar').innerText='انتهت الحصص - اطلب الحساب';
 }
 
-function togglePay(s){
-  s.paid=true;
-  save();
+function confirmPayment(){
+  document.getElementById('statusBar').style.background='green';
+  document.getElementById('statusBar').innerText='تم الدفع';
 }
 
-function save(){
-  localStorage.setItem("SMART",JSON.stringify(students));
+function saveRender(){
+  localStorage.setItem('smartTutor_v6',JSON.stringify(students));
   render();
 }
 
 function render(){
-  studentsDiv.innerHTML="";
-  studentSelect.innerHTML="<option value=''>اختر طالب</option>";
-
+  document.getElementById('students').innerHTML='';
+  const select=document.getElementById('studentSelect'); select.innerHTML='<option value="">اختر طالب</option>';
+  document.querySelectorAll('.slots').forEach(s=>s.innerHTML='');
   students.forEach(s=>{
-    studentSelect.innerHTML+=`<option value="${s.id}">${s.name}</option>`;
-
-    let weeks="";
-    for(let i=1;i<=4;i++){
-      weeks+=`<div class="week ${s.lessons>=i*4?"done":""}">أسبوع ${i}</div>`;
-    }
-
-    let statusClass="wait";
-    let statusText="جاري الحصص";
-    if(s.lessons>=16&&!s.paid){
-      statusClass="alert";
-      statusText="انتهت الحصص - اطلب الحساب";
-    }
-    if(s.paid){
-      statusClass="paid";
-      statusText="تم الدفع ✔";
-    }
-
-    studentsDiv.innerHTML+=`
-    <div class="student">
-      <div class="student-name">${s.name}</div>
-      <div class="student-weeks">${weeks}</div>
-
-      <div class="status ${statusClass}" onclick="${statusClass==='alert'?'togglePay(students.find(x=>x.id==='+s.id+'))':''}">
-        ${statusText}
-      </div>
-
-      <button class="primary" style="margin-top:8px;background:${s.color}"
-        onclick="toggleLesson(students.find(x=>x.id===${s.id}))">
-        تسجيل حصة
-      </button>
-    </div>`;
+    const div=document.createElement('div');
+    div.className='student';
+    div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/50'}"><div class="student-info"><div style="font-weight:700">${s.name}</div><div class="student-sub">📞 ${s.phone||'--'} | 📍 ${s.location||'--'}</div><div class="student-sub" style="color:${s.color}">💡 ${s.conditions||''}</div></div>`;
+    document.getElementById('students').appendChild(div);
+    select.innerHTML+=`<option value="${s.id}">${s.name}</option>`;
+    s.schedules.forEach(sc=>{
+      const slot=document.createElement('div');
+      slot.className='slot';
+      slot.style.background=`linear-gradient(135deg, ${s.color}CC, ${s.color})`;
+      slot.innerHTML=`<div class="time">${sc.time}</div><div>${s.name}</div>`;
+      const cell=document.querySelector(`.day-row[data-day="${sc.day}"] .slots`);
+      if(cell)cell.appendChild(slot);
+    });
   });
 }
 
-initPalette();
-render();
+initPalette(); render();
 </script>
-
 </body>
 </html>
