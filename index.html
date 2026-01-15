@@ -1,50 +1,115 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tutor Pro | Clean UI</title>
+    <title>TutorFlow | Google Edition</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
-            --bg-dark:#09090b; --card-bg:#141417; --accent:#6366f1;
-            --text-main:#fafafa; --border:#27272a; --green:#10b981; --red:#ef4444;
+            --bg: #F8F9FA; /* Google Light Gray */
+            --card: #FFFFFF;
+            --google-blue: #4285F4;
+            --google-red: #EA4335;
+            --google-yellow: #FBBC05;
+            --google-green: #34A853;
+            --text-main: #202124;
+            --text-dim: #5f6368;
+            --border: #dadce0;
         }
-        body { margin:0; background:var(--bg-dark); color:var(--text-main); font-family:system-ui, sans-serif; overflow-x: hidden; }
         
-        /* القائمة الجانبية */
+        body { 
+            margin:0; background:var(--bg); color:var(--text-main); 
+            font-family: 'Product Sans', 'Segoe UI', Roboto, sans-serif; 
+            overflow-x: hidden; 
+        }
+
+        /* Sidebar - Google Style */
         .sidebar {
             position: fixed; top: 0; right: -100%; width: 85%; height: 100%;
-            background: var(--card-bg); border-left: 1px solid var(--border);
-            z-index: 1000; transition: 0.4s; padding: 20px; box-sizing: border-box;
-            overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            background: var(--card); border-left: 1px solid var(--border);
+            z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px; box-sizing: border-box; overflow-y: auto;
+            box-shadow: -8px 0 20px rgba(0,0,0,0.1);
         }
         .sidebar.active { right: 0; }
-        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:999; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); display:none; z-index:999; }
         .overlay.active { display:block; }
 
-        /* الواجهة الرئيسية (الجدول) */
-        .main-content { padding: 15px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; }
-        .menu-btn { background: var(--accent); border: none; color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        /* Header */
+        .main-content { padding: 15px; max-width: 500px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        header h1 { 
+            font-size: 22px; margin:0; font-weight: 500;
+            display: flex; gap: 2px;
+        }
+        /* تلوين كلمة TutorFlow على طريقة جوجل */
+        .logo-t { color: var(--google-blue); }
+        .logo-u { color: var(--google-red); }
+        .logo-t2 { color: var(--google-yellow); }
+        .logo-o { color: var(--google-blue); }
+        .logo-r { color: var(--google-green); }
 
-        .time-grid { border:1px solid var(--border); border-radius:15px; overflow:hidden; background:#000; width: 100%; }
-        .day-row { display:flex; border-bottom:1px solid var(--border); min-height:70px; }
-        .day-label { width:60px; font-size:12px; font-weight:bold; color:var(--accent); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); }
-        .slots { flex:1; display:flex; overflow-x:auto; gap:8px; padding:10px; }
-        .slot { flex-shrink:0; min-width:100px; padding:8px; border-radius:12px; text-align:center; color:#fff; font-size:11px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .slot b { display: block; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .menu-btn { 
+            background: #fff; border: 1px solid var(--border); color: var(--text-dim);
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.2s;
+        }
+        .menu-btn:hover { background: #f1f3f4; }
 
-        /* تنسيقات داخل القائمة */
-        .section-title { font-size: 14px; color: var(--accent); margin: 20px 0 10px; border-right: 3px solid var(--accent); padding-right: 8px; }
-        input, select, button { width:100%; padding:12px; margin-bottom:10px; border-radius:12px; border:1px solid var(--border); background:#000; color:#fff; }
-        #map { width: 100%; height: 180px; border-radius: 15px; margin-bottom: 15px; }
-        .payment-item { display: flex; justify-content: space-between; align-items: center; background: #1c1c20; padding: 10px; border-radius: 12px; margin-bottom: 8px; border-right: 4px solid var(--red); }
-        .payment-item.paid { border-right-color: var(--green); }
-        .btn-pay { width: auto; padding: 5px 10px; background: var(--green); font-size: 10px; }
+        /* Timetable Grid - Colorful */
+        .time-grid { display: flex; flex-direction: column; gap: 12px; }
+        .day-row { 
+            display: flex; align-items: stretch; background: var(--card); 
+            border-radius: 12px; border: 1px solid var(--border); 
+            overflow: hidden; min-height: 80px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .day-label { 
+            width: 60px; display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 12px; color: #fff; border-left: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* ألوان الأيام */
+        .row-sat .day-label { background: var(--google-blue); }
+        .row-sun .day-label { background: var(--google-red); }
+        .row-mon .day-label { background: var(--google-yellow); color: #000; }
+        .row-tue .day-label { background: var(--google-green); }
+        .row-wed .day-label { background: var(--google-blue); }
+        .row-thu .day-label { background: var(--google-red); }
+
+        .slots { flex: 1; display: flex; flex-direction: row-reverse; overflow-x: auto; gap: 10px; padding: 12px; }
+        .slots::-webkit-scrollbar { display: none; }
+
+        .slot { 
+            flex-shrink: 0; min-width: 100px; padding: 8px; border-radius: 8px; 
+            background: #f8f9fa; border: 1px solid var(--border); text-align: center;
+        }
+        .slot b { display: block; color: var(--google-blue); font-size: 13px; }
+        .slot span { font-size: 11px; color: var(--text-main); font-weight: 500; }
+
+        /* Inputs & Buttons */
+        .section-title { font-size: 13px; font-weight: 500; color: var(--text-dim); margin: 20px 0 10px; }
+        input, select { 
+            width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; 
+            border: 1px solid var(--border); background: #fff; font-size: 14px;
+        }
+        .primary-btn { 
+            width: 100%; padding: 12px; border-radius: 8px; border: none; 
+            background: var(--google-blue); color: white; font-weight: 500; cursor: pointer;
+        }
+
+        #map { width: 100%; height: 180px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
+
+        .payment-card { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; background: #fff; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px;
+        }
+        .payment-card.paid { border-right: 5px solid var(--google-green); }
+        .pay-btn { background: var(--google-green); color: white; border: none; padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -52,44 +117,49 @@
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <div class="sidebar" id="sidebar">
-    <button onclick="toggleMenu()" style="background:var(--red); width: auto;">إغلاق ×</button>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin:0; font-size: 18px;">Control Panel</h2>
+        <button onclick="toggleMenu()" style="background:none; border:none; font-size:24px; color:var(--text-dim); cursor:pointer;">&times;</button>
+    </div>
     
-    <div class="section-title">📍 مواقع الطلاب</div>
+    <div class="section-title">Students Locations</div>
     <div id="map"></div>
 
-    <div class="section-title">👤 إضافة طالب جديد</div>
-    <input id="stuName" placeholder="اسم الطالب">
-    <input id="stuPrice" type="number" placeholder="المبلغ (ريال)">
-    <button onclick="addStudent()">حفظ الطالب</button>
+    <div class="section-title">New Student</div>
+    <input id="stuName" placeholder="Student Name">
+    <input id="stuPrice" type="number" placeholder="Fee (SR)">
+    <button class="primary-btn" onclick="addStudent()">Add Student</button>
 
-    <div class="section-title">⏰ حجز موعد</div>
+    <div class="section-title">Book a Class</div>
     <select id="stuSelect"></select>
     <input type="time" id="classTime">
     <select id="classDay">
-        <option value="Sat">السبت</option><option value="Sun">الأحد</option>
-        <option value="Mon">الاثنين</option><option value="Tues">الثلاثاء</option>
-        <option value="Wed">الأربعاء</option><option value="Thurs">الخميس</option>
+        <option value="Sat">Saturday</option><option value="Sun">Sunday</option>
+        <option value="Mon">Monday</option><option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option><option value="Thu">Thursday</option>
     </select>
-    <button style="background:var(--green)" onclick="addSchedule()">تثبيت الموعد</button>
+    <button class="primary-btn" style="background:var(--google-green)" onclick="addSchedule()">Save to Schedule</button>
 
-    <div class="section-title">💰 الحسابات المالية</div>
+    <div class="section-title">Payments</div>
     <div id="paymentList"></div>
 </div>
 
 <div class="main-content">
     <header>
-        <h1 style="font-size: 22px; margin:0;">الجدول الأسبوعي</h1>
-        <button class="menu-btn" onclick="toggleMenu()">القائمة ☰</button>
+        <h1>
+            <span class="logo-t">T</span><span class="logo-u">u</span><span class="logo-t2">t</span><span class="logo-o">o</span><span class="logo-r">r</span>
+            <span style="color:var(--text-dim); margin-right:4px;">Flow</span>
+        </h1>
+        <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
     </header>
 
     <div class="time-grid" id="mainGrid"></div>
 </div>
 
 <script>
-    let students = JSON.parse(localStorage.getItem('tutor_pro_v11')) || [];
-    const daysMap = {Sat:"السبت", Sun:"الأحد", Mon:"الاثنين", Tues:"الثلاثاء", Wed:"الأربعاء", Thurs:"الخميس"};
+    let students = JSON.parse(localStorage.getItem('tutor_google_v1')) || [];
+    const daysMap = {Sat:"SAT", Sun:"SUN", Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU"};
 
-    // تفعيل الخريطة
     let map = L.map('map').setView([25.3833, 49.5833], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -101,13 +171,11 @@
     function addStudent() {
         let name = document.getElementById('stuName').value;
         let price = document.getElementById('stuPrice').value;
-        if(!name || !price) return alert("أكمل البيانات");
-
+        if(!name || !price) return;
         students.push({
             id: Date.now(), name, price: parseFloat(price), isPaid: false,
             lat: 25.3833 + (Math.random() * 0.04 - 0.02),
             lng: 49.5833 + (Math.random() * 0.04 - 0.02),
-            color: '#'+Math.floor(Math.random()*16777215).toString(16),
             schedules: []
         });
         save();
@@ -118,10 +186,10 @@
         let id = +document.getElementById('stuSelect').value;
         let time = document.getElementById('classTime').value;
         let day = document.getElementById('classDay').value;
-        if(!id || !time) return alert("اختر الطالب والوقت");
+        if(!id || !time) return;
         students.find(s => s.id === id).schedules.push({day, time});
         save();
-        toggleMenu(); // غلق القائمة بعد الحجز
+        toggleMenu();
     }
 
     function togglePay(id) {
@@ -131,7 +199,7 @@
     }
 
     function save() {
-        localStorage.setItem('tutor_pro_v11', JSON.stringify(students));
+        localStorage.setItem('tutor_google_v1', JSON.stringify(students));
         render();
     }
 
@@ -140,11 +208,15 @@
         const select = document.getElementById('stuSelect');
         const pList = document.getElementById('paymentList');
         
-        grid.innerHTML = ''; select.innerHTML = '<option value="">اختر طالب</option>'; pList.innerHTML = '';
+        grid.innerHTML = ''; select.innerHTML = '<option value="">Choose Student</option>'; pList.innerHTML = '';
         map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
 
         Object.keys(daysMap).forEach(d => {
-            grid.innerHTML += `<div class="day-row"><div class="day-label">${daysMap[d]}</div><div class="slots" id="slot-${d}"></div></div>`;
+            grid.innerHTML += `
+                <div class="day-row row-${d.toLowerCase()}">
+                    <div class="day-label">${daysMap[d]}</div>
+                    <div class="slots" id="slot-${d}"></div>
+                </div>`;
         });
 
         students.forEach(s => {
@@ -152,14 +224,20 @@
             L.marker([s.lat, s.lng]).addTo(map).bindPopup(s.name);
 
             pList.innerHTML += `
-                <div class="payment-item ${s.isPaid ? 'paid' : ''}">
-                    <span><b>${s.name}</b> (${s.price} ر.س)</span>
-                    <button class="btn-pay" onclick="togglePay(${s.id})">${s.isPaid ? 'تراجع' : 'تم'}</button>
+                <div class="payment-card ${s.isPaid ? 'paid' : ''}">
+                    <div><b>${s.name}</b><br><small>${s.price} SR</small></div>
+                    <button class="pay-btn" onclick="togglePay(${s.id})">${s.isPaid ? 'Undo' : 'Collect'}</button>
                 </div>`;
 
             s.schedules.forEach(sc => {
                 const dayBox = document.getElementById(`slot-${sc.day}`);
-                if(dayBox) dayBox.innerHTML += `<div class="slot" style="background:${s.color}"><b>${sc.time}</b>${s.name}</div>`;
+                if(dayBox) {
+                    dayBox.innerHTML += `
+                        <div class="slot">
+                            <b>${sc.time}</b>
+                            <span>${s.name}</span>
+                        </div>`;
+                }
             });
         });
     }
