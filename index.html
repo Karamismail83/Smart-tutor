@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Compact & Totals</title>
+    <title>Smart Tutor Pro - Ultimate Flexible</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -13,8 +13,8 @@
             --fb-blue: #1877F2;      
             --vivid-green: #1B4332; 
             --vivid-red: #8B0000;
-            --name-w: 100px; /* تصغير العرض */
-            --fee-w: 60px;   /* تصغير العرض */
+            --name-w: 100px;
+            --fee-w: 60px;
         }
         
         body { margin: 0; background: var(--main-dark); color: #2D3E50; font-family: 'Segoe UI', sans-serif; direction: ltr; font-size: 13px; }
@@ -32,51 +32,41 @@
 
         .income-banner {
             background: linear-gradient(135deg, #DBA520 0%, #FFD700 100%);
-            padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #FFF;
+            padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #FFF; margin-bottom: 5px;
         }
         .income-amount { font-size: 20px; font-weight: 900; color: #000; }
 
-        /* الجدول المدمج */
         .acc-table-wrapper { 
             overflow-x: auto; background: white; border-radius: 10px; border: 1px solid var(--accent-yellow);
         }
         .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 11px; }
         .acc-table th, .acc-table td { padding: 6px 4px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); min-width: 55px; }
 
-        .sticky-name { 
-            position: sticky; left: 0; z-index: 10; 
-            width: var(--name-w) !important; min-width: var(--name-w) !important;
-            border-right: 1px solid #ddd !important;
-        }
-        .sticky-fee { 
-            position: sticky; left: var(--name-w); z-index: 10; 
-            width: var(--fee-w) !important; min-width: var(--fee-w) !important;
-            border-right: 2px solid #333 !important;
-        }
+        .sticky-name { position: sticky; left: 0; z-index: 10; width: var(--name-w) !important; min-width: var(--name-w) !important; border-right: 1px solid rgba(0,0,0,0.1) !important; cursor: pointer; }
+        .sticky-fee { position: sticky; left: var(--name-w); z-index: 10; width: var(--fee-w) !important; min-width: var(--fee-w) !important; border-right: 2px solid #333 !important; }
 
         thead th { background: var(--main-dark) !important; color: white !important; z-index: 1; }
         tfoot td { background: #f0f0f0; font-weight: 900; color: var(--vivid-green); border-top: 2px solid var(--main-dark); }
 
-        /* الجدول الدراسي المصغر */
         .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 5px; }
         .day-label { width: 40px; display: flex; align-items: center; justify-content: center; font-weight: 900; background: rgba(0,0,0,0.3); color: var(--soft-beige); font-size: 11px; }
         .slots { flex: 1; display: flex; overflow-x: auto; gap: 5px; padding: 6px; min-height: 45px; }
         .slot { flex-shrink: 0; width: 85px; height: 35px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 9px; color: white; font-weight: bold; cursor: pointer; }
 
         .box { width: 25px; height: 25px; border-radius: 4px; border: 1px solid #ddd; background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; }
+        .box.is-pay-week { border: 2px solid var(--fb-blue); background: #eef2ff; }
         .box.state-attended { background: #6B9080 !important; color: white; }
-        .box.pay-empty { background: var(--fb-blue) !important; border-color: #000; }
-        .box.pay-paid { background: var(--vivid-green) !important; color: white; }
-        .box.pay-unpaid { background: var(--vivid-red) !important; color: white; }
+        .box.pay-paid { background: var(--vivid-green) !important; color: white; border-color: transparent; }
+        .box.pay-unpaid { background: var(--vivid-red) !important; color: white; border-color: transparent; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 80%; height: 100%; background: var(--soft-beige); z-index: 2000; transition: 0.3s; padding: 15px; overflow-y: auto; }
+        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 80%; height: 100%; background: var(--soft-beige); z-index: 2000; transition: 0.3s; padding: 15px; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.3); }
         .sidebar.active, .modal.active { left: 0; }
         .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:1500; }
         .overlay.active { display:block; }
 
-        input, select, button { width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--main-dark); font-weight: bold; font-size: 12px; }
+        input, select, button { width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--main-dark); font-weight: bold; }
         .primary-btn { background: var(--main-dark); color: white; border: none; }
-
+        
         @media print { .no-print { display: none !important; } .container { padding: 0; } .acc-table-wrapper { overflow: visible; } }
     </style>
 </head>
@@ -85,17 +75,32 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
 <div class="modal" id="editModal">
-    <h3>Edit</h3>
-    <input id="editName"><input id="editPrice" type="number">
-    <select id="editCycle"><option value="3">3 Weeks</option><option value="4">4 Weeks</option></select>
-    <button class="primary-btn" onclick="updateStudent()">Update</button>
-    <button onclick="deleteStudent()" style="color:red; background:none; border:none;">Delete</button>
+    <h3>Edit Student & Cycle</h3>
+    <input id="editName" placeholder="Name">
+    <input id="editPrice" type="number" placeholder="Fee">
+    <label style="font-size: 10px; font-weight: bold;">New Cycle Duration (Weeks):</label>
+    <select id="editCycle">
+        <option value="1">1 Week</option>
+        <option value="2">2 Weeks</option>
+        <option value="3">3 Weeks</option>
+        <option value="4">4 Weeks</option>
+    </select>
+    <button class="primary-btn" onclick="updateStudent()">Save Changes</button>
+    <p style="font-size: 9px; color: #555;">* Modifying the cycle only affects future weeks while keeping past records intact.</p>
+    <hr>
+    <button onclick="deleteStudent()" style="color:red; background:none; border:none; font-weight: bold;">Delete Student</button>
+    <button onclick="closeAll()">Cancel</button>
 </div>
 
 <div class="sidebar" id="sidebar">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Name"><input id="sPrice" type="number" placeholder="Fee">
-    <select id="sCycle"><option value="4">4 Weeks</option><option value="3">3 Weeks</option></select>
+    <select id="sCycle">
+        <option value="4">4 Weeks Cycle</option>
+        <option value="3">3 Weeks Cycle</option>
+        <option value="2">2 Weeks Cycle</option>
+        <option value="1">1 Week Cycle</option>
+    </select>
     <div id="palette" style="display:grid; grid-template-columns: repeat(5,1fr); gap:5px; margin-bottom:10px;"></div>
     <button class="primary-btn" onclick="addStudent()">Add Student</button>
     <hr>
@@ -103,7 +108,7 @@
     <select id="sSelect"></select>
     <select id="cDay"><option value="Sat">Sat</option><option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option></select>
     <select id="cTime"></select>
-    <button class="primary-btn" onclick="addSchedule()">Confirm</button>
+    <button class="primary-btn" onclick="addSchedule()">Confirm Booking</button>
 </div>
 
 <header>
@@ -119,8 +124,9 @@
     <div id="scheduleContainer"></div>
     
     <section>
+        <h2>Account Tracker</h2>
         <div class="income-banner">
-            <div style="font-size:10px; font-weight:bold;">TOTAL EXPECTED MONTHLY</div>
+            <div style="font-size:10px; font-weight:bold; color: #1A3A3A;">TOTAL EXPECTED INCOME</div>
             <div class="income-amount" id="totalIncome">0 SR</div>
         </div>
 
@@ -135,7 +141,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'tutor_db_compact_v105';
+    const STORAGE_KEY = 'tutor_flex_v300';
     const colors = ["#DBA520", "#E85D3F", "#1877F2", "#2D6A4F", "#8B0000", "#6A4C93", "#FF9F1C", "#2EC4B6", "#E71D36", "#011627"];
     let selectedColor = colors[0];
     let students = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -143,6 +149,7 @@
 
     function init() {
         const p = document.getElementById('palette');
+        p.innerHTML = '';
         colors.forEach(c => {
             const div = document.createElement('div');
             div.style.background = c; div.style.height = '25px'; div.style.borderRadius = '4px'; div.style.cursor = 'pointer';
@@ -156,17 +163,25 @@
         render();
     }
 
-    function addStudent() {
-        const n = document.getElementById('sName').value.trim();
-        const p = document.getElementById('sPrice').value.trim();
-        if(!n || !p) return;
-        students.push({ id: Date.now(), name: n, price: parseFloat(p), cycle: parseInt(document.getElementById('sCycle').value), color: selectedColor, status: Array(20).fill(0), schedules: [] });
-        save();
-    }
-
     function hexToRgba(hex, alpha) {
         let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function addStudent() {
+        const n = document.getElementById('sName').value.trim();
+        const p = parseFloat(document.getElementById('sPrice').value);
+        const cycle = parseInt(document.getElementById('sCycle').value);
+        if(!n || isNaN(p)) return alert("Fill Name/Fee");
+
+        let financialMap = Array(20).fill(0).map((_, i) => ({
+            isPayWeek: (i + 1) % cycle === 0,
+            status: 0 
+        }));
+
+        students.push({ id: Date.now(), name: n, price: p, cycle: cycle, color: selectedColor, financialMap: financialMap, schedules: [] });
+        save();
+        document.getElementById('sName').value = ''; document.getElementById('sPrice').value = '';
     }
 
     function render() {
@@ -174,7 +189,7 @@
         const header = document.getElementById('accHeader');
         const body = document.getElementById('accBody');
         const footer = document.getElementById('accFooter');
-        const totalIncomeEl = document.getElementById('totalIncome');
+        const incomeEl = document.getElementById('totalIncome');
         const select = document.getElementById('sSelect');
 
         grid.innerHTML = '<h2>Weekly Schedule</h2>';
@@ -192,72 +207,101 @@
         dates.forEach(d => header.innerHTML += `<th>${d}</th>`);
 
         body.innerHTML = '';
-        let totalMonthly = 0;
+        let totalIncome = 0;
         ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"].forEach(d => grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`);
 
         students.forEach(s => {
-            totalMonthly += s.price;
+            totalIncome += s.price;
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            let row = `<tr style="background: ${hexToRgba(s.color, 0.1)};">
-                        <td class="sticky-name" onclick="openEdit(${s.id})" style="background: ${hexToRgba(s.color, 0.2)} !important; border-left: 4px solid ${s.color};">${s.name}</td>
-                        <td class="sticky-fee" style="background: ${hexToRgba(s.color, 0.2)} !important;">${s.price}</td>`;
+            
+            const rowBg = hexToRgba(s.color, 0.1);
+            const stickyBg = hexToRgba(s.color, 0.2);
+
+            let row = `<tr style="background: ${rowBg};">
+                        <td class="sticky-name" onclick="openEdit(${s.id})" style="background: ${stickyBg} !important; border-left: 4px solid ${s.color};">${s.name}</td>
+                        <td class="sticky-fee" style="background: ${stickyBg} !important;">${s.price}</td>`;
+            
             dates.forEach((d, i) => {
-                let isPay = (i + 1) % s.cycle === 0;
-                if(isPay) weeklyTotals[i] += s.price;
-                let stat = s.status[i];
-                let cls = isPay ? (stat==1?'pay-paid':stat==2?'pay-unpaid':'pay-empty') : (stat==3?'state-attended':'');
-                let content = isPay ? (stat==1?'😊':stat==2?'😡':'') : (stat==3?'✓':'');
-                row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id},${i},${isPay})">${content}</div></td>`;
+                let week = s.financialMap[i];
+                if(week.isPayWeek) weeklyTotals[i] += s.price;
+                
+                let cls = week.isPayWeek ? 'is-pay-week' : '';
+                if(week.status == 1) cls = 'pay-paid';
+                else if(week.status == 2) cls = 'pay-unpaid';
+                else if(week.status == 3) cls = 'state-attended';
+
+                let content = week.status == 1 ? '😊' : week.status == 2 ? '😡' : week.status == 3 ? '✓' : '';
+                row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id},${i})">${content}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
 
-            s.schedules.forEach((sc, idx) => {
+            s.schedules.forEach(sc => {
                 const b = document.getElementById(`slot-${sc.day}`);
                 if(b) {
                     let div = document.createElement('div'); div.className = 'slot'; div.style.backgroundColor = s.color;
                     div.innerHTML = `<b>${sc.time}</b> ${s.name}`;
-                    div.onclick = () => { if(confirm('Delete?')) { s.schedules.splice(idx,1); save(); } };
                     b.appendChild(div);
                 }
             });
         });
 
-        // إنشاء Footer للمجاميع الأسبوعية
         let footerRow = `<tr><td colspan="2" style="text-align:right; padding-right:10px;">Weekly Total:</td>`;
-        weeklyTotals.forEach(t => { footerRow += `<td>${t > 0 ? t : '-'}</td>`; });
+        weeklyTotals.forEach(t => footerRow += `<td>${t > 0 ? t : '-'}</td>`);
         footer.innerHTML = footerRow + `</tr>`;
-        totalIncomeEl.innerText = totalMonthly + " SR";
+        incomeEl.innerText = totalIncome + " SR";
     }
 
-    function toggleBox(id, i, isPay) {
+    function toggleBox(id, weekIndex) {
         let s = students.find(x => x.id === id);
-        if(isPay) s.status[i] = s.status[i]==0?1:s.status[i]==1?2:0;
-        else s.status[i] = s.status[i]==0?3:0;
+        let week = s.financialMap[weekIndex];
+        if(week.isPayWeek) {
+            week.status = week.status == 0 ? 1 : week.status == 1 ? 2 : 0;
+        } else {
+            week.status = week.status == 3 ? 0 : 3;
+        }
         save();
     }
 
+    function openEdit(id) {
+        editingId = id; let s = students.find(x => x.id === id);
+        document.getElementById('editName').value = s.name;
+        document.getElementById('editPrice').value = s.price;
+        document.getElementById('editCycle').value = s.cycle;
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function updateStudent() {
+        let s = students.find(x => x.id === editingId);
+        const newCycle = parseInt(document.getElementById('editCycle').value);
+        s.name = document.getElementById('editName').value;
+        s.price = parseFloat(document.getElementById('editPrice').value);
+        
+        if(newCycle !== s.cycle) {
+            s.cycle = newCycle;
+            let lastInteractive = -1;
+            for(let i = s.financialMap.length - 1; i >= 0; i--) {
+                if(s.financialMap[i].status !== 0) { lastInteractive = i; break; }
+            }
+            for(let i = lastInteractive + 1; i < s.financialMap.length; i++) {
+                s.financialMap[i].isPayWeek = ( (i - lastInteractive) % newCycle === 0 );
+            }
+        }
+        save(); closeAll();
+    }
+
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(students)); render(); }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+    function deleteStudent() { if(confirm('Delete?')) { students = students.filter(x => x.id !== editingId); save(); closeAll(); } }
     function addSchedule() {
         let id = +document.getElementById('sSelect').value; if(!id) return;
         students.find(x => x.id === id).schedules.push({ day: document.getElementById('cDay').value, time: document.getElementById('cTime').value });
         save();
     }
-    function openEdit(id) {
-        editingId = id; let s = students.find(x => x.id === id);
-        document.getElementById('editName').value = s.name; document.getElementById('editPrice').value = s.price; document.getElementById('editCycle').value = s.cycle;
-        document.getElementById('editModal').classList.add('active'); document.getElementById('overlay').classList.add('active');
-    }
-    function updateStudent() {
-        let s = students.find(x => x.id === editingId);
-        s.name = document.getElementById('editName').value; s.price = parseFloat(document.getElementById('editPrice').value); s.cycle = parseInt(document.getElementById('editCycle').value);
-        save(); closeAll();
-    }
-    function deleteStudent() { if(confirm('Delete?')) { students = students.filter(x => x.id !== editingId); save(); closeAll(); } }
     function exportPDF() {
         const element = document.getElementById('pdf-area');
-        html2pdf().set({ margin: 5, filename: 'Tutor_Compact_Report.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(element).save();
+        html2pdf().set({ margin: 5, filename: 'Tutor_Report.pdf', html2canvas: { scale: 2 }, jsPDF: { format: 'a4', orientation: 'landscape' } }).from(element).save();
     }
     window.onload = init;
 </script>
