@@ -1,93 +1,92 @@
 <!DOCTYPE html>
-<html lang="en" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tutor</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Tutor Pro - Full Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
-            --bg: #F8F9FA; --card: #FFFFFF;
-            --google-blue: #4285F4; --google-red: #EA4335;
-            --google-yellow: #FBBC05; --google-green: #34A853;
-            --text-main: #202124; --text-dim: #5f6368; --border: #dadce0;
+            --bg: #F2F2F7; --card: #FFFFFF;
+            --apple-blue: #007AFF; --apple-red: #FF3B30;
+            --apple-yellow: #FFCC00; --apple-green: #34C759;
+            --text-main: #1C1C1E; --border: #D1D1D6;
         }
         
-        body { margin:0; background:var(--bg); color:var(--text-main); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
-        /* Sidebar */
-        .sidebar {
-            position: fixed; top: 0; right: -100%; width: 85%; height: 100%;
-            background: var(--card); border-left: 1px solid var(--border);
-            z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 20px; box-sizing: border-box; overflow-y: auto;
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 20px; background: rgba(255,255,255,0.85); 
+            backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 100;
+            border-bottom: 0.5px solid var(--border);
         }
-        .sidebar.active { right: 0; }
-        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); display:none; z-index:999; }
+        .nav-btns { display: flex; gap: 5px; }
+        .menu-btn { background: #E9E9EB; border: none; padding: 8px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--apple-blue); cursor: pointer; }
+        .pdf-btn { background: var(--apple-green); color: white !important; }
+
+        /* Sidebar & Modals */
+        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-right: 1px solid var(--border); z-index: 1001; transition: 0.4s; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .sidebar.active, .modal.active { left: 0; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); display:none; z-index:1000; backdrop-filter: blur(4px); }
         .overlay.active { display:block; }
 
-        /* Logo Correction - Forced LTR for the Name */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid var(--border); }
+        /* Tables & Grid */
+        .view { display: none; padding: 15px; }
+        .view.active { display: block; }
         
-        .logo-container { 
-            display: flex; 
-            direction: ltr !important; /* ضمان ترتيب الحروف من اليسار لليمين */
-            font-size: 26px; 
-            font-weight: 700;
-            gap: 0;
-        }
+        .time-grid { display: flex; flex-direction: column; gap: 8px; }
+        .day-row { display: flex; background: var(--card); border-radius: 14px; border: 0.5px solid var(--border); overflow: hidden; min-height: 55px; }
+        .day-label { width: 45px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px; color: #fff; flex-shrink: 0; }
+        .slots { flex: 1; display: flex; overflow-x: auto; gap: 6px; padding: 6px 10px; align-items: center; }
+        .slot { flex-shrink: 0; width: 85px; height: 45px; border-radius: 10px; color: #fff; text-align: center; font-size: 10px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .delete-slot { position: absolute; top: -5px; right: -5px; background: var(--apple-red); color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 10px; border: none; display: none; }
+        .slot:hover .delete-slot { display: block; }
 
-        .c1 { color: var(--google-blue); } .c2 { color: var(--google-red); } 
-        .c3 { color: var(--google-yellow); } .c4 { color: var(--google-green); } 
-        .c5 { color: var(--google-blue); } .c6 { color: var(--google-red); } 
-        .c7 { color: var(--google-yellow); } .c8 { color: var(--google-green); } 
-        .c9 { color: var(--google-blue); } .c10 { color: var(--google-red); }
-        .space { width: 8px; }
-
-        /* Timetable Grid */
-        .time-grid { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .day-row { display: flex; align-items: stretch; background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; min-height: 80px; }
-        .day-label { width: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; }
+        .acc-table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+        .acc-table { border-collapse: collapse; width: 100%; }
+        .acc-table th, .acc-table td { border: 0.5px solid #eee; padding: 8px; text-align: center; font-size: 11px; }
+        .sticky-col { position: sticky; left: 0; background: #f9f9f9; font-weight: bold; z-index: 5; border-right: 2px solid var(--apple-blue) !important; cursor: pointer; text-decoration: underline; }
         
-        .row-sat .day-label { background: var(--google-blue); }
-        .row-sun .day-label { background: var(--google-red); }
-        .row-mon .day-label { background: var(--google-yellow); color: #000; }
-        .row-tue .day-label { background: var(--google-green); }
-        .row-wed .day-label { background: var(--google-blue); }
-        .row-thu .day-label { background: var(--google-red); }
+        .box { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; }
+        .box.checked { background: var(--apple-green); color: white; }
+        .box.pay-due { border: 2px solid var(--apple-red); }
+        .box.pay-done { background: #1a8335 !important; color: white; }
 
-        .slots { flex: 1; display: flex; flex-direction: row-reverse; overflow-x: auto; gap: 10px; padding: 12px; }
-        .slot { flex-shrink: 0; min-width: 110px; padding: 10px; border-radius: 12px; color: #fff; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .slot b { display: block; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px; }
-
-        /* Form Elements */
-        .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
-        .color-swatch { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
-        .color-swatch.active { border-color: #202124; transform: scale(1.1); }
-        
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border); }
-        .primary-btn { background: var(--google-blue); color: #fff; border: none; font-weight: bold; cursor: pointer; }
-        #map { width: 100%; height: 200px; border-radius: 15px; margin-bottom: 15px; border: 1px solid var(--border); }
+        .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
+        .color-dot { width: 25px; height: 25px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ddd; cursor: pointer; }
+        .summary-card { background: linear-gradient(135deg, #007AFF, #0051FF); padding: 15px; border-radius: 16px; margin-bottom: 20px; color: #fff; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border); font-size: 14px; }
+        .primary-btn { background: var(--apple-blue); color: #fff; border: none; font-weight: 700; cursor: pointer; }
+        .danger-btn { background: var(--apple-red); color: #fff; border: none; }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<div class="modal" id="editModal">
+    <h3>Edit Student Info</h3>
+    <input id="editName" placeholder="Name">
+    <input id="editPrice" type="number" placeholder="Monthly Fee">
+    <p style="font-size: 12px; color: gray;">To change sessions, use the delete button on the main schedule slots.</p>
+    <button class="primary-btn" onclick="updateStudent()">Update Changes</button>
+    <button class="danger-btn" onclick="deleteStudent()">Delete Student Entirely</button>
+    <button onclick="closeAll()">Cancel</button>
+</div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="color:var(--google-blue); margin-top:0;">Management</h2>
-    <div id="map"></div>
-    
-    <input id="sName" placeholder="Student Name">
-    <input id="sPrice" type="number" placeholder="Fee (SR)">
-    
-    <div class="palette" id="colorPalette"></div>
-    <button class="primary-btn" onclick="addStudent()">Add Student</button>
-
-    <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+    <div class="summary-card">
+        <small>COLLECTION (Current Cycle)</small>
+        <div id="totalToCollect" style="font-size: 24px; font-weight: 800;">0 SR</div>
+    </div>
+    <h3>Add Student</h3>
+    <input id="sName" placeholder="Full Name">
+    <input id="sPrice" type="number" placeholder="Monthly Fee">
+    <div class="color-grid" id="colorPalette"></div>
+    <button class="primary-btn" onclick="addStudent()">Save Student</button>
+    <hr style="opacity:0.1">
+    <h3>Book Session</h3>
     <select id="sSelect"></select>
     <input type="time" id="cTime">
     <select id="cDay">
@@ -95,58 +94,111 @@
         <option value="Mon">Monday</option><option value="Tue">Tuesday</option>
         <option value="Wed">Wednesday</option><option value="Thu">Thursday</option>
     </select>
-    <button class="primary-btn" style="background:var(--google-green)" onclick="addSchedule()">Save Session</button>
-    <div id="paymentList" style="margin-top:20px;"></div>
+    <button class="primary-btn" onclick="addSchedule()">Confirm Session</button>
 </div>
 
-<div class="main-content">
-    <header>
-        <div class="logo-container">
-            <span class="c1">S</span><span class="c2">m</span><span class="c3">a</span><span class="c4">r</span><span class="c5">t</span>
-            <div class="space"></div>
-            <span class="c6">T</span><span class="c7">u</span><span class="c8">t</span><span class="c9">o</span><span class="c10">r</span>
-        </div>
-        <button onclick="toggleMenu()" style="background:#fff; border:1px solid var(--border); padding:8px 15px; border-radius:20px;">Menu ☰</button>
-    </header>
-    <div class="time-grid" id="mainGrid"></div>
+<header>
+    <div style="font-weight: 800; font-size: 16px;">Smart<span style="color:var(--apple-blue)">Tutor</span></div>
+    <div class="nav-btns">
+        <button class="menu-btn" onclick="switchView('main')">Schedule</button>
+        <button class="menu-btn" onclick="switchView('accounts')">Accounts</button>
+        <button class="menu-btn pdf-btn" onclick="printCurrentView()">Print PDF</button>
+        <button class="menu-btn" onclick="toggleSidebar()">Menu ☰</button>
+    </div>
+</header>
+
+<div id="mainView" class="view active">
+    <div id="schedulePDF" class="time-grid"></div>
+</div>
+
+<div id="accountsView" class="view">
+    <div class="acc-table-wrapper" id="accountsPDF">
+        <table class="acc-table">
+            <thead>
+                <tr id="accHeader">
+                    <th class="sticky-col">Student (Edit)</th>
+                    <th style="background:#eef">Fee</th>
+                </tr>
+            </thead>
+            <tbody id="accBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    const colors = ["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#673AB7", "#E91E63", "#00BCD4", "#FF5722"];
+    const colors = ["#007AFF", "#FF3B30", "#34C759", "#FF9500", "#5856D6", "#AF52DE", "#FF2D55", "#FFCC00", "#8E8E93", "#E67E22"];
     let selectedColor = colors[0];
-    let students = JSON.parse(localStorage.getItem('smart_tutor_v3')) || [];
+    let students = JSON.parse(localStorage.getItem('smart_tutor_v13')) || [];
+    let ThursdayDates = [];
+    let currentActiveView = 'main';
+    let editingStudentId = null;
 
-    function initPalette() {
-        const p = document.getElementById('colorPalette');
-        colors.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'color-swatch' + (c === selectedColor ? ' active' : '');
-            div.style.background = c;
-            div.onclick = () => {
-                selectedColor = c;
-                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-                div.classList.add('active');
-            };
-            p.appendChild(div);
-        });
+    function generateDates() {
+        ThursdayDates = [];
+        let start = new Date('2026-01-22');
+        let end = new Date('2026-06-30');
+        while(start <= end) {
+            ThursdayDates.push(new Date(start).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'}));
+            start.setDate(start.getDate() + 7);
+        }
     }
 
-    function toggleMenu() {
+    function switchView(v) {
+        currentActiveView = v;
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        document.getElementById(v + 'View').classList.add('active');
+        render();
+    }
+
+    function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function closeAll() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('editModal').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    function openEdit(id) {
+        editingStudentId = id;
+        let s = students.find(st => st.id === id);
+        document.getElementById('editName').value = s.name;
+        document.getElementById('editPrice').value = s.price;
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function updateStudent() {
+        let s = students.find(st => st.id === editingStudentId);
+        s.name = document.getElementById('editName').value;
+        s.price = document.getElementById('editPrice').value;
+        save();
+        closeAll();
+    }
+
+    function deleteStudent() {
+        if(confirm('Delete student and all records?')) {
+            students = students.filter(s => s.id !== editingStudentId);
+            save();
+            closeAll();
+        }
+    }
+
+    function removeSchedule(sId, scheduleIndex) {
+        if(confirm('Remove this session?')) {
+            students.find(s => s.id === sId).schedules.splice(scheduleIndex, 1);
+            save();
+        }
     }
 
     function addStudent() {
         let name = document.getElementById('sName').value;
         let price = document.getElementById('sPrice').value;
         if(!name || !price) return;
-        students.push({
-            id: Date.now(), name, price, color: selectedColor, isPaid: false,
-            lat: 25.3833 + (Math.random()*0.04-0.02), lng: 49.5833 + (Math.random()*0.04-0.02),
-            schedules: []
-        });
+        students.push({ id: Date.now(), name, price, color: selectedColor, attendance: Array(25).fill(false), schedules: [] });
         save();
-        document.getElementById('sName').value = ""; document.getElementById('sPrice').value = "";
     }
 
     function addSchedule() {
@@ -156,44 +208,81 @@
         if(!id || !time) return;
         students.find(s => s.id === id).schedules.push({day, time});
         save();
-        toggleMenu();
     }
 
-    function togglePay(id) {
-        let s = students.find(s => s.id === id);
-        s.isPaid = !s.isPaid;
+    function toggleBox(sId, index) {
+        let s = students.find(st => st.id === sId);
+        s.attendance[index] = !s.attendance[index];
         save();
     }
 
     function save() {
-        localStorage.setItem('smart_tutor_v3', JSON.stringify(students));
+        localStorage.setItem('smart_tutor_v13', JSON.stringify(students));
         render();
     }
 
     function render() {
-        const grid = document.getElementById('mainGrid');
+        generateDates();
+        const grid = document.getElementById('schedulePDF');
         const select = document.getElementById('sSelect');
-        const pList = document.getElementById('paymentList');
-        grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>'; pList.innerHTML = '';
-        const days = {Sat:"SAT", Sun:"SUN", Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU"};
+        const accHeader = document.getElementById('accHeader');
+        const accBody = document.getElementById('accBody');
+        const totalEl = document.getElementById('totalToCollect');
 
+        grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>';
+        accHeader.innerHTML = '<th class="sticky-col">Student (Edit)</th><th style="background:#eef">Fee</th>';
+        accBody.innerHTML = '';
+        let globalTotal = 0;
+
+        ThursdayDates.forEach(date => { accHeader.innerHTML += `<th>${date}</th>`; });
+
+        const days = {Sat:"SAT", Sun:"SUN", Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU"};
+        const dayColors = {Sat:"#007AFF", Sun:"#FF3B30", Mon:"#FFCC00", Tue:"#34C759", Wed:"#5856D6", Thu:"#AF52DE"};
+        
         Object.keys(days).forEach(d => {
-            grid.innerHTML += `<div class="day-row row-${d.toLowerCase()}"><div class="day-label">${days[d]}</div><div class="slots" id="slot-${d}"></div></div>`;
+            grid.innerHTML += `<div class="day-row"><div class="day-label" style="background:${dayColors[d]}">${days[d]}</div><div class="slots" id="slot-${d}"></div></div>`;
         });
 
         students.forEach(s => {
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            pList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:10px; border:1px solid #eee; border-radius:10px;"><span>${s.name} (${s.price} SR)</span><button onclick="togglePay(${s.id})" style="width:auto; margin:0; padding:5px 10px; background:${s.isPaid?'#34A853':'#EA4335'}; color:#fff; border:none; border-radius:5px;">${s.isPaid?'Paid':'Pay'}</button></div>`;
-            
-            s.schedules.forEach(sc => {
-                const box = document.getElementById(`slot-${sc.day}`);
-                if(box) box.innerHTML += `<div class="slot" style="background:${s.color}"><b>${sc.time}</b><span>${s.name}</span></div>`;
+            let rowHtml = `<tr><td class="sticky-col" onclick="openEdit(${s.id})" style="color:${s.color}">${s.name}</td><td>${s.price}</td>`;
+            ThursdayDates.forEach((date, i) => {
+                let isPayWeek = (i + 1) % 4 === 0;
+                let statusClass = s.attendance[i] ? (isPayWeek ? 'pay-done' : 'checked') : (isPayWeek ? 'pay-due' : '');
+                if(isPayWeek && s.attendance[i]) globalTotal += parseFloat(s.price || 0);
+                rowHtml += `<td><div class="box ${statusClass}" onclick="toggleBox(${s.id}, ${i})">${s.attendance[i] ? '✓' : ''}</div></td>`;
             });
+            accBody.innerHTML += rowHtml + `</tr>`;
+
+            s.schedules.forEach((sc, idx) => {
+                const dayBox = document.getElementById(`slot-${sc.day}`);
+                if(dayBox) dayBox.innerHTML += `
+                    <div class="slot" style="background:${s.color}">
+                        <button class="delete-slot" onclick="removeSchedule(${s.id}, ${idx})">×</button>
+                        <b>${sc.time}</b>${s.name}
+                    </div>`;
+            });
+        });
+        totalEl.innerText = globalTotal + " SR";
+    }
+
+    function printCurrentView() {
+        const element = currentActiveView === 'main' ? document.getElementById('schedulePDF') : document.getElementById('accountsPDF');
+        html2pdf().from(element).set({
+            margin: 5, filename: 'Tutor_Report.pdf', jsPDF: { orientation: currentActiveView === 'main' ? 'p' : 'l' }
+        }).save();
+    }
+
+    function initPalette() {
+        const p = document.getElementById('colorPalette');
+        colors.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'color-dot'; div.style.background = c;
+            div.a = () => { selectedColor = c; };
+            p.appendChild(div);
         });
     }
 
-    let map = L.map('map').setView([25.3833, 49.5833], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     initPalette();
     render();
 </script>
