@@ -3,127 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tutor | Professional Management</title>
+    <title>Smart Tutor</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
-            --bg: #F8F9FA;
-            --card: #FFFFFF;
-            --google-blue: #4285F4;
-            --google-red: #EA4335;
-            --google-yellow: #FBBC05;
-            --google-green: #34A853;
-            --text-main: #202124;
-            --text-dim: #5f6368;
-            --border: #dadce0;
+            --bg: #F8F9FA; --card: #FFFFFF;
+            --google-blue: #4285F4; --google-red: #EA4335;
+            --google-yellow: #FBBC05; --google-green: #34A853;
+            --text-main: #202124; --text-dim: #5f6368; --border: #dadce0;
         }
+        
+        body { margin:0; background:var(--bg); color:var(--text-main); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
 
-        body { 
-            margin:0; background:var(--bg); color:var(--text-main); 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            overflow-x: hidden; 
-        }
-
-        /* Sidebar Glass Effect */
+        /* Sidebar */
         .sidebar {
-            position: fixed; top: 0; right: -100%; width: 88%; height: 100%;
+            position: fixed; top: 0; right: -100%; width: 85%; height: 100%;
             background: var(--card); border-left: 1px solid var(--border);
-            z-index: 1000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 25px; box-sizing: border-box; overflow-y: auto;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px; box-sizing: border-box; overflow-y: auto;
         }
         .sidebar.active { right: 0; }
-        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:none; z-index:999; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); display:none; z-index:999; }
         .overlay.active { display:block; }
 
-        /* Header & Smart Tutor Logo */
-        .main-content { padding: 15px; max-width: 600px; margin: auto; }
-        header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 25px; background: white; padding: 15px; border-radius: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-        }
-        header h1 { font-size: 26px; margin:0; font-weight: 700; display: flex; gap: 0px; }
+        /* Logo Correction - Forced LTR for the Name */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid var(--border); }
         
-        /* Coloring each letter of Smart Tutor */
-        .c-S { color: var(--google-blue); }
-        .c-m { color: var(--google-red); }
-        .c-a { color: var(--google-yellow); }
-        .c-r { color: var(--google-green); }
-        .c-t { color: var(--google-blue); }
-        .logo-space { width: 10px; }
-        .c-T { color: var(--google-red); }
-        .c-u { color: var(--google-yellow); }
-        .c-t2 { color: var(--google-green); }
-        .c-o { color: var(--google-blue); }
-        .c-r2 { color: var(--google-red); }
-
-        .menu-btn { 
-            background: #fff; border: 1px solid var(--border); color: var(--text-dim);
-            padding: 10px 18px; border-radius: 25px; cursor: pointer; font-weight: 600;
-            transition: 0.3s;
+        .logo-container { 
+            display: flex; 
+            direction: ltr !important; /* ضمان ترتيب الحروف من اليسار لليمين */
+            font-size: 26px; 
+            font-weight: 700;
+            gap: 0;
         }
-        .menu-btn:hover { background: #f8f9fa; }
 
-        /* Modern Timetable Grid */
-        .time-grid { display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px; }
-        .day-row { 
-            display: flex; align-items: stretch; background: var(--card); 
-            border-radius: 20px; border: 1px solid var(--border); 
-            overflow: hidden; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        }
+        .c1 { color: var(--google-blue); } .c2 { color: var(--google-red); } 
+        .c3 { color: var(--google-yellow); } .c4 { color: var(--google-green); } 
+        .c5 { color: var(--google-blue); } .c6 { color: var(--google-red); } 
+        .c7 { color: var(--google-yellow); } .c8 { color: var(--google-green); } 
+        .c9 { color: var(--google-blue); } .c10 { color: var(--google-red); }
+        .space { width: 8px; }
+
+        /* Timetable Grid */
+        .time-grid { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .day-row { display: flex; align-items: stretch; background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; min-height: 80px; }
+        .day-label { width: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; }
         
-        .day-label { 
-            width: 70px; display: flex; align-items: center; justify-content: center; 
-            font-weight: 800; font-size: 14px; color: #fff; border-left: 1px solid rgba(0,0,0,0.05);
-        }
-
-        /* Day Colors */
         .row-sat .day-label { background: var(--google-blue); }
         .row-sun .day-label { background: var(--google-red); }
-        .row-mon .day-label { background: var(--google-yellow); color: #202124; }
+        .row-mon .day-label { background: var(--google-yellow); color: #000; }
         .row-tue .day-label { background: var(--google-green); }
         .row-wed .day-label { background: var(--google-blue); }
         .row-thu .day-label { background: var(--google-red); }
 
-        .slots { flex: 1; display: flex; flex-direction: row-reverse; overflow-x: auto; gap: 12px; padding: 15px; }
-        .slots::-webkit-scrollbar { display: none; }
+        .slots { flex: 1; display: flex; flex-direction: row-reverse; overflow-x: auto; gap: 10px; padding: 12px; }
+        .slot { flex-shrink: 0; min-width: 110px; padding: 10px; border-radius: 12px; color: #fff; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .slot b { display: block; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px; }
 
-        .slot { 
-            flex-shrink: 0; min-width: 120px; padding: 12px; border-radius: 15px; 
-            color: #fff; text-align: center; position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .slot b { display: block; font-size: 15px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2px; }
-        .slot span { font-size: 12px; font-weight: 600; }
-
-        /* Sidebar Styles */
-        .section-title { font-size: 12px; font-weight: 700; color: var(--text-dim); margin: 25px 0 12px; text-transform: uppercase; letter-spacing: 1px; }
-        input, select { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 14px; box-sizing: border-box; }
-        .primary-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--google-blue); color: white; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .primary-btn:active { transform: scale(0.98); }
-
-        #map { width: 100%; height: 220px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-
-        /* Color Palette Selection */
-        .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; }
-        .color-circle { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
-        .color-circle.active { border-color: #202124; transform: scale(1.1); }
-
-        /* Photo Upload */
-        .upload-wrapper { text-align: center; margin-bottom: 20px; }
-        .avatar-preview { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--google-blue); object-fit: cover; cursor: pointer; background: #eee; }
-
-        /* Accounting List */
-        .payment-card { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px; background: #fff; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 10px;
-        }
-        .payment-card.paid { border-right: 6px solid var(--google-green); }
-        .pay-btn { background: var(--google-green); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* Form Elements */
+        .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
+        .color-swatch { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+        .color-swatch.active { border-color: #202124; transform: scale(1.1); }
+        
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border); }
+        .primary-btn { background: var(--google-blue); color: #fff; border: none; font-weight: bold; cursor: pointer; }
+        #map { width: 100%; height: 200px; border-radius: 15px; margin-bottom: 15px; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
@@ -131,219 +78,124 @@
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <div class="sidebar" id="sidebar">
-    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin:0; font-size: 22px;">Smart Panel</h2>
-        <button onclick="toggleMenu()" style="background:none; border:none; font-size:30px; cursor:pointer;">&times;</button>
-    </div>
-    
-    <div class="section-title">Global Map</div>
+    <h2 style="color:var(--google-blue); margin-top:0;">Management</h2>
     <div id="map"></div>
+    
+    <input id="sName" placeholder="Student Name">
+    <input id="sPrice" type="number" placeholder="Fee (SR)">
+    
+    <div class="palette" id="colorPalette"></div>
+    <button class="primary-btn" onclick="addStudent()">Add Student</button>
 
-    <div class="section-title">Add New Student</div>
-    <div class="upload-wrapper">
-        <input type="file" id="studentImg" hidden accept="image/*" onchange="handleImage(this)">
-        <img id="preview" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-preview" onclick="document.getElementById('studentImg').click()">
-        <p style="font-size:10px; color:var(--text-dim); margin-top:5px;">Tap to upload photo</p>
-    </div>
-    
-    <input id="stuName" placeholder="Enter Student Name">
-    <input id="stuPrice" type="number" placeholder="Tuition Fee (SR)">
-    
-    <div class="section-title">Pick Schedule Color</div>
-    <div class="palette" id="palette"></div>
-    
-    <button class="primary-btn" onclick="addStudent()">Register Student</button>
-
-    <div class="section-title">Quick Booking</div>
-    <select id="stuSelect"></select>
-    <input type="time" id="classTime">
-    <select id="classDay">
-        <option value="Sat">Saturday</option>
-        <option value="Sun">Sunday</option>
-        <option value="Mon">Monday</option>
-        <option value="Tue">Tuesday</option>
-        <option value="Wed">Wednesday</option>
-        <option value="Thu">Thursday</option>
+    <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+    <select id="sSelect"></select>
+    <input type="time" id="cTime">
+    <select id="cDay">
+        <option value="Sat">Saturday</option><option value="Sun">Sunday</option>
+        <option value="Mon">Monday</option><option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option><option value="Thu">Thursday</option>
     </select>
-    <button class="primary-btn" style="background:var(--google-green)" onclick="addSchedule()">Save to Schedule</button>
-
-    <div class="section-title">Payment Tracking</div>
-    <div id="paymentList"></div>
+    <button class="primary-btn" style="background:var(--google-green)" onclick="addSchedule()">Save Session</button>
+    <div id="paymentList" style="margin-top:20px;"></div>
 </div>
 
 <div class="main-content">
     <header>
-        <h1>
-            <span class="c-S">S</span><span class="c-m">m</span><span class="c-a">a</span><span class="c-r">r</span><span class="c-t">t</span>
-            <div class="logo-space"></div>
-            <span class="c-T">T</span><span class="c-u">u</span><span class="c-t2">t</span><span class="c-o">o</span><span class="c-r2">r</span>
-        </h1>
-        <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
+        <div class="logo-container">
+            <span class="c1">S</span><span class="c2">m</span><span class="c3">a</span><span class="c4">r</span><span class="c5">t</span>
+            <div class="space"></div>
+            <span class="c6">T</span><span class="c7">u</span><span class="c8">t</span><span class="c9">o</span><span class="c10">r</span>
+        </div>
+        <button onclick="toggleMenu()" style="background:#fff; border:1px solid var(--border); padding:8px 15px; border-radius:20px;">Menu ☰</button>
     </header>
-
     <div class="time-grid" id="mainGrid"></div>
 </div>
 
 <script>
-    // Configuration & Data
-    const studentColors = ["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#673AB7", "#E91E63", "#00BCD4", "#FF5722", "#795548", "#607D8B"];
-    let activeSelectedColor = studentColors[0];
-    let students = JSON.parse(localStorage.getItem('smart_tutor_final_db')) || [];
-    let currentUploadedImg = "";
+    const colors = ["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#673AB7", "#E91E63", "#00BCD4", "#FF5722"];
+    let selectedColor = colors[0];
+    let students = JSON.parse(localStorage.getItem('smart_tutor_v3')) || [];
 
-    // Initialize Leaflet Map
-    let map = L.map('map').setView([25.3833, 49.5833], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    function initPalette() {
+        const p = document.getElementById('colorPalette');
+        colors.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'color-swatch' + (c === selectedColor ? ' active' : '');
+            div.style.background = c;
+            div.onclick = () => {
+                selectedColor = c;
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                div.classList.add('active');
+            };
+            p.appendChild(div);
+        });
+    }
 
-    // Sidebar Toggle
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
     }
 
-    // Image Preview Handler
-    function handleImage(input) {
-        if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            reader.onload = (e) => {
-                currentUploadedImg = e.target.result;
-                document.getElementById('preview').src = currentUploadedImg;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // Build Color Palette
-    function initColorPalette() {
-        const paletteContainer = document.getElementById('palette');
-        studentColors.forEach(color => {
-            const div = document.createElement('div');
-            div.className = 'color-circle' + (color === activeSelectedColor ? ' active' : '');
-            div.style.background = color;
-            div.onclick = () => {
-                activeSelectedColor = color;
-                document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-                div.classList.add('active');
-            };
-            paletteContainer.appendChild(div);
-        });
-    }
-
-    // Add Student Logic
     function addStudent() {
-        const name = document.getElementById('stuName').value;
-        const price = document.getElementById('stuPrice').value;
-        if(!name || !price) return alert("Please fill name and fee");
-
+        let name = document.getElementById('sName').value;
+        let price = document.getElementById('sPrice').value;
+        if(!name || !price) return;
         students.push({
-            id: Date.now(),
-            name: name,
-            price: parseFloat(price),
-            color: activeSelectedColor,
-            image: currentUploadedImg || 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-            isPaid: false,
-            lat: 25.3833 + (Math.random() * 0.05 - 0.025),
-            lng: 49.5833 + (Math.random() * 0.05 - 0.025),
+            id: Date.now(), name, price, color: selectedColor, isPaid: false,
+            lat: 25.3833 + (Math.random()*0.04-0.02), lng: 49.5833 + (Math.random()*0.04-0.02),
             schedules: []
         });
-
-        saveAndRender();
-        // Clear inputs
-        document.getElementById('stuName').value = "";
-        document.getElementById('stuPrice').value = "";
-        document.getElementById('preview').src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        currentUploadedImg = "";
+        save();
+        document.getElementById('sName').value = ""; document.getElementById('sPrice').value = "";
     }
 
-    // Add Schedule Logic
     function addSchedule() {
-        const studentId = +document.getElementById('stuSelect').value;
-        const time = document.getElementById('classTime').value;
-        const day = document.getElementById('classDay').value;
-        
-        if(!studentId || !time) return alert("Please select student and time");
-
-        const student = students.find(s => s.id === studentId);
-        student.schedules.push({ day, time });
-        
-        saveAndRender();
+        let id = +document.getElementById('sSelect').value;
+        let time = document.getElementById('cTime').value;
+        let day = document.getElementById('cDay').value;
+        if(!id || !time) return;
+        students.find(s => s.id === id).schedules.push({day, time});
+        save();
         toggleMenu();
     }
 
-    // Toggle Payment Status
-    function togglePayment(id) {
-        const student = students.find(s => s.id === id);
-        student.isPaid = !student.isPaid;
-        saveAndRender();
+    function togglePay(id) {
+        let s = students.find(s => s.id === id);
+        s.isPaid = !s.isPaid;
+        save();
     }
 
-    // Global Save & Render
-    function saveAndRender() {
-        localStorage.setItem('smart_tutor_final_db', JSON.stringify(students));
-        renderUI();
+    function save() {
+        localStorage.setItem('smart_tutor_v3', JSON.stringify(students));
+        render();
     }
 
-    function renderUI() {
+    function render() {
         const grid = document.getElementById('mainGrid');
-        const select = document.getElementById('stuSelect');
-        const paymentList = document.getElementById('paymentList');
+        const select = document.getElementById('sSelect');
+        const pList = document.getElementById('paymentList');
+        grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>'; pList.innerHTML = '';
         const days = {Sat:"SAT", Sun:"SUN", Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU"};
 
-        // Clear Old Content
-        grid.innerHTML = '';
-        select.innerHTML = '<option value="">Choose Student</option>';
-        paymentList.innerHTML = '';
-        map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
-
-        // Generate Day Rows
         Object.keys(days).forEach(d => {
-            grid.innerHTML += `
-                <div class="day-row row-${d.toLowerCase()}">
-                    <div class="day-label">${days[d]}</div>
-                    <div class="slots" id="slot-${d}"></div>
-                </div>`;
+            grid.innerHTML += `<div class="day-row row-${d.toLowerCase()}"><div class="day-label">${days[d]}</div><div class="slots" id="slot-${d}"></div></div>`;
         });
 
-        // Fill Students Data
         students.forEach(s => {
-            // Update Select Dropdown
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-
-            // Update Map Markers with Photos
-            const customIcon = L.divIcon({
-                html: `<img src="${s.image}" style="width:35px; height:35px; border-radius:50%; border:2px solid ${s.color};">`,
-                className: '', iconSize: [35, 35], iconAnchor: [17, 35]
-            });
-            L.marker([s.lat, s.lng], {icon: customIcon}).addTo(map).bindPopup(`<b>${s.name}</b>`);
-
-            // Update Payment List
-            paymentList.innerHTML += `
-                <div class="payment-card ${s.isPaid ? 'paid' : ''}">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${s.image}" style="width:35px; height:35px; border-radius:50%;">
-                        <div><b>${s.name}</b><br><small>${s.price} SR</small></div>
-                    </div>
-                    <button class="pay-btn" onclick="togglePayment(${s.id})">${s.isPaid ? 'Refund' : 'Pay'}</button>
-                </div>`;
-
-            // Update Timetable Slots
+            pList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:10px; border:1px solid #eee; border-radius:10px;"><span>${s.name} (${s.price} SR)</span><button onclick="togglePay(${s.id})" style="width:auto; margin:0; padding:5px 10px; background:${s.isPaid?'#34A853':'#EA4335'}; color:#fff; border:none; border-radius:5px;">${s.isPaid?'Paid':'Pay'}</button></div>`;
+            
             s.schedules.forEach(sc => {
-                const dayContainer = document.getElementById(`slot-${sc.day}`);
-                if(dayContainer) {
-                    dayContainer.innerHTML += `
-                        <div class="slot" style="background:${s.color}">
-                            <b>${sc.time}</b>
-                            <span>${s.name}</span>
-                        </div>`;
-                }
+                const box = document.getElementById(`slot-${sc.day}`);
+                if(box) box.innerHTML += `<div class="slot" style="background:${s.color}"><b>${sc.time}</b><span>${s.name}</span></div>`;
             });
         });
     }
 
-    // Initial Load
-    initColorPalette();
-    renderUI();
+    let map = L.map('map').setView([25.3833, 49.5833], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    initPalette();
+    render();
 </script>
-
 </body>
 </html>
