@@ -1,179 +1,130 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Tutor Pro | النسخة الشاملة</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tutor Pro | الخريطة الذكية</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
-:root {
-  --bg-dark:#09090b; --card-bg:#141417; --text-main:#fafafa;
-  --text-dim:#a1a1aa; --border:#27272a; --accent:#6366f1;
-  --green:#10b981; --red:#ef4444; --orange:#f97316;
-}
+    <style>
+        :root {
+            --bg-dark:#09090b; --card-bg:#141417; --accent:#6366f1;
+            --text-main:#fafafa; --border:#27272a; --green:#10b981;
+        }
+        body { margin:0; background:var(--bg-dark); color:var(--text-main); font-family:system-ui, sans-serif; }
+        .container { width:100%; max-width:480px; margin:auto; padding:15px; box-sizing:border-box; }
+        
+        .card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:15px; margin-bottom:15px; }
+        
+        /* تصميم الخريطة */
+        #map { width: 100%; height: 350px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 10px; z-index: 1; }
+        
+        /* تصميم أيقونة الطالب على الخريطة */
+        .student-marker {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            object-fit: cover;
+        }
 
-body {
-  margin:0; background:var(--bg-dark); color:var(--text-main);
-  font-family:system-ui,-apple-system,sans-serif;
-  display:flex; justify-content:center;
-}
-
-.container { width:100%; max-width:480px; padding:15px; box-sizing:border-box; }
-
-header { text-align:center; padding:25px 0; }
-
-/* تصميم الشعار المدمج ليعمل على الموبايل فوراً */
-.app-logo {
-  width: 100px; height: 100px;
-  object-fit: cover; border-radius: 22px;
-  margin-bottom: 12px; border: 2px solid var(--accent);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-}
-
-header h1 {
-  font-size:30px; margin:0;
-  background:linear-gradient(to right,#818cf8,#c084fc);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
-
-.card {
-  background:var(--card-bg); border:1px solid var(--border);
-  border-radius:20px; padding:15px; margin-bottom:15px;
-  box-shadow:0 4px 15px rgba(0,0,0,0.3);
-}
-
-.card h3 { color:var(--accent); font-size:14px; margin-bottom:10px; border-right: 3px solid var(--accent); padding-right: 8px; }
-
-input, select, button {
-  width:100%; padding:12px; margin-bottom:10px;
-  border-radius:12px; border:1px solid var(--border);
-  background:#000; color:#fff; box-sizing:border-box;
-}
-
-button { cursor:pointer; font-weight:700; transition:0.2s; border:none; }
-.btn-primary { background:var(--accent); color:#fff; }
-.btn-success { background:var(--green); color:#fff; }
-
-.student {
-  display:flex; align-items:center; gap:10px; padding:10px;
-  background:#1c1c20; border-radius:15px; margin-bottom:10px;
-  border:1px solid var(--border);
-}
-
-.student img { width:40px; height:40px; border-radius:50%; object-fit:cover; }
-.time-grid { border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:10px; background:#000; }
-.day-row { display:flex; align-items:center; border-bottom:1px solid var(--border); min-height:60px; }
-.day-label { width:55px; font-size:11px; font-weight:700; color:var(--text-dim); text-align:center; }
-.slots { flex:1; display:flex; overflow-x:auto; gap:6px; padding:6px; }
-
-.slot {
-  flex-shrink:0; min-width:85px; padding:6px; border-radius:10px;
-  text-align:center; color:#fff; font-size:11px;
-}
-.slot .time { font-weight:700; border-bottom:1px solid rgba(255,255,255,0.2); margin-bottom:4px; }
-
-.status-bar {
-  height:40px; border-radius:12px; background:var(--red);
-  color:#fff; text-align:center; line-height:40px;
-  font-weight:700; margin-top:10px; cursor:pointer;
-}
-</style>
+        input, select, button { width:100%; padding:12px; margin-bottom:10px; border-radius:12px; border:1px solid var(--border); background:#000; color:#fff; }
+        button { cursor:pointer; font-weight:700; border:none; background:var(--accent); }
+        
+        .student-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #1c1c20; border-radius: 15px; margin-bottom: 5px; }
+        .student-item img { width: 35px; height: 35px; border-radius: 50%; }
+    </style>
 </head>
-
 <body>
+
 <div class="container">
+    <header style="text-align:center; padding:10px;">
+        <h1 style="background:linear-gradient(to right,#818cf8,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0;">Smart Tutor Map</h1>
+    </header>
 
-<header>
-  <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABkAGQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZnaGlqc3R1dnd4eXqGhcXl5wg4Z2NzNzg5OkNERUZHSElKU1RVVldYWVpjZGVmZnaGlqc3R1dnd4eXqEl5Wl5iZmqjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD//2Q==" class="app-logo" alt="Logo">
-  <h1>Smart Tutor Pro</h1>
-  <p style="color:var(--text-dim)">نظام إدارة المواعيد المتكامل</p>
-</header>
+    <section class="card">
+        <h3 style="color:var(--accent); margin-top:0;">📍 خريطة الطلاب الحية</h3>
+        <div id="map"></div>
+        <p style="font-size:10px; color:#aaa; text-align:center;">* الصور تظهر فوق مواقع الطلاب المسجلة</p>
+    </section>
 
-<section class="card">
-<h3>👤 إضافة طالب جديد</h3>
-<input id="name" placeholder="اسم الطالب">
-<input id="phone" placeholder="رقم الجوال">
-<button class="btn-primary" onclick="addStudent()">حفظ الطالب</button>
-</section>
+    <section class="card">
+        <h3>👤 إضافة طالب وموقعه</h3>
+        <div style="text-align:center; margin-bottom:10px;">
+            <input type="file" id="pic" hidden onchange="loadFile(event)">
+            <img id="tempImg" src="https://via.placeholder.com/60" style="width:60px; height:60px; border-radius:50%; cursor:pointer;" onclick="document.getElementById('pic').click()">
+        </div>
+        <input id="name" placeholder="اسم الطالب">
+        <input id="lat" placeholder="خط العرض (Latitude) - اختياري">
+        <input id="lng" placeholder="خط الطول (Longitude) - اختياري">
+        <p style="font-size:10px; color:var(--green)">نصيحة: يمكنك نسخ الإحداثيات من خرائط جوجل ولصقها هنا.</p>
+        <button onclick="addStudent()">إضافة للطالب والخريطة</button>
+    </section>
 
-<section class="card">
-<h3>⏰ حجز موعد</h3>
-<select id="studentSelect"></select>
-<div style="display:flex; gap:5px;">
-<input type="time" id="time">
-<select id="day">
-<option value="Sat">السبت</option><option value="Sun">الأحد</option><option value="Mon">الاثنين</option>
-<option value="Tues">الثلاثاء</option><option value="Wed">الأربعاء</option><option value="Thurs">الخميس</option>
-</select>
-</div>
-<button class="btn-success" onclick="addSchedule()">تثبيت الموعد</button>
-</section>
-
-<section class="card">
-<h3>📅 الجدول الأسبوعي</h3>
-<div class="time-grid" id="mainGrid"></div>
-<div class="status-bar" id="statusBar" onclick="confirmPayment()">بانتظار اتمام الحصص</div>
-</section>
-
-<section class="card">
-<h3>👥 قائمة الطلاب</h3>
-<div id="students"></div>
-</section>
-
+    <section class="card">
+        <h3>👥 القائمة</h3>
+        <div id="list"></div>
+    </section>
 </div>
 
 <script>
-let students = JSON.parse(localStorage.getItem('smartTutor_v6'))||[];
-const daysMap = {Sat:"السبت", Sun:"الأحد", Mon:"الاثنين", Tues:"الثلاثاء", Wed:"الأربعاء", Thurs:"الخميس"};
+    let map = L.map('map').setView([25.3833, 49.5833], 13); // البداية من الهفوف
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-function addStudent(){
-  const name=document.getElementById('name').value.trim();
-  if(!name)return alert('الاسم مطلوب');
-  students.push({id:Date.now(), name, phone:document.getElementById('phone').value, color:"#6366f1", schedules:[]});
-  saveRender();
-  document.getElementById('name').value=''; document.getElementById('phone').value='';
-}
+    let students = JSON.parse(localStorage.getItem('map_tutor_v1')) || [];
+    let currentImg = "";
 
-function addSchedule(){
-  const id=+document.getElementById('studentSelect').value;
-  const time=document.getElementById('time').value;
-  const day=document.getElementById('day').value;
-  if(!id||!time)return alert('اختر الطالب والوقت');
-  students.find(x=>x.id===id).schedules.push({day,time});
-  saveRender();
-}
+    function loadFile(event) {
+        let reader = new FileReader();
+        reader.onload = () => {
+            currentImg = reader.result;
+            document.getElementById('tempImg').src = currentImg;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
 
-function confirmPayment(){
-  const bar = document.getElementById('statusBar');
-  bar.style.background='var(--green)';
-  bar.innerText='تم تحصيل الرسوم ✅';
-}
+    function addStudent() {
+        let name = document.getElementById('name').value;
+        let lat = parseFloat(document.getElementById('lat').value) || 25.3833 + (Math.random() * 0.02);
+        let lng = parseFloat(document.getElementById('lng').value) || 49.5833 + (Math.random() * 0.02);
+        
+        let newStudent = { name, lat, lng, img: currentImg || 'https://via.placeholder.com/40' };
+        students.push(newStudent);
+        localStorage.setItem('map_tutor_v1', JSON.stringify(students));
+        
+        render();
+    }
 
-function saveRender(){
-  localStorage.setItem('smartTutor_v6',JSON.stringify(students));
-  render();
-}
+    function render() {
+        document.getElementById('list').innerHTML = "";
+        // مسح الماركرز القديمة
+        map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
 
-function render(){
-  const list=document.getElementById('students'); list.innerHTML='';
-  const select=document.getElementById('studentSelect'); select.innerHTML='<option value="">اختر طالب</option>';
-  const grid=document.getElementById('mainGrid'); grid.innerHTML='';
+        students.forEach(s => {
+            // إضافة الصورة على الخريطة
+            let customIcon = L.divIcon({
+                html: `<img src="${s.img}" class="student-marker">`,
+                className: '',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
 
-  Object.keys(daysMap).forEach(d => {
-    grid.innerHTML += `<div class="day-row"><div class="day-label">${daysMap[d]}</div><div class="slots" id="slots-${d}"></div></div>`;
-  });
+            L.marker([s.lat, s.lng], {icon: customIcon}).addTo(map).bindPopup(s.name);
 
-  students.forEach(s=>{
-    list.innerHTML += `<div class="student"><div class="student-info"><b>${s.name}</b><br><small>${s.phone}</small></div></div>`;
-    select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-    s.schedules.forEach(sc=>{
-      const target = document.getElementById(`slots-${sc.day}`);
-      if(target) target.innerHTML += `<div class="slot" style="background:${s.color}"><div class="time">${sc.time}</div>${s.name}</div>`;
-    });
-  });
-}
+            // إضافة للقائمة
+            document.getElementById('list').innerHTML += `
+                <div class="student-item">
+                    <img src="${s.img}">
+                    <span>${s.name}</span>
+                </div>
+            `;
+        });
+    }
 
-render();
+    render();
 </script>
 </body>
 </html>
