@@ -22,17 +22,17 @@ body {
 
 header { text-align:center; padding:25px 0; }
 
-/* الشعار الجديد */
+/* تنسيق الشعار الجديد المحدث */
 .app-logo {
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
-  border-radius: 18px;
-  margin-bottom: 12px;
-  background: #0f0f12;
-  padding: 6px;
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 22px;
+  margin-bottom: 15px;
+  background: #141417;
+  padding: 2px;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+  border: 2px solid var(--accent);
 }
 
 header h1 {
@@ -58,7 +58,6 @@ input, select, button {
 button { cursor:pointer; font-weight:700; transition:0.2s; }
 .btn-primary { background:var(--accent); color:#fff; }
 .btn-success { background:var(--green); color:#fff; }
-.btn-outline { background:transparent; border:1px solid var(--accent); color:var(--accent); }
 
 .palette-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:10px; }
 .color-swatch { aspect-ratio:1; border-radius:50%; cursor:pointer; border:2px solid transparent; }
@@ -81,7 +80,7 @@ button { cursor:pointer; font-weight:700; transition:0.2s; }
 
 .slot {
   flex-shrink:0; min-width:80px; padding:6px; border-radius:12px;
-  text-align:center; color:#fff; font-size:11px; cursor:pointer; transition:0.3s;
+  text-align:center; color:#fff; font-size:11px;
 }
 
 .slot .time {
@@ -90,11 +89,11 @@ button { cursor:pointer; font-weight:700; transition:0.2s; }
 }
 
 .week-control { display:flex; justify-content:space-between; margin-top:10px; }
-.week-btn { flex:1; margin:0 3px; padding:8px; border-radius:12px; color:#fff; font-weight:700; cursor:pointer; text-align:center; }
+.week-btn { flex:1; margin:0 3px; padding:8px; border-radius:12px; color:#fff; font-weight:700; cursor:pointer; text-align:center; background: var(--border); }
 
 .status-bar {
-  height:25px; border-radius:12px; background:var(--red);
-  color:#fff; text-align:center; line-height:25px;
+  height:35px; border-radius:12px; background:var(--red);
+  color:#fff; text-align:center; line-height:35px;
   font-weight:700; margin-top:10px; cursor:pointer;
 }
 
@@ -116,7 +115,7 @@ button { cursor:pointer; font-weight:700; transition:0.2s; }
 <div class="container">
 
 <header>
-  <img src="/attachments/yQaUusxod2So4KCTVXDu4.jpeg" class="app-logo" alt="App Logo">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAAB6glWfAAAABlBMVEUAAAD///+l2Z/dAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAC0ElEQVR4nO2YQXKCMBSGf8S9m7p07S679Abp0mUv4NIDuO0F7NIDpAsXvYAn8B78L16mIdYIKAnKe99MAsmXDxLykfArCQAAAAAAAAAAAAAAAAD8N0REv6D6HOfpS6X9v6B6DqfPqX6D6q9K+w9Un8P6OarvUP1Saf+B6m9UP0f1I6qfKu0/UL2i+jmqV1R/Vtp/oPr7L6rvUP2m0v4D1S8/vVf9DdXPVf8PVP8H1d+o/vWn+X9T/SdVv6P6p6r/N6r7F0A8f6l6QvUfVP+n6glf7l8A8fK96gnVf1D9v6rnv/X+uFmD6jmqV1Q/o/oNql9++6j6R6pfUP0Z1fP/1H9R/YrV96fOf6j6v6v+UP0Lqp+oPvepPw9X/6X6A9XfUf2C6keojv86vX/n6v9U/0H1X6o/6v2p7uO5+mPVf1L9WfWnSvu/6/7036p7v78AAAAAAAAAAAAAAACA/wFvXoX0T39XmX9B9RxOn1P9BtVflfYfqD6H9XNU36H6pdL+A9XfqH6O6kdUP1Xaf6B6RfVzVK+o/qy0/0D1919U36H6TaX9B6pfvrr99F71N1Q/V/0/UP0fVH+j+tef5v9N9Z9U/Y7qn6r+36juXwDx/KXqCdV/UP2fqid8uX8BxMv3qidU/0H1/6qe/9b742YNquen6glVv0H1y28fVf9I9QuqP6N6/p/6L6pfsfr+1PkPVf931R+qf0H1E9XnPvXn4eq/VH+g+juqX1D9CNXxX6f371z9n+o/qP5L9Ue9P9V9PFd/rPpPqj+r/lRp/3fdn/5bde/3FwAAAAAAAAAAAAAAAAD+ALy5GdIv/V1l/gXVczh9TvUbVH9V2n+g+hzWz1F9h+qXSvsPVH+j+jmqH1H9VGn/geoV1c9RvaL6s9L+A9Xff1F9h+o3lfYfqH756vbTe9XfUP1c9f9A9X9Q/Y3qX3+a/zfVf1L1O6p/qvp/o7p/AcTzl6onVP9B9X+qnvDl/gUQL9+rnlD9B9X/q3r+W++PmzWonn6qnlD1G1S//PZR9Y9Uv6D6M6rn/6n/ovoVq+9Pnf9Q9X9X/aH6F1Q/UX3uU38erv5L9Qeqv6P6BdWPUA399P6dq/9T/QfVf6n+qPenuo/n6o9V/0n1Z9WfKu3/rvvTf6vu/f4CAAAAAAAAAAAAAAAAAP4AvAGYpIdf4G/0oAAAAABJRU5ErkJggg==" class="app-logo" alt="Smart Tutor Logo">
   <h1>Smart Tutor Pro</h1>
   <p>إدارة الطلاب والحصص مع إشعارات ذكية</p>
 </header>
@@ -126,7 +125,7 @@ button { cursor:pointer; font-weight:700; transition:0.2s; }
 
 <div class="upload-area" onclick="document.getElementById('image').click()">
 <input type="file" id="image" accept="image/*" hidden onchange="previewImage(this)">
-<div id="imgPreview">📸 اضغط لإضافة صورة</div>
+<div id="imgPreview">📸 اضغط لإضافة صورة طالب</div>
 </div>
 
 <input id="name" placeholder="اسم الطالب">
@@ -180,7 +179,7 @@ button { cursor:pointer; font-weight:700; transition:0.2s; }
 <div class="week-btn" id="week4" onclick="markWeek(4)">الأسبوع 4</div>
 </div>
 
-<div class="status-bar" id="statusBar" onclick="confirmPayment()">انتهت الحصص - اطلب الحساب</div>
+<div class="status-bar" id="statusBar" onclick="confirmPayment()">بانتظار اتمام الحصص</div>
 </section>
 
 <section class="card animate-in">
@@ -245,7 +244,7 @@ function resetForm(){
   document.getElementById('location').value='';
   document.getElementById('conditions').value='';
   currentImage='';
-  document.getElementById('imgPreview').innerHTML='📸 اضغط لإضافة صورة';
+  document.getElementById('imgPreview').innerHTML='📸 اضغط لإضافة صورة طالب';
 }
 
 function addSchedule(){
@@ -262,14 +261,17 @@ function addSchedule(){
 }
 
 function markWeek(w){
-  if(w===4) document.getElementById('week4').style.background='green';
-  document.getElementById('statusBar').style.background='var(--red)';
-  document.getElementById('statusBar').innerText='انتهت الحصص - اطلب الحساب';
+  const btn = document.getElementById('week'+w);
+  btn.style.background = 'var(--green)';
+  if(w===4) {
+    document.getElementById('statusBar').style.background='var(--orange)';
+    document.getElementById('statusBar').innerText='انتهت الحصص - اطلب الحساب';
+  }
 }
 
 function confirmPayment(){
-  document.getElementById('statusBar').style.background='green';
-  document.getElementById('statusBar').innerText='تم الدفع';
+  document.getElementById('statusBar').style.background='var(--green)';
+  document.getElementById('statusBar').innerText='تم تحصيل الرسوم ✅';
 }
 
 function saveRender(){
