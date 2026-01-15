@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Professional Logic Edition</title>
+    <title>Smart Tutor Pro - Final Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -11,7 +11,9 @@
             --accent-orange: #E85D3F; 
             --accent-yellow: #DBA520; 
             --soft-beige: #F2E3C6; 
-            --sage-green: #6B9080; 
+            --fb-blue: #1877F2;      
+            --vivid-green: #1B4332; 
+            --vivid-red: #8B0000;   
         }
         
         body { margin: 0; background: var(--main-dark); color: #2D3E50; font-family: 'Segoe UI', sans-serif; direction: ltr; }
@@ -27,54 +29,47 @@
         .menu-btn { background: var(--soft-beige); border: 1px solid var(--accent-yellow); padding: 8px 12px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 12px; }
         .pdf-btn { background: var(--accent-orange) !important; color: white !important; border: none; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: var(--soft-beige); z-index: 1001; transition: 0.3s; padding: 25px; box-sizing: border-box; overflow-y: auto; }
+        .view { display: none; padding: 15px; }
+        .view.active { display: block; }
+        
+        /* التنسيق المتقدم للجدول والخانة الثابتة */
+        .acc-table-wrapper { overflow-x: auto; border-radius: 15px; background: var(--soft-beige); border: 2px solid var(--accent-yellow); position: relative; }
+        .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; white-space: nowrap; }
+        .acc-table th, .acc-table td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.1); }
+
+        .sticky-name { 
+            position: sticky; left: 0; z-index: 20; 
+            background: #eee !important; font-weight: 900; 
+            border-right: 2px solid var(--main-dark); min-width: 100px;
+        }
+        .sticky-fee { 
+            position: sticky; left: 126px; z-index: 20; 
+            background: var(--accent-orange) !important; color: white !important; 
+            font-weight: 900; border-right: 3px solid var(--main-dark) !important;
+            min-width: 70px;
+        }
+
+        /* مربعات الدفع والحضور */
+        .box { width: 34px; height: 34px; border-radius: 8px; border: 2px solid var(--main-dark); background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.1s; }
+        .box.state-attended { background: #6B9080; color: white; }
+        .box.pay-empty { border: 3px solid #000 !important; background: var(--fb-blue) !important; }
+        .box.pay-paid { background: var(--vivid-green) !important; color: white !important; border-color: #000; }
+        .box.pay-unpaid { background: var(--vivid-red) !important; color: white !important; border-color: #000; }
+
+        /* الجوانب والمودال */
+        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: var(--soft-beige); z-index: 1001; transition: 0.3s; padding: 25px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .sidebar.active, .modal.active { left: 0; }
         .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:1000; }
         .overlay.active { display:block; }
 
-        .view { display: none; padding: 15px; }
-        .view.active { display: block; }
-        
-        .summary-card { background: var(--main-dark); padding: 20px; border-radius: 20px; color: white; text-align: center; margin-bottom: 20px; border: 2px solid var(--accent-yellow); }
-        .gold-text { color: var(--accent-yellow); font-size: 32px; font-weight: 900; }
-
-        /* Time Grid Styling */
-        .time-grid { display: flex; flex-direction: column; gap: 10px; }
-        .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .day-label { width: 50px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; color: var(--soft-beige); flex-shrink: 0; background: rgba(0,0,0,0.3); }
-        .slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 10px; }
-        .slot { flex-shrink: 0; width: 110px; height: 50px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-
-        /* Accounts Table Styling */
-        .acc-table-wrapper { overflow-x: auto; border-radius: 15px; background: var(--soft-beige); border: 2px solid var(--accent-yellow); }
-        .acc-table { border-collapse: collapse; width: 100%; white-space: nowrap; }
-        .acc-table th { padding: 12px; font-size: 11px; background: rgba(0,0,0,0.05); }
-        .acc-table td { padding: 10px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        
-        /* Fixed Column Rules */
-        .sticky-name { position: sticky; left: 0; z-index: 10; font-weight: 900; background: var(--soft-beige) !important; border-right: 2px solid var(--main-dark); min-width: 90px; }
-        .sticky-fee { position: sticky; left: 92px; z-index: 10; font-weight: 900; background: var(--accent-orange) !important; color: white !important; border-right: 3px solid var(--main-dark) !important; min-width: 60px; }
-
-        /* Square Checkboxes */
-        .box { width: 30px; height: 30px; border-radius: 7px; border: 2px solid var(--main-dark); background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: transparent; }
-        .box.checked { background: var(--sage-green); color: white; }
-        .box.pay-due { border: 2px solid var(--accent-orange); }
-        .box.pay-done { background: var(--main-dark) !important; color: white; border-color: var(--accent-orange); }
-
-        /* Print Specific Styles */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; color: black !important; }
-            .acc-table th { background: #eee !important; color: black !important; }
-            .sticky-name, .sticky-fee { position: static !important; background: white !important; color: black !important; }
-            .day-row { background: #fafafa !important; border: 1px solid #ddd !important; }
-        }
-
         input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 2px solid var(--main-dark); font-weight: bold; }
         .primary-btn { background: var(--main-dark); color: white; border: none; cursor: pointer; }
-        .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px; }
-        .color-dot { width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--main-dark); }
-        .color-dot.active { border: 3px solid white; transform: scale(1.1); }
+        
+        .time-grid { display: flex; flex-direction: column; gap: 10px; }
+        .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; margin-bottom: 5px; }
+        .day-label { width: 50px; display: flex; align-items: center; justify-content: center; font-weight: 900; background: rgba(0,0,0,0.3); color: var(--soft-beige); }
+        .slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 10px; }
+        .slot { flex-shrink: 0; width: 110px; height: 50px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; cursor: pointer; font-size: 12px; font-weight: bold; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -82,28 +77,20 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
 <div class="modal" id="editModal">
-    <h3>Student Info</h3>
+    <h3>Edit Student Info</h3>
     <input id="editName" placeholder="Name">
     <input id="editPrice" type="number" placeholder="Fees">
-    <select id="editCycle">
-        <option value="4">4-Week Cycle</option>
-        <option value="3">3-Week Cycle</option>
-    </select>
-    <button class="primary-btn" onclick="updateStudent()">Update</button>
-    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold;">Remove Student</button>
+    <select id="editCycle"><option value="4">4 Weeks Cycle</option><option value="3">3 Weeks Cycle</option></select>
+    <button class="primary-btn" onclick="updateStudent()">Update Student</button>
+    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold; cursor:pointer;">Delete Student Permanently</button>
 </div>
 
 <div class="sidebar" id="sidebar">
-    <div class="summary-card">
-        <small>Total Expected Fees</small>
-        <div id="totalToCollect" class="gold-text">0 SR</div>
-    </div>
     <h3>Add Student</h3>
-    <input id="sName" placeholder="Name">
+    <input id="sName" placeholder="Student Name">
     <input id="sPrice" type="number" placeholder="Fee Amount">
-    <select id="sCycle"><option value="4">4 Weeks Cycle</option><option value="3">3 Weeks Cycle</option></select>
-    <div class="color-grid" id="colorPalette"></div>
-    <button class="primary-btn" onclick="addStudent()">Save</button>
+    <select id="sCycle"><option value="4">4 Weeks</option><option value="3">3 Weeks</option></select>
+    <button class="primary-btn" onclick="addStudent()">Save Student</button>
     <hr>
     <h3>Book Session</h3>
     <select id="sSelect"></select>
@@ -113,15 +100,15 @@
         <option value="Mon">Mon</option><option value="Tue">Tue</option>
         <option value="Wed">Wed</option><option value="Thu">Thu</option>
     </select>
-    <button class="primary-btn" onclick="addSchedule()">Confirm</button>
+    <button class="primary-btn" onclick="addSchedule()">Confirm Session</button>
 </div>
 
-<header class="no-print">
+<header>
     <div class="brand-text">Smart Tutor Pro</div>
     <div class="nav-btns">
         <button class="menu-btn" onclick="switchView('main')">Schedule</button>
         <button class="menu-btn" onclick="switchView('accounts')">Accounts</button>
-        <button class="menu-btn pdf-btn" onclick="printCurrentView()">Export PDF</button>
+        <button class="menu-btn pdf-btn" onclick="printPDF()">Export PDF</button>
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     </div>
 </header>
@@ -139,23 +126,9 @@
 </div>
 
 <script>
-    const colors = ["#F2E3C6", "#E85D3F", "#DBA520", "#6B9080", "#A4C3B2", "#EAE2B7", "#D4A373", "#CCD5AE"];
-    let selectedColor = colors[0];
-    let students = JSON.parse(localStorage.getItem('smart_tutor_final_logic')) || [];
+    let students = JSON.parse(localStorage.getItem('smart_tutor_master_v1')) || [];
     let ThursdayDates = [];
-    let currentActiveView = 'main';
     let editingId = null;
-
-    function buildTimeOptions() {
-        const select = document.getElementById('cTime');
-        for (let h = 1; h <= 12; h++) {
-            ['00', '15', '30', '45'].forEach(m => {
-                let opt = document.createElement('option');
-                opt.value = `${h}:${m}`; opt.innerText = `${h}:${m}`;
-                select.appendChild(opt);
-            });
-        }
-    }
 
     function generateDates() {
         ThursdayDates = [];
@@ -166,19 +139,26 @@
         }
     }
 
+    function buildTimeOptions() {
+        const select = document.getElementById('cTime');
+        for (let h = 1; h <= 12; h++) {
+            ['00', '15', '30', '45'].forEach(m => {
+                let opt = document.createElement('option'); opt.value = `${h}:${m}`; opt.innerText = `${h}:${m}`;
+                select.appendChild(opt);
+            });
+        }
+    }
+
     function switchView(v) {
-        currentActiveView = v;
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         document.getElementById(v + 'View').classList.add('active');
         render();
     }
 
     function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
+        document.getElementById('sidebar').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
     }
-
-    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
 
     function openEdit(id) {
         editingId = id;
@@ -199,15 +179,20 @@
     }
 
     function deleteStudent() {
-        if(confirm('Permanently delete student?')) { students = students.filter(s => s.id !== editingId); save(); closeAll(); }
+        if(confirm('Are you sure you want to delete this student?')) {
+            students = students.filter(s => s.id !== editingId);
+            save(); closeAll();
+        }
     }
+
+    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
 
     function addStudent() {
         let name = document.getElementById('sName').value;
         let price = document.getElementById('sPrice').value;
         let cycle = parseInt(document.getElementById('sCycle').value);
         if(!name || !price) return;
-        students.push({ id: Date.now(), name, price, cycle, color: selectedColor, attendance: Array(30).fill(false), schedules: [] });
+        students.push({ id: Date.now(), name, price, cycle, color: "#DBA520", status: Array(50).fill(0), schedules: [] });
         save();
         document.getElementById('sName').value = ''; document.getElementById('sPrice').value = '';
     }
@@ -221,18 +206,19 @@
         save();
     }
 
-    function removeSchedule(sId, idx) {
-        if(confirm('Delete this session?')) { students.find(s => s.id === sId).schedules.splice(idx, 1); save(); }
-    }
-
-    function toggleBox(sId, index) {
+    function toggleBox(sId, index, isPayWeek) {
         let s = students.find(st => st.id === sId);
-        s.attendance[index] = !s.attendance[index];
+        let current = s.status[index];
+        if (isPayWeek) {
+            s.status[index] = (current === 0) ? 1 : (current === 1) ? 2 : 0;
+        } else {
+            s.status[index] = (current === 0) ? 3 : 0;
+        }
         save();
     }
 
     function save() {
-        localStorage.setItem('smart_tutor_final_logic', JSON.stringify(students));
+        localStorage.setItem('smart_tutor_master_v1', JSON.stringify(students));
         render();
     }
 
@@ -242,64 +228,57 @@
         const select = document.getElementById('sSelect');
         const header = document.getElementById('accHeader');
         const body = document.getElementById('accBody');
-        const totalEl = document.getElementById('totalToCollect');
 
         grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>';
         header.innerHTML = '<th class="sticky-name">Student</th><th class="sticky-fee">Fees</th>';
         ThursdayDates.forEach(d => header.innerHTML += `<th>${d}</th>`);
         body.innerHTML = '';
         
-        let totalRevenue = 0;
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
         days.forEach(d => { grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`; });
 
         students.forEach(s => {
-            totalRevenue += parseFloat(s.price || 0);
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})" style="background:${s.color}">${s.name}</td><td class="sticky-fee">${s.price}</td>`;
+            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})" style="background:${s.color} !important; color:white; cursor:pointer;">${s.name}</td><td class="sticky-fee">${s.price} SR</td>`;
+            
             ThursdayDates.forEach((d, i) => {
-                let isPay = (i + 1) % (s.cycle || 4) === 0;
-                let cls = s.attendance[i] ? (isPay ? 'pay-done' : 'checked') : (isPay ? 'pay-due' : '');
-                row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id}, ${i})">✓</div></td>`;
+                let isPayWeek = (i + 1) % (s.cycle || 4) === 0;
+                let stat = s.status[i];
+                let cls = ''; let content = '';
+
+                if (isPayWeek) {
+                    if (stat === 1) { cls = 'pay-paid'; content = '😊'; }
+                    else if (stat === 2) { cls = 'pay-unpaid'; content = '😡'; }
+                    else { cls = 'pay-empty'; content = ''; }
+                } else {
+                    if (stat === 3) { cls = 'state-attended'; content = '✓'; }
+                }
+                row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id}, ${i}, ${isPayWeek})">${content}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
 
             s.schedules.forEach((sc, idx) => {
                 const dayBox = document.getElementById(`slot-${sc.day}`);
                 if(dayBox) {
-                    let div = document.createElement('div');
-                    div.className = 'slot'; div.style.backgroundColor = s.color;
-                    div.innerHTML = `<b>${sc.time}</b><span>${s.name}</span>`;
-                    div.onclick = () => removeSchedule(s.id, idx);
+                    let div = document.createElement('div'); div.className = 'slot'; 
+                    div.style.backgroundColor = s.color; div.innerHTML = `<b>${sc.time}</b><br>${s.name}`;
+                    div.onclick = () => { if(confirm('Remove session?')) { s.schedules.splice(idx, 1); save(); } };
                     dayBox.appendChild(div);
                 }
             });
         });
-        totalEl.innerText = totalRevenue + " SR";
     }
 
-    function printCurrentView() {
+    function printPDF() {
         const element = document.getElementById('export-container');
-        const opt = {
-            margin: 5, filename: 'Smart_Tutor_Report.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: currentActiveView === 'main' ? 'portrait' : 'landscape' }
-        };
-        html2pdf().from(element).set(opt).save();
+        html2pdf().from(element).set({ 
+            margin: 5, filename: 'Smart_Tutor_Report.pdf', 
+            jsPDF: { orientation: 'landscape' },
+            html2canvas: { scale: 2 }
+        }).save();
     }
 
-    function initPalette() {
-        const p = document.getElementById('colorPalette');
-        colors.forEach(c => {
-            const d = document.createElement('div');
-            d.className = 'color-dot'; d.style.background = c;
-            d.onclick = () => { selectedColor = c; document.querySelectorAll('.color-dot').forEach(x => x.classList.remove('active')); d.classList.add('active'); };
-            p.appendChild(d);
-        });
-    }
-
-    buildTimeOptions(); initPalette(); render();
+    buildTimeOptions(); render();
 </script>
 </body>
 </html>
