@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Fixed Boxes</title>
+    <title>Smart Tutor - Professional Logic Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -14,7 +14,7 @@
             --sage-green: #6B9080; 
         }
         
-        body { margin: 0; background: var(--main-dark); color: #2D3E50; font-family: -apple-system, sans-serif; direction: ltr; }
+        body { margin: 0; background: var(--main-dark); color: #2D3E50; font-family: 'Segoe UI', sans-serif; direction: ltr; }
 
         header { 
             display: flex; justify-content: space-between; align-items: center; 
@@ -27,7 +27,7 @@
         .menu-btn { background: var(--soft-beige); border: 1px solid var(--accent-yellow); padding: 8px 12px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 12px; }
         .pdf-btn { background: var(--accent-orange) !important; color: white !important; border: none; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: var(--soft-beige); z-index: 1001; transition: 0.3s; padding: 25px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.3); }
+        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: var(--soft-beige); z-index: 1001; transition: 0.3s; padding: 25px; box-sizing: border-box; overflow-y: auto; }
         .sidebar.active, .modal.active { left: 0; }
         .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:1000; }
         .overlay.active { display:block; }
@@ -38,42 +38,42 @@
         .summary-card { background: var(--main-dark); padding: 20px; border-radius: 20px; color: white; text-align: center; margin-bottom: 20px; border: 2px solid var(--accent-yellow); }
         .gold-text { color: var(--accent-yellow); font-size: 32px; font-weight: 900; }
 
-        /* Schedule Grid */
+        /* Time Grid Styling */
         .time-grid { display: flex; flex-direction: column; gap: 10px; }
         .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .day-label { width: 50px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; color: var(--soft-beige); flex-shrink: 0; background: rgba(0,0,0,0.3); }
         .slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 10px; }
-        
-        .slot { flex-shrink: 0; width: 115px; height: 50px; border-radius: 12px; color: #000 !important; text-align: center; display: flex; flex-direction: column; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.1); }
-        .slot b { font-size: 15px; font-weight: 900; }
-        .slot span { font-size: 11px; font-weight: 700; opacity: 0.8; }
+        .slot { flex-shrink: 0; width: 110px; height: 50px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
-        /* Accounts Table */
+        /* Accounts Table Styling */
         .acc-table-wrapper { overflow-x: auto; border-radius: 15px; background: var(--soft-beige); border: 2px solid var(--accent-yellow); }
         .acc-table { border-collapse: collapse; width: 100%; white-space: nowrap; }
-        .acc-table th { padding: 12px; font-size: 12px; background: rgba(0,0,0,0.05); }
+        .acc-table th { padding: 12px; font-size: 11px; background: rgba(0,0,0,0.05); }
         .acc-table td { padding: 10px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
         
-        /* Sticky Columns */
-        .sticky-name { position: sticky; left: 0; z-index: 10; font-weight: 900; background: var(--soft-beige) !important; border-right: 2px solid var(--main-dark); min-width: 100px; cursor: pointer; }
-        .sticky-fee { position: sticky; left: 102px; z-index: 10; font-weight: 900; background: var(--accent-orange) !important; color: white !important; border-right: 3px solid var(--main-dark) !important; min-width: 60px; }
+        /* Fixed Column Rules */
+        .sticky-name { position: sticky; left: 0; z-index: 10; font-weight: 900; background: var(--soft-beige) !important; border-right: 2px solid var(--main-dark); min-width: 90px; }
+        .sticky-fee { position: sticky; left: 92px; z-index: 10; font-weight: 900; background: var(--accent-orange) !important; color: white !important; border-right: 3px solid var(--main-dark) !important; min-width: 60px; }
 
-        /* FIXED BOXES */
-        .box { 
-            width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--main-dark); 
-            background: white; cursor: pointer; display: inline-flex; align-items: center; 
-            justify-content: center; font-size: 16px; font-weight: 900; color: transparent; 
-            margin: auto; transition: 0.2s;
-        }
-        .box.checked { background: var(--sage-green); color: white; border-color: var(--main-dark); }
-        .box.pay-due { border: 3px solid var(--accent-orange); background: #FFF; }
+        /* Square Checkboxes */
+        .box { width: 30px; height: 30px; border-radius: 7px; border: 2px solid var(--main-dark); background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: transparent; }
+        .box.checked { background: var(--sage-green); color: white; }
+        .box.pay-due { border: 2px solid var(--accent-orange); }
         .box.pay-done { background: var(--main-dark) !important; color: white; border-color: var(--accent-orange); }
 
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 2px solid var(--main-dark); font-family: inherit; font-weight: 700; }
+        /* Print Specific Styles */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .acc-table th { background: #eee !important; color: black !important; }
+            .sticky-name, .sticky-fee { position: static !important; background: white !important; color: black !important; }
+            .day-row { background: #fafafa !important; border: 1px solid #ddd !important; }
+        }
+
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 2px solid var(--main-dark); font-weight: bold; }
         .primary-btn { background: var(--main-dark); color: white; border: none; cursor: pointer; }
-        
         .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px; }
-        .color-dot { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid var(--main-dark); }
+        .color-dot { width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--main-dark); }
         .color-dot.active { border: 3px solid white; transform: scale(1.1); }
     </style>
 </head>
@@ -82,30 +82,26 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
 <div class="modal" id="editModal">
-    <h3>Student Settings</h3>
+    <h3>Student Info</h3>
     <input id="editName" placeholder="Name">
     <input id="editPrice" type="number" placeholder="Fees">
     <select id="editCycle">
-        <option value="3">Cycle: 3 Weeks</option>
-        <option value="4">Cycle: 4 Weeks</option>
+        <option value="4">4-Week Cycle</option>
+        <option value="3">3-Week Cycle</option>
     </select>
-    <button class="primary-btn" onclick="updateStudent()">Update Info</button>
-    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold; cursor:pointer;">Delete Student</button>
-    <button onclick="closeAll()" style="background:none; border:none; margin-top:10px;">Close</button>
+    <button class="primary-btn" onclick="updateStudent()">Update</button>
+    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold;">Remove Student</button>
 </div>
 
 <div class="sidebar" id="sidebar">
     <div class="summary-card">
-        <small>Total Monthly Revenue</small>
+        <small>Total Expected Fees</small>
         <div id="totalToCollect" class="gold-text">0 SR</div>
     </div>
     <h3>Add Student</h3>
     <input id="sName" placeholder="Name">
     <input id="sPrice" type="number" placeholder="Fee Amount">
-    <select id="sCycle">
-        <option value="4">Cycle: 4 Weeks</option>
-        <option value="3">Cycle: 3 Weeks</option>
-    </select>
+    <select id="sCycle"><option value="4">4 Weeks Cycle</option><option value="3">3 Weeks Cycle</option></select>
     <div class="color-grid" id="colorPalette"></div>
     <button class="primary-btn" onclick="addStudent()">Save</button>
     <hr>
@@ -120,23 +116,32 @@
     <button class="primary-btn" onclick="addSchedule()">Confirm</button>
 </div>
 
-<header>
+<header class="no-print">
     <div class="brand-text">Smart Tutor Pro</div>
     <div class="nav-btns">
         <button class="menu-btn" onclick="switchView('main')">Schedule</button>
         <button class="menu-btn" onclick="switchView('accounts')">Accounts</button>
-        <button class="menu-btn pdf-btn" onclick="printCurrentView()">PDF</button>
+        <button class="menu-btn pdf-btn" onclick="printCurrentView()">Export PDF</button>
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     </div>
 </header>
 
-<div id="mainView" class="view active"><div id="schedulePDF" class="time-grid"></div></div>
-<div id="accountsView" class="view"><div class="acc-table-wrapper" id="accountsPDF"><table class="acc-table"><thead><tr id="accHeader"></tr></thead><tbody id="accBody"></tbody></table></div></div>
+<div id="export-container">
+    <div id="mainView" class="view active"><div id="schedulePDF" class="time-grid"></div></div>
+    <div id="accountsView" class="view">
+        <div class="acc-table-wrapper" id="accountsPDF">
+            <table class="acc-table">
+                <thead><tr id="accHeader"></tr></thead>
+                <tbody id="accBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <script>
     const colors = ["#F2E3C6", "#E85D3F", "#DBA520", "#6B9080", "#A4C3B2", "#EAE2B7", "#D4A373", "#CCD5AE"];
     let selectedColor = colors[0];
-    let students = JSON.parse(localStorage.getItem('smart_tutor_en_final')) || [];
+    let students = JSON.parse(localStorage.getItem('smart_tutor_final_logic')) || [];
     let ThursdayDates = [];
     let currentActiveView = 'main';
     let editingId = null;
@@ -155,7 +160,7 @@
     function generateDates() {
         ThursdayDates = [];
         let start = new Date('2026-01-22');
-        for(let i=0; i<20; i++) {
+        for(let i=0; i<15; i++) {
             ThursdayDates.push(new Date(start).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'}));
             start.setDate(start.getDate() + 7);
         }
@@ -173,9 +178,7 @@
         document.getElementById('overlay').classList.toggle('active');
     }
 
-    function closeAll() {
-        document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active'));
-    }
+    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
 
     function openEdit(id) {
         editingId = id;
@@ -196,10 +199,7 @@
     }
 
     function deleteStudent() {
-        if(confirm('Delete student?')) {
-            students = students.filter(s => s.id !== editingId);
-            save(); closeAll();
-        }
+        if(confirm('Permanently delete student?')) { students = students.filter(s => s.id !== editingId); save(); closeAll(); }
     }
 
     function addStudent() {
@@ -207,7 +207,7 @@
         let price = document.getElementById('sPrice').value;
         let cycle = parseInt(document.getElementById('sCycle').value);
         if(!name || !price) return;
-        students.push({ id: Date.now(), name, price, cycle, color: selectedColor, attendance: Array(40).fill(false), schedules: [] });
+        students.push({ id: Date.now(), name, price, cycle, color: selectedColor, attendance: Array(30).fill(false), schedules: [] });
         save();
         document.getElementById('sName').value = ''; document.getElementById('sPrice').value = '';
     }
@@ -222,10 +222,7 @@
     }
 
     function removeSchedule(sId, idx) {
-        if(confirm('Delete session?')) {
-            students.find(s => s.id === sId).schedules.splice(idx, 1);
-            save();
-        }
+        if(confirm('Delete this session?')) { students.find(s => s.id === sId).schedules.splice(idx, 1); save(); }
     }
 
     function toggleBox(sId, index) {
@@ -235,7 +232,7 @@
     }
 
     function save() {
-        localStorage.setItem('smart_tutor_en_final', JSON.stringify(students));
+        localStorage.setItem('smart_tutor_final_logic', JSON.stringify(students));
         render();
     }
 
@@ -254,9 +251,7 @@
         
         let totalRevenue = 0;
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
-        days.forEach(d => {
-            grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`;
-        });
+        days.forEach(d => { grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`; });
 
         students.forEach(s => {
             totalRevenue += parseFloat(s.price || 0);
@@ -284,8 +279,14 @@
     }
 
     function printCurrentView() {
-        const el = currentActiveView === 'main' ? document.getElementById('schedulePDF') : document.getElementById('accountsPDF');
-        html2pdf().from(el).set({ margin: 10, filename: 'Tutor_Report.pdf', jsPDF: { orientation: currentActiveView === 'main' ? 'p' : 'l' } }).save();
+        const element = document.getElementById('export-container');
+        const opt = {
+            margin: 5, filename: 'Smart_Tutor_Report.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: currentActiveView === 'main' ? 'portrait' : 'landscape' }
+        };
+        html2pdf().from(element).set(opt).save();
     }
 
     function initPalette() {
