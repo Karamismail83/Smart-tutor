@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tutor Pro | الخريطة الذكية</title>
+    <title>Smart Tutor Pro | Clean UI</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,116 +11,156 @@
     <style>
         :root {
             --bg-dark:#09090b; --card-bg:#141417; --accent:#6366f1;
-            --text-main:#fafafa; --border:#27272a; --green:#10b981;
+            --text-main:#fafafa; --border:#27272a; --green:#10b981; --red:#ef4444;
         }
-        body { margin:0; background:var(--bg-dark); color:var(--text-main); font-family:system-ui, sans-serif; }
-        .container { width:100%; max-width:480px; margin:auto; padding:15px; box-sizing:border-box; }
+        body { margin:0; background:var(--bg-dark); color:var(--text-main); font-family:system-ui, sans-serif; overflow-x: hidden; }
         
-        .card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:15px; margin-bottom:15px; }
-        
-        /* تصميم الخريطة */
-        #map { width: 100%; height: 350px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 10px; z-index: 1; }
-        
-        /* تصميم أيقونة الطالب على الخريطة */
-        .student-marker {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--accent);
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            object-fit: cover;
+        /* القائمة الجانبية */
+        .sidebar {
+            position: fixed; top: 0; right: -100%; width: 85%; height: 100%;
+            background: var(--card-bg); border-left: 1px solid var(--border);
+            z-index: 1000; transition: 0.4s; padding: 20px; box-sizing: border-box;
+            overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
         }
+        .sidebar.active { right: 0; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:999; }
+        .overlay.active { display:block; }
 
+        /* الواجهة الرئيسية (الجدول) */
+        .main-content { padding: 15px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; }
+        .menu-btn { background: var(--accent); border: none; color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        .time-grid { border:1px solid var(--border); border-radius:15px; overflow:hidden; background:#000; width: 100%; }
+        .day-row { display:flex; border-bottom:1px solid var(--border); min-height:70px; }
+        .day-label { width:60px; font-size:12px; font-weight:bold; color:var(--accent); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); }
+        .slots { flex:1; display:flex; overflow-x:auto; gap:8px; padding:10px; }
+        .slot { flex-shrink:0; min-width:100px; padding:8px; border-radius:12px; text-align:center; color:#fff; font-size:11px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .slot b { display: block; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+
+        /* تنسيقات داخل القائمة */
+        .section-title { font-size: 14px; color: var(--accent); margin: 20px 0 10px; border-right: 3px solid var(--accent); padding-right: 8px; }
         input, select, button { width:100%; padding:12px; margin-bottom:10px; border-radius:12px; border:1px solid var(--border); background:#000; color:#fff; }
-        button { cursor:pointer; font-weight:700; border:none; background:var(--accent); }
-        
-        .student-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #1c1c20; border-radius: 15px; margin-bottom: 5px; }
-        .student-item img { width: 35px; height: 35px; border-radius: 50%; }
+        #map { width: 100%; height: 180px; border-radius: 15px; margin-bottom: 15px; }
+        .payment-item { display: flex; justify-content: space-between; align-items: center; background: #1c1c20; padding: 10px; border-radius: 12px; margin-bottom: 8px; border-right: 4px solid var(--red); }
+        .payment-item.paid { border-right-color: var(--green); }
+        .btn-pay { width: auto; padding: 5px 10px; background: var(--green); font-size: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header style="text-align:center; padding:10px;">
-        <h1 style="background:linear-gradient(to right,#818cf8,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0;">Smart Tutor Map</h1>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="sidebar" id="sidebar">
+    <button onclick="toggleMenu()" style="background:var(--red); width: auto;">إغلاق ×</button>
+    
+    <div class="section-title">📍 مواقع الطلاب</div>
+    <div id="map"></div>
+
+    <div class="section-title">👤 إضافة طالب جديد</div>
+    <input id="stuName" placeholder="اسم الطالب">
+    <input id="stuPrice" type="number" placeholder="المبلغ (ريال)">
+    <button onclick="addStudent()">حفظ الطالب</button>
+
+    <div class="section-title">⏰ حجز موعد</div>
+    <select id="stuSelect"></select>
+    <input type="time" id="classTime">
+    <select id="classDay">
+        <option value="Sat">السبت</option><option value="Sun">الأحد</option>
+        <option value="Mon">الاثنين</option><option value="Tues">الثلاثاء</option>
+        <option value="Wed">الأربعاء</option><option value="Thurs">الخميس</option>
+    </select>
+    <button style="background:var(--green)" onclick="addSchedule()">تثبيت الموعد</button>
+
+    <div class="section-title">💰 الحسابات المالية</div>
+    <div id="paymentList"></div>
+</div>
+
+<div class="main-content">
+    <header>
+        <h1 style="font-size: 22px; margin:0;">الجدول الأسبوعي</h1>
+        <button class="menu-btn" onclick="toggleMenu()">القائمة ☰</button>
     </header>
 
-    <section class="card">
-        <h3 style="color:var(--accent); margin-top:0;">📍 خريطة الطلاب الحية</h3>
-        <div id="map"></div>
-        <p style="font-size:10px; color:#aaa; text-align:center;">* الصور تظهر فوق مواقع الطلاب المسجلة</p>
-    </section>
-
-    <section class="card">
-        <h3>👤 إضافة طالب وموقعه</h3>
-        <div style="text-align:center; margin-bottom:10px;">
-            <input type="file" id="pic" hidden onchange="loadFile(event)">
-            <img id="tempImg" src="https://via.placeholder.com/60" style="width:60px; height:60px; border-radius:50%; cursor:pointer;" onclick="document.getElementById('pic').click()">
-        </div>
-        <input id="name" placeholder="اسم الطالب">
-        <input id="lat" placeholder="خط العرض (Latitude) - اختياري">
-        <input id="lng" placeholder="خط الطول (Longitude) - اختياري">
-        <p style="font-size:10px; color:var(--green)">نصيحة: يمكنك نسخ الإحداثيات من خرائط جوجل ولصقها هنا.</p>
-        <button onclick="addStudent()">إضافة للطالب والخريطة</button>
-    </section>
-
-    <section class="card">
-        <h3>👥 القائمة</h3>
-        <div id="list"></div>
-    </section>
+    <div class="time-grid" id="mainGrid"></div>
 </div>
 
 <script>
-    let map = L.map('map').setView([25.3833, 49.5833], 13); // البداية من الهفوف
+    let students = JSON.parse(localStorage.getItem('tutor_pro_v11')) || [];
+    const daysMap = {Sat:"السبت", Sun:"الأحد", Mon:"الاثنين", Tues:"الثلاثاء", Wed:"الأربعاء", Thurs:"الخميس"};
+
+    // تفعيل الخريطة
+    let map = L.map('map').setView([25.3833, 49.5833], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    let students = JSON.parse(localStorage.getItem('map_tutor_v1')) || [];
-    let currentImg = "";
-
-    function loadFile(event) {
-        let reader = new FileReader();
-        reader.onload = () => {
-            currentImg = reader.result;
-            document.getElementById('tempImg').src = currentImg;
-        };
-        reader.readAsDataURL(event.target.files[0]);
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
     }
 
     function addStudent() {
-        let name = document.getElementById('name').value;
-        let lat = parseFloat(document.getElementById('lat').value) || 25.3833 + (Math.random() * 0.02);
-        let lng = parseFloat(document.getElementById('lng').value) || 49.5833 + (Math.random() * 0.02);
-        
-        let newStudent = { name, lat, lng, img: currentImg || 'https://via.placeholder.com/40' };
-        students.push(newStudent);
-        localStorage.setItem('map_tutor_v1', JSON.stringify(students));
-        
+        let name = document.getElementById('stuName').value;
+        let price = document.getElementById('stuPrice').value;
+        if(!name || !price) return alert("أكمل البيانات");
+
+        students.push({
+            id: Date.now(), name, price: parseFloat(price), isPaid: false,
+            lat: 25.3833 + (Math.random() * 0.04 - 0.02),
+            lng: 49.5833 + (Math.random() * 0.04 - 0.02),
+            color: '#'+Math.floor(Math.random()*16777215).toString(16),
+            schedules: []
+        });
+        save();
+        document.getElementById('stuName').value = ""; document.getElementById('stuPrice').value = "";
+    }
+
+    function addSchedule() {
+        let id = +document.getElementById('stuSelect').value;
+        let time = document.getElementById('classTime').value;
+        let day = document.getElementById('classDay').value;
+        if(!id || !time) return alert("اختر الطالب والوقت");
+        students.find(s => s.id === id).schedules.push({day, time});
+        save();
+        toggleMenu(); // غلق القائمة بعد الحجز
+    }
+
+    function togglePay(id) {
+        let s = students.find(s => s.id === id);
+        s.isPaid = !s.isPaid;
+        save();
+    }
+
+    function save() {
+        localStorage.setItem('tutor_pro_v11', JSON.stringify(students));
         render();
     }
 
     function render() {
-        document.getElementById('list').innerHTML = "";
-        // مسح الماركرز القديمة
-        map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+        const grid = document.getElementById('mainGrid');
+        const select = document.getElementById('stuSelect');
+        const pList = document.getElementById('paymentList');
+        
+        grid.innerHTML = ''; select.innerHTML = '<option value="">اختر طالب</option>'; pList.innerHTML = '';
+        map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+
+        Object.keys(daysMap).forEach(d => {
+            grid.innerHTML += `<div class="day-row"><div class="day-label">${daysMap[d]}</div><div class="slots" id="slot-${d}"></div></div>`;
+        });
 
         students.forEach(s => {
-            // إضافة الصورة على الخريطة
-            let customIcon = L.divIcon({
-                html: `<img src="${s.img}" class="student-marker">`,
-                className: '',
-                iconSize: [40, 40],
-                iconAnchor: [20, 40]
+            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            L.marker([s.lat, s.lng]).addTo(map).bindPopup(s.name);
+
+            pList.innerHTML += `
+                <div class="payment-item ${s.isPaid ? 'paid' : ''}">
+                    <span><b>${s.name}</b> (${s.price} ر.س)</span>
+                    <button class="btn-pay" onclick="togglePay(${s.id})">${s.isPaid ? 'تراجع' : 'تم'}</button>
+                </div>`;
+
+            s.schedules.forEach(sc => {
+                const dayBox = document.getElementById(`slot-${sc.day}`);
+                if(dayBox) dayBox.innerHTML += `<div class="slot" style="background:${s.color}"><b>${sc.time}</b>${s.name}</div>`;
             });
-
-            L.marker([s.lat, s.lng], {icon: customIcon}).addTo(map).bindPopup(s.name);
-
-            // إضافة للقائمة
-            document.getElementById('list').innerHTML += `
-                <div class="student-item">
-                    <img src="${s.img}">
-                    <span>${s.name}</span>
-                </div>
-            `;
         });
     }
 
