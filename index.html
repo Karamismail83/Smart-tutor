@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Colors Restored</title>
+    <title>Smart Tutor Pro - Fixed Sticky Layout</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -31,38 +31,64 @@
         .view { display: none; padding: 15px; }
         .view.active { display: block; }
         
-        /* الجدول الثابت */
-        .acc-table-wrapper { overflow-x: auto; border-radius: 15px; background: var(--soft-beige); border: 2px solid var(--accent-yellow); position: relative; }
+        /* ضبط أعمدة الجدولة الثابتة بدقة */
+        .acc-table-wrapper { overflow-x: auto; border-radius: 15px; background: var(--soft-beige); border: 2px solid var(--accent-yellow); }
         .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; white-space: nowrap; }
-        .sticky-name { position: sticky; left: 0; z-index: 20; background: #eee !important; font-weight: 900; border-right: 2px solid var(--main-dark); min-width: 100px; }
-        .sticky-fee { position: sticky; left: 126px; z-index: 20; background: var(--accent-orange) !important; color: white !important; font-weight: 900; border-right: 3px solid var(--main-dark) !important; min-width: 70px; }
+        .acc-table th, .acc-table td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.1); }
 
-        /* الألوان والمربعات */
+        /* تثبيت عمود الاسم - عرض 100px */
+        .sticky-name { 
+            position: sticky; 
+            left: 0; 
+            z-index: 21; 
+            background: #eee !important; 
+            min-width: 100px;
+            max-width: 100px;
+            border-right: 2px solid var(--main-dark) !important;
+        }
+
+        /* تثبيت عمود الرسوم - يبدأ مباشرة بعد الـ 100px الخاصة بالاسم */
+        .sticky-fee { 
+            position: sticky; 
+            left: 126px; /* 100px عرض الاسم + padding المحسوب */
+            z-index: 20; 
+            background: var(--accent-orange) !important; 
+            color: white !important; 
+            font-weight: 900; 
+            min-width: 80px;
+            max-width: 80px;
+            border-right: 3px solid var(--main-dark) !important;
+        }
+
+        /* تصحيح رؤوس الجداول الثابتة */
+        .acc-table th.sticky-name, .acc-table th.sticky-fee {
+            background: var(--main-dark) !important;
+            color: white !important;
+            z-index: 22;
+        }
+
         .box { width: 34px; height: 34px; border-radius: 8px; border: 2px solid var(--main-dark); background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
         .box.state-attended { background: #6B9080; color: white; }
         .box.pay-empty { border: 3px solid #000 !important; background: var(--fb-blue) !important; }
         .box.pay-paid { background: var(--vivid-green) !important; color: white !important; }
         .box.pay-unpaid { background: var(--vivid-red) !important; color: white !important; }
 
-        /* لوحة الألوان */
         .color-palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
-        .color-opt { width: 100%; height: 35px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .color-opt.selected { border-color: var(--main-dark); transform: scale(1.1); box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        .color-opt { width: 100%; height: 35px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
+        .color-opt.selected { border-color: black; transform: scale(1.1); }
 
-        /* القوائم الجانبية */
         .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: var(--soft-beige); z-index: 1001; transition: 0.3s; padding: 25px; box-sizing: border-box; overflow-y: auto; }
         .sidebar.active, .modal.active { left: 0; }
         .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:1000; }
         .overlay.active { display:block; }
 
         input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 2px solid var(--main-dark); font-weight: bold; }
-        .primary-btn { background: var(--main-dark); color: white; border: none; }
-        
-        .time-grid { display: flex; flex-direction: column; gap: 10px; }
-        .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; }
+        .primary-btn { background: var(--main-dark); color: white; border: none; cursor: pointer; }
+
+        .day-row { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; margin-bottom: 8px; }
         .day-label { width: 50px; display: flex; align-items: center; justify-content: center; font-weight: 900; background: rgba(0,0,0,0.3); color: var(--soft-beige); }
         .slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 10px; }
-        .slot { flex-shrink: 0; width: 110px; height: 55px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; cursor: pointer; font-size: 12px; font-weight: bold; color: white; }
+        .slot { flex-shrink: 0; width: 110px; height: 50px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 11px; font-weight: bold; color: white; }
     </style>
 </head>
 <body>
@@ -70,24 +96,21 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
 <div class="modal" id="editModal">
-    <h3>Edit Student Info</h3>
+    <h3>Edit Student</h3>
     <input id="editName" placeholder="Name">
     <input id="editPrice" type="number" placeholder="Fees">
     <select id="editCycle"><option value="4">4 Weeks</option><option value="3">3 Weeks</option></select>
-    <button class="primary-btn" onclick="updateStudent()">Save Changes</button>
-    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold;">Delete Student</button>
+    <button class="primary-btn" onclick="updateStudent()">Save</button>
+    <button onclick="deleteStudent()" style="background:none; color:red; border:none; font-weight:bold;">Delete</button>
 </div>
 
 <div class="sidebar" id="sidebar">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
     <input id="sPrice" type="number" placeholder="Fee Amount">
-    <select id="sCycle"><option value="4">4 Weeks Cycle</option><option value="3">3 Weeks Cycle</option></select>
-    
-    <label>Choose Student Color:</label>
+    <select id="sCycle"><option value="4">4 Weeks</option><option value="3">3 Weeks</option></select>
     <div class="color-palette" id="palette"></div>
-    
-    <button class="primary-btn" onclick="addStudent()">Save Student</button>
+    <button class="primary-btn" onclick="addStudent()">Save</button>
     <hr>
     <h3>Book Session</h3>
     <select id="sSelect"></select>
@@ -110,7 +133,7 @@
 </header>
 
 <div id="export-container">
-    <div id="mainView" class="view active"><div id="schedulePDF" class="time-grid"></div></div>
+    <div id="mainView" class="view active"><div id="schedulePDF" style="display: flex; flex-direction: column; gap:10px;"></div></div>
     <div id="accountsView" class="view">
         <div class="acc-table-wrapper">
             <table class="acc-table">
@@ -124,7 +147,7 @@
 <script>
     const studentColors = ["#DBA520", "#E85D3F", "#1877F2", "#2D6A4F", "#8B0000", "#6A4C93", "#FF9F1C", "#2EC4B6", "#E71D36", "#011627"];
     let selectedColor = studentColors[0];
-    let students = JSON.parse(localStorage.getItem('smart_tutor_master_v2')) || [];
+    let students = JSON.parse(localStorage.getItem('smart_tutor_v3')) || [];
     let ThursdayDates = [];
     let editingId = null;
 
@@ -193,7 +216,7 @@
     }
 
     function deleteStudent() {
-        if(confirm('Delete student?')) { students = students.filter(s => s.id !== editingId); save(); closeAll(); }
+        if(confirm('Delete?')) { students = students.filter(s => s.id !== editingId); save(); closeAll(); }
     }
 
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
@@ -201,9 +224,8 @@
     function addStudent() {
         let name = document.getElementById('sName').value;
         let price = document.getElementById('sPrice').value;
-        let cycle = parseInt(document.getElementById('sCycle').value);
         if(!name || !price) return;
-        students.push({ id: Date.now(), name, price, cycle, color: selectedColor, status: Array(50).fill(0), schedules: [] });
+        students.push({ id: Date.now(), name, price, cycle: parseInt(document.getElementById('sCycle').value), color: selectedColor, status: Array(50).fill(0), schedules: [] });
         save();
         document.getElementById('sName').value = ''; document.getElementById('sPrice').value = '';
     }
@@ -229,7 +251,7 @@
     }
 
     function save() {
-        localStorage.setItem('smart_tutor_master_v2', JSON.stringify(students));
+        localStorage.setItem('smart_tutor_v3', JSON.stringify(students));
         render();
     }
 
@@ -250,7 +272,7 @@
 
         students.forEach(s => {
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})" style="background:${s.color} !important; color:white; cursor:pointer;">${s.name}</td><td class="sticky-fee">${s.price} SR</td>`;
+            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})" style="background:${s.color} !important; color:white;">${s.name}</td><td class="sticky-fee">${s.price} SR</td>`;
             
             ThursdayDates.forEach((d, i) => {
                 let isPayWeek = (i + 1) % (s.cycle || 4) === 0;
@@ -260,9 +282,7 @@
                     if (stat === 1) { cls = 'pay-paid'; content = '😊'; }
                     else if (stat === 2) { cls = 'pay-unpaid'; content = '😡'; }
                     else { cls = 'pay-empty'; content = ''; }
-                } else {
-                    if (stat === 3) { cls = 'state-attended'; content = '✓'; }
-                }
+                } else if (stat === 3) { cls = 'state-attended'; content = '✓'; }
                 row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id}, ${i}, ${isPayWeek})">${content}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
