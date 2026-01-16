@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Advanced Periods</title>
+    <title>Smart Tutor Pro - Undo/Redo Edition</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -11,7 +11,8 @@
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; font-size: 10px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; }
+        .action-btn:disabled { background: #444; color: #888; cursor: not-serif; }
         .pdf-btn { background: #ef4444; color: white; }
         .container { padding: 8px; }
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(250,204,21,0.2); }
@@ -19,38 +20,40 @@
         .profile-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; background: #334155; }
         .add-img-btn { position: absolute; bottom: 0; right: 0; background: var(--gold); color: black; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 1px solid var(--bg-dark); font-weight: bold; }
         .income-banner { background: var(--gold); color: #000; padding: 8px; border-radius: 8px; text-align: center; font-weight: 900; margin-bottom: 10px; font-size: 12px; }
+        
+        /* Schedule & Tables */
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .day-label { width: 40px; font-size: 8px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .day-label { width: 45px; font-size: 8px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; }
         .slots { flex: 1; display: flex; gap: 5px; padding: 5px; overflow-x: auto; }
-        .slot { flex-shrink: 0; min-width: 65px; background: var(--slate); padding: 5px; border-radius: 5px; font-size: 8px; text-align: center; border: 1px solid rgba(250,204,21,0.2); display: flex; flex-direction: column; gap: 2px; }
+        .slot { flex-shrink: 0; min-width: 65px; background: var(--slate); padding: 5px; border-radius: 5px; font-size: 8px; text-align: center; border: 1px solid rgba(250,204,21,0.2); }
         .slot-time { font-weight: bold; color: var(--gold); }
-        .slot-name { font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; table-layout: fixed; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 0; }
-        .acc-table th { background: #1E293B; color: white; font-size: 7px; height: 25px; cursor: pointer; }
-        .sticky-name { position: sticky; left: 0; z-index: 100; background: white !important; width: var(--name-w); font-weight: 900; font-size: 9px; }
-        .sticky-fee { position: sticky; left: var(--name-w); z-index: 100; background: #f8fafc !important; width: var(--fee-w); font-size: 8px; font-weight: 900; border-right: 2px solid #ddd !important; }
+        .acc-table th { background: #1E293B; color: white; font-size: 7px; height: 25px; }
+        .sticky-name { position: sticky; left: 0; z-index: 100; background: white !important; width: var(--name-w); font-weight: 900; }
+        .sticky-fee { position: sticky; left: var(--name-w); z-index: 100; background: #f8fafc !important; width: var(--fee-w); border-right: 2px solid #ddd !important; }
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 9px; cursor: pointer; }
         .is-pay-week { border: 2.5px solid #b45309; background: #fef3c7; }
         .status-paid { background: #10b981 !important; color: white; border: none; }
         .status-notpaid { background: #ef4444 !important; color: white; border: none; }
         .holiday-cell { background: #f3e8ff !important; }
         .holiday-header { background: #581c87 !important; color: white !important; }
-        tfoot td { background: #f1f5f9; font-weight: 900; color: #1E293B; font-size: 8px; padding: 6px 0; border-top: 2px solid #cbd5e1; }
-        .weekly-label { position: sticky; left: 0; z-index: 100; background: #e2e8f0 !important; font-weight: 900; text-align: right; padding-right: 5px; }
+
+        /* UI Elements */
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 280px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         input, select { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; }
-        .edit-section { border: 1px solid #eee; padding: 10px; border-radius: 10px; margin-bottom: 10px; background: #fafafa; }
+        .edit-card { border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #f9fafb; }
+
         @media print {
             @page { size: landscape; margin: 5mm; }
-            .no-print, header, .sidebar, .modal, .overlay, .add-img-btn { display: none !important; }
-            body { background: white; color: black; zoom: 90%; }
+            .no-print, header, .sidebar, .modal, .overlay { display: none !important; }
+            body { background: white; color: black; zoom: 100%; }
             .acc-table-wrapper { overflow: visible; }
-            .sticky-name, .sticky-fee { position: static; background: #fff !important; }
+            .sticky-name, .sticky-fee { position: static !important; }
         }
     </style>
 </head>
@@ -75,13 +78,18 @@
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-    <div><button class="action-btn pdf-btn" onclick="window.print()">PDF</button><button class="action-btn" onclick="toggleSidebar()">MENU</button></div>
+    <div style="display: flex; gap: 5px;">
+        <button class="action-btn" id="undoBtn" onclick="undo()" title="Undo">↩️</button>
+        <button class="action-btn" id="redoBtn" onclick="redo()" title="Redo">↪️</button>
+        <button class="action-btn pdf-btn no-print" onclick="window.print()">PDF</button>
+        <button class="action-btn no-print" onclick="toggleSidebar()">MENU</button>
+    </div>
 </header>
 
 <div class="container">
     <div class="teacher-box">
         <div class="profile-img-container"><img id="teacherImg" class="profile-img" src="https://via.placeholder.com/150"><label class="add-img-btn" for="tFile">+</label><input type="file" id="tFile" hidden accept="image/*" onchange="updateTeacherImg(this)"></div>
-        <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:12px; width:100%; font-weight:bold; outline:none;">
+        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:12px; width:100%; font-weight:bold; outline:none;">
     </div>
     <div class="income-banner">TOTAL INCOME: <span id="totalIncome">0</span> SR</div>
     <div id="scheduleGrid" class="no-print"></div>
@@ -89,12 +97,53 @@
 </div>
 
 <script>
+    // --- Database & History Logic ---
     let db = JSON.parse(localStorage.getItem('tutor_v26_final')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
+    let historyStack = [];
+    let redoStack = [];
 
-    function init() { document.getElementById('teacherName').value = db.teacherName || ''; document.getElementById('teacherImg').src = db.teacherImg || 'https://via.placeholder.com/150'; render(); }
+    function commitChange() {
+        // حفظ الحالة الحالية في الهيستوري قبل التغيير الجديد
+        historyStack.push(JSON.stringify(db));
+        if (historyStack.length > 20) historyStack.shift(); // حد أقصى 20 عملية
+        redoStack = []; // تصفير الإعادة عند حدوث فعل جديد
+        save();
+    }
+
+    function undo() {
+        if (historyStack.length === 0) return;
+        redoStack.push(JSON.stringify(db));
+        db = JSON.parse(historyStack.pop());
+        save(false); // حفظ بدون إضافة للهيستوري
+    }
+
+    function redo() {
+        if (redoStack.length === 0) return;
+        historyStack.push(JSON.stringify(db));
+        db = JSON.parse(redoStack.pop());
+        save(false);
+    }
+
+    function save(isNewAction = true) {
+        localStorage.setItem('tutor_v26_final', JSON.stringify(db));
+        updateUndoRedoButtons();
+        render();
+    }
+
+    function updateUndoRedoButtons() {
+        document.getElementById('undoBtn').disabled = historyStack.length === 0;
+        document.getElementById('redoBtn').disabled = redoStack.length === 0;
+    }
+
+    // --- Core UI Functions ---
+    function init() { 
+        document.getElementById('teacherName').value = db.teacherName || ''; 
+        document.getElementById('teacherImg').src = db.teacherImg || 'https://via.placeholder.com/150'; 
+        updateUndoRedoButtons();
+        render(); 
+    }
+
     function formatAutoPM(t) { if(!t) return ""; let [h, m] = t.split(':'); h = parseInt(h); let suffix = h >= 12 ? " PM" : " AM"; h = h % 12 || 12; return h + ":" + m + suffix; }
-    
-    function save() { localStorage.setItem('tutor_v26_final', JSON.stringify(db)); render(); }
 
     function render() {
         const grid = document.getElementById('scheduleGrid'), head = document.getElementById('accHeader'), body = document.getElementById('accBody'), foot = document.getElementById('accFooter'), select = document.getElementById('sSelect');
@@ -114,45 +163,30 @@
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
             s.schedules.forEach((sc, idx) => {
                 let t = document.getElementById(`slot-${sc.day}`);
-                if(t) t.innerHTML += `<div class="slot" onclick="deleteSlot(${s.id}, ${idx})"><span class="slot-time">${formatAutoPM(sc.time)}</span><span class="slot-name">${s.name}</span></div>`;
+                if(t) t.innerHTML += `<div class="slot" onclick="deleteSlot(${s.id}, ${idx})"><span class="slot-time">${formatAutoPM(sc.time)}</span><br>${s.name}</div>`;
             });
 
-            // ضمان وجود مصفوفة الفترات للطلاب القدامى
             if(!s.periods) s.periods = [{ startDate: s.startDate, price: s.price, cycle: s.cycle }];
-            
-            // ترتيب الفترات حسب التاريخ
             s.periods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
 
             let currentPrice = s.periods[0].price;
-            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">${s.name}</td><td class="sticky-fee" id="fee-${s.id}">${currentPrice}</td>`;
+            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">${s.name}</td><td class="sticky-fee">${currentPrice}</td>`;
             
             dates.forEach((d, i) => {
-                let isHol = db.holidays.includes(i);
-                let isPay = false;
-
-                // البحث عن الفترة المناسبة لهذا التاريخ
-                let activePeriod = [...s.periods].reverse().find(p => d >= new Date(p.startDate));
-
-                if (activePeriod) {
-                    let sStart = new Date(activePeriod.startDate);
-                    let holidayCountBefore = 0;
-                    
-                    // حساب العطلات داخل هذه الفترة فقط
+                let isHol = db.holidays.includes(i), isPay = false;
+                let activeP = [...s.periods].reverse().find(p => d >= new Date(p.startDate));
+                if (activeP) {
+                    let sStart = new Date(activeP.startDate);
+                    let hCount = 0;
                     db.holidays.forEach(hIdx => {
-                        let hDate = new Date(new Date('2026-01-01').getTime() + hIdx * 7 * 24 * 60 * 60 * 1000);
-                        if (hDate >= sStart && hDate <= d) holidayCountBefore++;
+                        let hD = new Date(new Date('2026-01-01').getTime() + hIdx * 7 * 24 * 60 * 60 * 1000);
+                        if (hD >= sStart && hD <= d) hCount++;
                     });
-
-                    let totalWeeks = Math.floor((d - sStart) / (7 * 24 * 60 * 60 * 1000));
-                    let effectiveWeeks = totalWeeks - holidayCountBefore;
-                    
-                    if (!isHol && effectiveWeeks >= 0 && effectiveWeeks % (activePeriod.cycle || 4) === 0) {
-                        isPay = true;
-                        weeklyIncome[i] += Number(activePeriod.price);
-                        currentPrice = activePeriod.price; // تحديث السعر المعروض
+                    let totalW = Math.floor((d - sStart) / 604800000);
+                    if (!isHol && (totalW - hCount) >= 0 && (totalW - hCount) % activeP.cycle === 0) {
+                        isPay = true; weeklyIncome[i] += Number(activeP.price); currentPrice = activeP.price;
                     }
                 }
-
                 let stat = s.financialMap[i] || 0, cls = stat===1?'status-paid':(stat===2?'status-notpaid':'');
                 row += `<td class="${isHol?'holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${cls}" onclick="cycleStatus(${s.id},${i})">${stat===1?'✓':stat===2?'✕':''}</div></td>`;
             });
@@ -166,33 +200,35 @@
         document.getElementById('totalIncome').innerText = grandTotal;
     }
 
+    // --- Action Functions with Commit ---
+    function addStudent() {
+        let n = document.getElementById('sName').value, p = document.getElementById('sPrice').value, d = document.getElementById('sDate').value, c = document.getElementById('sCycle').value;
+        if(!n || !p) return;
+        commitChange();
+        db.students.push({ id: Date.now(), name: n, price: Number(p), startDate: d, cycle: Number(c), financialMap: {}, schedules: [], periods: [{ startDate: d, price: Number(p), cycle: Number(c) }] });
+        closeAll(); save(false);
+    }
+
     function openEdit(id) {
         let s = db.students.find(x => x.id === id);
-        let html = `<h3>Edit: ${s.name}</h3>`;
-        html += `<div class="edit-section">
-                    <label>Main Name</label><input id="en" value="${s.name}">
-                 </div>`;
-        
+        let html = `<h3>Edit Student</h3><label>Name</label><input id="en" value="${s.name}">`;
         s.periods.forEach((p, idx) => {
-            html += `<div class="edit-section">
-                <strong>Period ${idx + 1}</strong>
+            html += `<div class="edit-card">
+                <strong>Period ${idx+1}</strong><br>
                 <label>Start Date</label><input type="date" id="psd-${idx}" value="${p.startDate}">
                 <label>Price</label><input type="number" id="pp-${idx}" value="${p.price}">
                 <label>Cycle (Weeks)</label><input type="number" id="pc-${idx}" value="${p.cycle}">
-                ${idx > 0 ? `<button onclick="removePeriod(${id}, ${idx})" style="color:red">Remove Period</button>` : ''}
+                ${idx > 0 ? `<button onclick="removePeriod(${id}, ${idx})" style="color:red; background:none; border:none; cursor:pointer">🗑 Remove Period</button>` : ''}
             </div>`;
         });
-
-        html += `<button class="action-btn" style="width:100%; background:#3b82f6; color:white" onclick="addPeriod(${id})">+ Add New Period (Change Cycle/Price)</button>
-                 <button class="action-btn" style="width:100%; margin-top:10px" onclick="updateS(${id})">Save All Changes</button>
+        html += `<button class="action-btn" style="width:100%; background:#3b82f6; color:white" onclick="addNewPeriod(${id})">+ Change Cycle/Price</button>
+                 <button class="action-btn" style="width:100%; margin-top:10px" onclick="updateS(${id})">Save All</button>
                  <button class="action-btn" style="width:100%; background:red; color:white; margin-top:10px" onclick="delS(${id})">Delete Student</button>`;
-        
         document.getElementById('editFields').innerHTML = html;
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
+        document.getElementById('editModal').classList.add('active'); document.getElementById('overlay').classList.add('active');
     }
 
-    function addPeriod(id) {
+    function addNewPeriod(id) {
         let s = db.students.find(x => x.id === id);
         s.periods.push({ startDate: '', price: s.price, cycle: s.cycle });
         openEdit(id);
@@ -205,6 +241,7 @@
     }
 
     function updateS(id) {
+        commitChange();
         let s = db.students.find(x => x.id === id);
         s.name = document.getElementById('en').value;
         s.periods.forEach((p, idx) => {
@@ -212,34 +249,28 @@
             p.price = Number(document.getElementById(`pp-${idx}`).value);
             p.cycle = Number(document.getElementById(`pc-${idx}`).value);
         });
-        save(); closeAll();
+        closeAll(); save(false);
     }
 
-    function addStudent() { 
-        let n = document.getElementById('sName').value, p = document.getElementById('sPrice').value; 
-        if(!n || !p) return; 
-        let id = Date.now();
-        db.students.push({ 
-            id: id, 
-            name: n, 
-            price: Number(p), 
-            startDate: document.getElementById('sDate').value, 
-            cycle: Number(document.getElementById('sCycle').value), 
-            financialMap: {}, 
-            schedules: [],
-            periods: [{ startDate: document.getElementById('sDate').value, price: Number(p), cycle: Number(document.getElementById('sCycle').value) }]
-        }); 
-        save(); closeAll(); 
+    function delS(id) { if(confirm('Delete Student?')) { commitChange(); db.students=db.students.filter(x=>x.id!==id); closeAll(); save(false); } }
+    
+    function cycleStatus(id, i) { commitChange(); let s=db.students.find(x=>x.id===id); s.financialMap[i]=((s.financialMap[i]||0)+1)%3; save(false); }
+    
+    function toggleHoliday(i) { commitChange(); let idx=db.holidays.indexOf(i); if(idx>-1) db.holidays.splice(idx,1); else db.holidays.push(i); save(false); }
+    
+    function addSchedule() { 
+        let id=Number(document.getElementById('sSelect').value); 
+        if(!id) return; 
+        commitChange();
+        db.students.find(x=>x.id===id).schedules.push({day:document.getElementById('cDay').value, time:document.getElementById('cTime').value}); 
+        save(false); 
     }
 
-    function delS(id) { if(confirm('Delete?')) { db.students=db.students.filter(x=>x.id!==id); save(); closeAll(); } }
-    function cycleStatus(id, i) { let s=db.students.find(x=>x.id===id); s.financialMap[i]=((s.financialMap[i]||0)+1)%3; save(); }
-    function toggleHoliday(i) { let idx=db.holidays.indexOf(i); if(idx>-1) db.holidays.splice(idx,1); else db.holidays.push(i); save(); }
-    function addSchedule() { let id=Number(document.getElementById('sSelect').value); if(!id) return; db.students.find(x=>x.id===id).schedules.push({day:document.getElementById('cDay').value, time:document.getElementById('cTime').value}); save(); }
-    function deleteSlot(sid, idx) { db.students.find(x=>x.id===sid).schedules.splice(idx,1); save(); }
+    function deleteSlot(sid, idx) { commitChange(); db.students.find(x=>x.id===sid).schedules.splice(idx,1); save(false); }
+    
     function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
-    function updateTeacherImg(input) { if (input.files && input.files[0]) { let r = new FileReader(); r.onload = (e) => { db.teacherImg = e.target.result; document.getElementById('teacherImg').src = e.target.result; save(); }; r.readAsDataURL(input.files[0]); } }
+    function updateTeacherImg(input) { if (input.files && input.files[0]) { let r = new FileReader(); r.onload = (e) => { commitChange(); db.teacherImg = e.target.result; document.getElementById('teacherImg').src = e.target.result; save(false); }; r.readAsDataURL(input.files[0]); } }
     
     window.onload = init;
 </script>
