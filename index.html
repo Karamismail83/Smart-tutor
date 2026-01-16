@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro 2026</title>
+    <title>Smart Tutor Pro 2026 - Hybrid</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 160px; --fee-w: 70px;
-            --holiday-bg: #581c87; /* لون العطلة المميز */
+            --name-w: 160px; --fee-w: 80px;
+            --holiday-bg: #581c87;
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; direction: ltr; font-size: 13px; }
 
@@ -25,7 +25,6 @@
         .nav-btns { display: flex; gap: 8px; }
         .action-btn { background: #E2E8F0; color: #0F172A; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 11px; }
         .menu-btn { background: var(--gold); color: #000; }
-        .print-btn { background: #64748B; color: white; }
 
         .container { padding: 20px; }
         
@@ -37,21 +36,18 @@
         .income-banner { background: linear-gradient(135deg, #FACC15 0%, #EAB308 100%); color: #000; padding: 18px; border-radius: 12px; text-align: center; margin-bottom: 15px; font-weight: 900; font-size: 20px; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
-        .day-label { width: 65px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; background: var(--gold); font-size: 12px; }
+        .day-label { width: 75px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; background: var(--gold); font-size: 11px; }
         .slots { flex: 1; display: flex; overflow-x: auto; gap: 10px; padding: 10px; }
-        .slot { flex-shrink: 0; min-width: 100px; background: var(--slate); border: 1px solid rgba(250, 204, 21, 0.3); padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; }
+        .slot { flex-shrink: 0; min-width: 110px; background: var(--slate); border: 1px solid rgba(250, 204, 21, 0.3); padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 11px; }
 
         .acc-table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; color: #1E293B; }
-        .acc-table th { background: #1E293B; color: white; padding: 12px 5px; font-size: 10px; cursor: pointer; }
+        .acc-table th { background: #1E293B; color: white; padding: 12px 5px; font-size: 10px; cursor: pointer; white-space: nowrap; }
         
-        /* تنسيق تمييز العطلات */
-        .holiday-header { background: var(--holiday-bg) !important; border-bottom: 2px solid #fff; }
-        .holiday-cell { background: #f3e8ff !important; border: 1px solid #d8b4fe !important; }
-        .holiday-cell .box { background: #e9d5ff !important; border-color: #c084fc !important; cursor: not-allowed; }
+        .holiday-header { background: var(--holiday-bg) !important; color: white !important; }
+        .holiday-cell { background: #f3e8ff !important; }
 
-        .sticky-name { position: sticky; left: 0; z-index: 20; background: inherit !important; border-right: 1px solid #ddd !important; min-width: var(--name-w); display: flex; align-items: center; gap: 8px; padding: 5px 10px !important; }
-        .row-student-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--gold); background: #eee; }
+        .sticky-name { position: sticky; left: 0; z-index: 20; background: inherit !important; border-right: 1px solid #ddd !important; min-width: var(--name-w); display: flex; align-items: center; padding: 5px 10px !important; }
         .sticky-fee { position: sticky; left: var(--name-w); z-index: 20; background: inherit !important; border-right: 3px solid rgba(0,0,0,0.1) !important; font-weight: 900; min-width: var(--fee-w); text-align: center; }
 
         .box { width: 30px; height: 30px; border-radius: 6px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; }
@@ -62,22 +58,15 @@
         
         tfoot td { background: #F1F5F9 !important; font-weight: 900; color: #1E293B; text-align: center; padding: 12px 5px; border-top: 2px solid #CBD5E1; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 80%; height: 100%; background: white; z-index: 2000; transition: 0.4s; padding: 25px; color: #1E293B; overflow-y: auto; }
+        .sidebar, .modal { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: white; z-index: 2000; transition: 0.4s; padding: 25px; color: #1E293B; overflow-y: auto; }
         .sidebar.active, .modal.active { left: 0; }
         .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:none; z-index:1500; }
         .overlay.active { display:block; }
 
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: bold; font-family: inherit; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: bold; font-family: inherit; }
         .primary-btn { background: #1E293B; color: white; border: none; cursor: pointer; }
 
-        @media print { 
-            .no-print { display: none !important; } 
-            .acc-table-wrapper { overflow: visible !important; } 
-            .sticky-name, .sticky-fee { position: static !important; } 
-            body { background: white !important; color: black !important; }
-            .container { padding: 0; }
-            header { display: none; }
-        }
+        @media print { .no-print { display: none !important; } .sticky-name, .sticky-fee { position: static !important; } }
     </style>
 </head>
 <body>
@@ -85,53 +74,50 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
 <div class="modal" id="editModal">
-    <h2 style="margin-top:0">Edit Student</h2>
-    <div class="profile-img-container" style="margin: 0 auto 15px auto;">
-        <img id="editStudentPreview" class="profile-img">
-        <label class="add-img-btn" onclick="document.getElementById('editSFile').click()">+</label>
-    </div>
-    <input type="file" id="editSFile" hidden accept="image/*" onchange="previewImg(this, 'editStudentPreview')">
-    <input id="editName" placeholder="Name">
+    <h2 style="margin-top:0">Edit Student Info</h2>
+    <input id="editName" placeholder="Student Name">
     <input id="editPrice" type="number" placeholder="Fee">
-    <select id="editType" onchange="toggleCycleInput('editType', 'editCycleWrapper')">
+    <select id="editType" onchange="toggleCycleInput('editType', 'editCycleWrapperUpdate')">
         <option value="weeks">Weekly</option>
         <option value="months">Monthly</option>
     </select>
-    <div id="editCycleWrapper">
-        <label style="font-size: 11px; color: #64748b;">Cycle (Every X weeks)</label>
-        <input id="editCycle" type="number" placeholder="Cycle Count">
+    <div id="editCycleWrapperUpdate">
+        <input id="editCycle" type="number" placeholder="Cycle (Weeks)">
     </div>
     <input id="editSDate" type="date">
-    <button class="primary-btn" onclick="updateStudent()">Save Changes</button>
+    <button class="primary-btn" onclick="updateStudent()">Update Info</button>
     <button class="primary-btn" style="background:#ef4444;" onclick="deleteStudent()">Delete Student</button>
     <button class="primary-btn" style="background:#64748B" onclick="closeAll()">Cancel</button>
 </div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="margin-top:0">Dashboard Menu</h2>
+    <h2 style="margin-top:0">Settings</h2>
     <div style="background:#F1F5F9; padding:15px; border-radius:12px; margin-bottom:20px;">
         <h3>Add Student</h3>
-        <div class="profile-img-container" style="margin-bottom:10px;">
-            <img id="newStudentPreview" class="profile-img">
-            <label class="add-img-btn" onclick="document.getElementById('sFile').click()">+</label>
-        </div>
-        <input type="file" id="sFile" hidden accept="image/*" onchange="previewImg(this, 'newStudentPreview')">
-        <input id="sName" placeholder="Name">
-        <input id="sPrice" type="number" placeholder="Fee">
+        <input id="sName" placeholder="Student Name">
+        <input id="sPrice" type="number" placeholder="Fee (SR)">
         <select id="sType" onchange="toggleCycleInput('sType', 'sCycleWrapper')">
-            <option value="weeks">Weekly</option>
-            <option value="months">Monthly</option>
+            <option value="weeks">Weekly System</option>
+            <option value="months">Monthly System</option>
         </select>
         <div id="sCycleWrapper">
-            <input id="sCycle" type="number" value="4" placeholder="Cycle Count (Weeks)">
+            <input id="sCycle" type="number" value="4" placeholder="Cycle (Every X Weeks)">
         </div>
         <input id="sDate" type="date">
-        <button class="primary-btn" onclick="addStudent()">Add Student</button>
+        <button class="primary-btn" onclick="addStudent()">Save</button>
     </div>
     <div style="background:#F1F5F9; padding:15px; border-radius:12px;">
-        <h3>Schedule Slot</h3>
+        <h3>Link Slot</h3>
         <select id="sSelect"></select>
-        <select id="cDay"><option value="Sat">Sat</option><option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option></select>
+        <select id="cDay">
+            <option value="Sat">Saturday</option>
+            <option value="Sun">Sunday</option>
+            <option value="Mon">Monday</option>
+            <option value="Tue">Tuesday</option>
+            <option value="Wed">Wednesday</option>
+            <option value="Thu">Thursday</option>
+            <option value="Fri">Friday</option>
+        </select>
         <input type="time" id="cTime">
         <button class="primary-btn" onclick="addSchedule()">Save Slot</button>
     </div>
@@ -140,8 +126,7 @@
 <header>
     <div class="logo-area"><div class="logo-text">SMART<span>TUTOR</span></div></div>
     <div class="nav-btns no-print">
-        <button class="action-btn print-btn" onclick="window.print()">PRINT</button>
-        <button class="action-btn" onclick="exportPDF()">PDF</button>
+        <button class="action-btn" onclick="window.print()">PRINT</button>
         <button class="action-btn menu-btn" onclick="toggleSidebar()">+ MENU</button>
     </div>
 </header>
@@ -149,20 +134,18 @@
 <div class="container" id="printable-area">
     <div class="teacher-box">
         <div class="profile-img-container">
-            <img id="teacherImg" class="profile-img">
+            <img id="teacherImg" class="profile-img" src="">
             <label class="add-img-btn no-print" onclick="document.getElementById('tFile').click()">+</label>
         </div>
         <input type="file" id="tFile" hidden accept="image/*" onchange="updateTeacherImg(this)">
-        <div style="flex:1">
-            <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; margin:0; padding:5px; font-size:18px;">
-        </div>
+        <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; margin:0; padding:5px; font-size:18px; width:100%;">
     </div>
 
-    <section><h2>Weekly Schedule</h2><div id="scheduleGrid"></div></section>
+    <section><h2>Weekly Schedule (Sat - Fri)</h2><div id="scheduleGrid"></div></section>
     
     <section>
-        <h2>Account Tracker</h2>
-        <div class="income-banner">TOTAL REVENUE: <span id="totalIncome">0</span> SR</div>
+        <h2>Account Tracker (Thursday Start)</h2>
+        <div class="income-banner">ESTIMATED REVENUE: <span id="totalIncome">0</span> SR</div>
         <div class="acc-table-wrapper">
             <table class="acc-table">
                 <thead><tr id="accHeader"></tr></thead>
@@ -174,7 +157,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'smart_tutor_2026_final_v3';
+    const STORAGE_KEY = 'smart_tutor_hybrid_v1';
     let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { students: [], holidays: [], teacherName: '', teacherImg: '' };
     let currentEditId = null;
 
@@ -184,119 +167,92 @@
         render();
     }
 
-    // تبديل ظهور حقل السايكل بناءً على نوع الحساب
-    function toggleCycleInput(selectId, wrapperId) {
-        const type = document.getElementById(selectId).value;
-        const wrapper = document.getElementById(wrapperId);
-        wrapper.style.display = (type === 'months') ? 'none' : 'block';
-    }
-
-    function previewImg(input, previewId) {
-        if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            reader.onload = (e) => document.getElementById(previewId).src = e.target.result;
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function updateTeacherImg(input) {
-        if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            reader.onload = (e) => {
-                db.teacherImg = e.target.result;
-                document.getElementById('teacherImg').src = e.target.result;
-                save();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    function toggleCycleInput(sId, wId) {
+        document.getElementById(wId).style.display = (document.getElementById(sId).value === 'months') ? 'none' : 'block';
     }
 
     function render() {
-        const header = document.getElementById('accHeader'), body = document.getElementById('accBody'), footer = document.getElementById('accFooter'), grid = document.getElementById('scheduleGrid'), select = document.getElementById('sSelect'), incomeEl = document.getElementById('totalIncome');
+        const grid = document.getElementById('scheduleGrid'), head = document.getElementById('accHeader'), body = document.getElementById('accBody'), foot = document.getElementById('accFooter'), select = document.getElementById('sSelect');
         grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>';
-        ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"].forEach(day => grid.innerHTML += `<div class="day-row"><div class="day-label">${day}</div><div class="slots" id="slot-${day}"></div></div>`);
+        
+        // 1. Schedule Grid: SATURDAY Start
+        const satOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        satOrder.forEach(day => grid.innerHTML += `<div class="day-row"><div class="day-label">${day}</div><div class="slots" id="slot-${day}"></div></div>`);
 
-        let dates = []; let startBase = new Date('2026-01-17');
-        for(let i=0; i<12; i++) { dates.push(new Date(startBase)); startBase.setDate(startBase.getDate()+7); }
+        // 2. Account Dates: THURSDAY Start
+        let dates = []; 
+        let startBase = new Date('2026-01-01'); // First Thursday 2026
+        for(let i=0; i<12; i++) {
+            dates.push(new Date(startBase));
+            startBase.setDate(startBase.getDate() + 7);
+        }
 
-        header.innerHTML = '<th class="sticky-name">Student</th><th class="sticky-fee">Fees</th>';
+        head.innerHTML = '<th class="sticky-name">Student Name</th><th class="sticky-fee">Fee</th>';
         dates.forEach((d, i) => {
             const isH = db.holidays.includes(i);
-            header.innerHTML += `<th class="${isH ? 'holiday-header' : ''}" onclick="toggleHoliday(${i})">${d.toLocaleDateString('en-GB',{day:'2-digit', month:'2-digit'})}</th>`;
+            head.innerHTML += `<th class="${isH ? 'holiday-header' : ''}" onclick="toggleHoliday(${i})">${d.toLocaleDateString('en-GB',{day:'2-digit', month:'2-digit'})}</th>`;
         });
 
         body.innerHTML = '';
         let grandTotal = 0;
-        let cycleTotals = Array(12).fill(0);
+        let weeklyTotals = Array(12).fill(0);
 
         db.students.forEach((s) => {
             grandTotal += s.price;
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            s.schedules.forEach((sc, scIdx) => {
-                const daySlot = document.getElementById(`slot-${sc.day}`);
-                if(daySlot) daySlot.innerHTML += `<div class="slot" onclick="deleteSlot(${s.id}, ${scIdx})"><b>${sc.time}</b>${s.name}</div>`;
+            
+            s.schedules.forEach((sc, idx) => {
+                const zone = document.getElementById(`slot-${sc.day}`);
+                if(zone) zone.innerHTML += `<div class="slot" onclick="deleteSlot(${s.id}, ${idx})"><b>${sc.time}</b><br>${s.name}</div>`;
             });
 
-            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})"><img src="${s.img || ''}" class="row-student-img">${s.name}</td><td class="sticky-fee">${s.price} SR</td>`;
+            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">${s.name}</td><td class="sticky-fee">${s.price}</td>`;
             
             dates.forEach((d, i) => {
                 let isHol = db.holidays.includes(i);
                 let isPay = false;
                 let sStart = new Date(s.startDate);
-                
+                sStart.setHours(0,0,0,0);
+
                 if (!isHol && d >= sStart) {
                     if (s.type === 'weeks') {
-                        let diffWeeks = Math.floor((d - sStart) / (7 * 24 * 60 * 60 * 1000));
-                        if (diffWeeks % s.cycle === 0) isPay = true;
+                        let diffTime = d.getTime() - sStart.getTime();
+                        let diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+                        if (diffWeeks >= 0 && diffWeeks % s.cycle === 0) isPay = true;
                     } else {
-                        // منطق الحساب الشهري الذكي:
-                        // إذا كان اليوم في هذا الأسبوع هو نفس يوم الشهر الذي بدأ فيه الطالب، أو مر عليه أقل من 7 أيام (أي يقع في نطاق هذا الأسبوع)
-                        let targetDay = sStart.getDate();
-                        let currentMonthDate = new Date(d.getFullYear(), d.getMonth(), targetDay);
-                        
-                        // حساب المسافة بين يوم السبت في هذا العمود وبين يوم الاستحقاق الشهري
-                        let diffDays = (d - currentMonthDate) / (24 * 60 * 60 * 1000);
-                        
-                        // إذا كان يوم الاستحقاق يقع ضمن هذا الأسبوع (من السبت للجمعة)
-                        if (diffDays >= 0 && diffDays < 7) isPay = true;
+                        // Monthly system check
+                        if (d.getDate() >= sStart.getDate() && d.getDate() < sStart.getDate() + 7) isPay = true;
                     }
                 }
 
-                if(isPay) cycleTotals[i] += s.price;
-                let status = s.financialMap[i] || 0;
+                if(isPay) weeklyTotals[i] += s.price;
+                let stat = s.financialMap[i] || 0;
                 let cls = isHol ? 'holiday-cell' : (isPay ? 'is-pay-week' : '');
-                if(status == 1) cls = 'pay-paid'; else if(status == 2) cls = 'pay-unpaid'; else if(status == 3) cls = 'state-attended';
-                row += `<td class="${isHol ? 'holiday-cell' : ''}"><div class="box ${cls}" onclick="toggleBox(${s.id},${i})">${status==1?'OK':status==2?'!!':status==3?'✔':''}</div></td>`;
+                if(stat == 1) cls = 'pay-paid'; else if(stat == 2) cls = 'pay-unpaid'; else if(stat == 3) cls = 'state-attended';
+                row += `<td class="${isHol ? 'holiday-cell' : ''}"><div class="box ${cls}" onclick="toggleBox(${s.id},${i})">${stat==1?'OK':stat==2?'!!':stat==3?'✔':''}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
         });
 
-        let fRow = `<tr><td colspan="2" style="text-align:right; padding-right:15px; background:#F1F5F9 !important;">Weekly Sum:</td>`;
-        cycleTotals.forEach(t => fRow += `<td>${t > 0 ? t : '-'}</td>`);
-        footer.innerHTML = fRow + `</tr>`;
-        incomeEl.innerText = grandTotal;
+        let fRow = `<tr><td colspan="2" style="text-align:right; padding-right:15px;">Total Per Thursday:</td>`;
+        weeklyTotals.forEach(v => fRow += `<td>${v > 0 ? v : '-'}</td>`);
+        foot.innerHTML = fRow + '</tr>';
+        document.getElementById('totalIncome').innerText = grandTotal;
     }
 
     function toggleBox(id, i) {
-        if(db.holidays.includes(i)) return; // منع التعديل في أسابيع العطلة
+        if(db.holidays.includes(i)) return;
         let s = db.students.find(x => x.id === id);
-        if(!s.financialMap) s.financialMap = {};
         s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 4;
         save();
     }
 
     function addStudent() {
-        const n = document.getElementById('sName').value, 
-              p = parseFloat(document.getElementById('sPrice').value), 
-              t = document.getElementById('sType').value, 
-              d = document.getElementById('sDate').value, 
-              img = document.getElementById('newStudentPreview').src;
-        
-        let c = parseInt(document.getElementById('sCycle').value);
-        if(t === 'months') c = 1; // السايكل الشهري افتراضيا 1
-
+        const n = document.getElementById('sName').value, p = parseFloat(document.getElementById('sPrice').value), t = document.getElementById('sType').value, d = document.getElementById('sDate').value;
+        let c = parseInt(document.getElementById('sCycle').value) || 4;
+        if(t === 'months') c = 1;
         if(!n || isNaN(p)) return;
-        db.students.push({ id: Date.now(), name: n, price: p, cycle: c, type: t, startDate: d || '2026-01-17', img: img.startsWith('data') ? img : '', financialMap: {}, schedules: [] });
+        db.students.push({ id: Date.now(), name: n, price: p, cycle: c, type: t, startDate: d || '2026-01-01', financialMap: {}, schedules: [] });
         save(); closeAll();
     }
 
@@ -307,9 +263,7 @@
         document.getElementById('editCycle').value = s.cycle;
         document.getElementById('editType').value = s.type;
         document.getElementById('editSDate').value = s.startDate;
-        document.getElementById('editStudentPreview').src = s.img || '';
-        
-        toggleCycleInput('editType', 'editCycleWrapper');
+        toggleCycleInput('editType', 'editCycleWrapperUpdate');
         document.getElementById('editModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
     }
@@ -321,32 +275,21 @@
         s.type = document.getElementById('editType').value;
         s.cycle = (s.type === 'months') ? 1 : parseInt(document.getElementById('editCycle').value);
         s.startDate = document.getElementById('editSDate').value;
-        s.img = document.getElementById('editStudentPreview').src;
         save(); closeAll();
     }
 
     function deleteStudent() { if(confirm('Delete student?')) { db.students = db.students.filter(x => x.id !== currentEditId); save(); closeAll(); } }
-    
     function addSchedule() {
         let id = +document.getElementById('sSelect').value; if(!id) return;
         db.students.find(x => x.id === id).schedules.push({ day: document.getElementById('cDay').value, time: document.getElementById('cTime').value });
         save(); closeAll();
     }
-
     function deleteSlot(sid, idx) { if(confirm('Delete slot?')) { db.students.find(x => x.id === sid).schedules.splice(idx, 1); save(); } }
-    
-    function toggleHoliday(idx) { 
-        if(!db.holidays) db.holidays = [];
-        const hIdx = db.holidays.indexOf(idx); 
-        if(hIdx > -1) db.holidays.splice(hIdx, 1); 
-        else db.holidays.push(idx); 
-        save(); 
-    }
-
+    function toggleHoliday(i) { const hIdx = db.holidays.indexOf(i); if(hIdx > -1) db.holidays.splice(hIdx, 1); else db.holidays.push(i); save(); }
+    function updateTeacherImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { db.teacherImg = e.target.result; save(); render(); }; r.readAsDataURL(i.files[0]); } }
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); render(); }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.add('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(e => e.classList.remove('active')); }
-    function exportPDF() { html2pdf().set({ margin: 5, filename: 'SmartTutor.pdf', jsPDF: { orientation: 'landscape' } }).from(document.getElementById('printable-area')).save(); }
 
     window.onload = init;
 </script>
