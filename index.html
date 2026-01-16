@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Highlight Edition</title>
+    <title>Smart Tutor Pro - Multi-Status Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 90px; --fee-w: 50px;
-            --holiday-bg: #581c87; --accent: #3B82F6;
-            /* ألوان التمييز الجديدة */
-            --pay-bg: #FFFBEB; /* خلفية ذهبية باهتة جداً */
-            --pay-border: #D97706; /* إطار ذهبي غامق */
+            --name-w: 90px;
+            --fee-w: 50px;
+            --holiday-bg: #581c87;
+            --accent: #3B82F6;
         }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; direction: ltr; font-size: 12px; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; direction: ltr; font-size: 12px; }
 
         header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 10px 15px; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(15px);
             position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--gold);
         }
-        .logo-text { font-weight: 900; font-size: 18px; }
+        .logo-text { font-weight: 900; font-size: 18px; letter-spacing: 1px; }
         .logo-text span { color: var(--gold); }
 
         .nav-btns { display: flex; gap: 8px; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 10px; display: flex; align-items: center; gap: 5px; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 10px; display: flex; align-items: center; gap: 5px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3); }
         .pdf-btn { background: #ef4444; color: white; }
 
         .container { padding: 15px; }
@@ -35,64 +35,161 @@
         .profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #334155; border: 2px solid var(--gold); }
         .add-img-btn { position: absolute; bottom: 0; right: 0; background: var(--gold); color: black; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 14px; border: 2px solid var(--bg-dark); z-index: 5; }
 
-        .income-banner { background: linear-gradient(135deg, #FACC15 0%, #EAB308 100%); color: #000; padding: 12px; border-radius: 12px; text-align: center; margin-bottom: 15px; font-weight: 900; font-size: 16px; }
+        .income-banner { background: linear-gradient(135deg, #FACC15 0%, #EAB308 100%); color: #000; padding: 12px; border-radius: 12px; text-align: center; margin-bottom: 15px; font-weight: 900; font-size: 16px; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2); }
+
+        .day-row { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+        .day-label { width: 60px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; background: var(--gold); font-size: 10px; }
+        .slots { flex: 1; display: flex; overflow-x: auto; gap: 8px; padding: 8px; }
+        .slot { flex-shrink: 0; min-width: 100px; background: var(--slate); border: 1px solid rgba(250, 204, 21, 0.2); padding: 6px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .slot:hover { border-color: var(--gold); background: rgba(250, 204, 21, 0.05); }
 
         .acc-table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; color: #1E293B; }
-        .acc-table th { background: #1E293B; color: white; padding: 10px 4px; font-size: 9px; white-space: nowrap; position: sticky; top: 0; z-index: 30; }
+        .acc-table th { background: #1E293B; color: white; padding: 10px 4px; font-size: 9px; white-space: nowrap; position: sticky; top: 0; z-index: 30; cursor: pointer; border-bottom: 1px solid #334155; }
         
+        .holiday-header { background: var(--holiday-bg) !important; color: white !important; }
+        .holiday-cell { background: #f3e8ff !important; }
+
         .sticky-name { 
             position: sticky; left: 0; z-index: 40; background: white !important; 
-            border-right: 1px solid #e2e8f0 !important; width: var(--name-w); min-width: var(--name-w);
-            color: #0F172A; font-weight: 900; font-size: 11px; padding: 10px 6px !important; 
+            border-right: 1px solid #e2e8f0 !important; 
+            width: var(--name-w); min-width: var(--name-w); max-width: var(--name-w);
+            color: #0F172A; font-weight: 900; font-size: 11px;
+            cursor: pointer; padding: 10px 6px !important; 
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .sticky-fee { position: sticky; left: var(--name-w); z-index: 40; background: #f8fafc !important; border-right: 2px solid rgba(0,0,0,0.05) !important; font-weight: 900; width: var(--fee-w); text-align: center; font-size: 10px; }
-
-        /* تجميل المربعات المتميزة */
-        .box { 
-            width: 26px; height: 26px; border-radius: 6px; border: 1px solid #CBD5E1; 
-            background: white; cursor: pointer; display: inline-flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 13px; margin: 0 auto; transition: 0.2s; 
+        .sticky-fee { 
+            position: sticky; left: var(--name-w); z-index: 40; background: #f8fafc !important; 
+            border-right: 2px solid rgba(0,0,0,0.05) !important; 
+            font-weight: 900; width: var(--fee-w); min-width: var(--fee-w); 
+            text-align: center; color: #1e293b; font-size: 10px;
         }
 
-        /* المربع المميز (أسبوع الدفع) */
-        .box.is-pay-week { 
-            background: var(--pay-bg) !important; 
-            border: 2px solid var(--pay-border) !important;
-            box-shadow: inset 0 0 5px rgba(217, 119, 6, 0.2);
+        .box { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #CBD5E1; background: white; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; margin: 0 auto; transition: 0.2s; }
+        .box.is-pay-week { border: 2px solid #B45309; background: #FEF3C7; }
+        .box.status-paid { background: #10b981 !important; color: white; border: none; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); } 
+        .box.status-notpaid { background: #ef4444 !important; color: white; border: none; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); } 
+        
+        tfoot td { background: #f8fafc !important; font-weight: 900; color: #1E293B; text-align: center; padding: 10px 2px; border-top: 2px solid #e2e8f0; position: sticky; bottom: 0; z-index: 30; font-size: 10px; }
+        .footer-label { text-align: right !important; padding-right: 15px !important; color: #0F172A; }
+
+        /* Modern Sidebar & Modal Styling */
+        .sidebar, .modal { 
+            position: fixed; top: 0; left: -110%; width: 320px; height: 100%; 
+            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);
+            z-index: 3000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            padding: 0; color: #1E293B; overflow-y: auto;
+            box-shadow: 20px 0 50px rgba(0,0,0,0.5);
         }
-
-        /* تداخل الحالات مع التميز */
-        .box.status-paid { background: #10b981 !important; color: white !important; border-color: #059669 !important; } 
-        .box.status-notpaid { background: #ef4444 !important; color: white !important; border-color: #dc2626 !important; } 
-
-        tfoot td { background: #f8fafc !important; font-weight: 900; text-align: center; padding: 10px 2px; border-top: 2px solid #e2e8f0; position: sticky; bottom: 0; z-index: 30; }
-
-        /* Sidebar & Modal */
-        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); color: #1E293B; overflow-y: auto; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
         .sidebar.active, .modal.active { left: 0; }
-        .sidebar-head { background: var(--slate); color: white; padding: 25px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); }
+        
+        .sidebar-head {
+            background: var(--slate); color: white; padding: 25px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 4px solid var(--gold);
+        }
+        .sidebar-head h2 { margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+        .back-btn-side { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s; }
+        .back-btn-side:hover { background: var(--gold); color: black; }
+
         .sidebar-body { padding: 25px 20px; }
-        .input-wrap { margin-bottom: 15px; }
-        .input-wrap label { display: block; font-weight: 800; font-size: 10px; color: #64748B; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #F1F5F9; background: #F8FAF9; font-weight: 600; box-sizing: border-box; }
-        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); display:none; z-index:2500; }
+        .input-wrap { margin-bottom: 20px; }
+        .input-wrap label { display: block; font-weight: 800; font-size: 11px; color: #64748B; text-transform: uppercase; margin-bottom: 8px; margin-left: 2px; }
+        
+        input, select { 
+            width: 100%; padding: 12px 15px; border-radius: 10px; border: 2px solid #F1F5F9; 
+            background: #F8FAF9; font-size: 14px; font-weight: 600; box-sizing: border-box;
+            transition: 0.3s; outline: none; color: var(--slate);
+        }
+        input:focus, select:focus { border-color: var(--gold); background: #fff; box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1); }
+
+        .sidebar hr { border: 0; border-top: 2px solid #F1F5F9; margin: 30px 0; }
+
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); display:none; z-index:2500; transition: 0.3s; }
         .overlay.active { display:block; }
+
+        @media print {
+            .no-print, header, .nav-btns, .add-img-btn, .sidebar, .modal, .overlay, #scheduleGrid { display: none !important; }
+            body { background: white; color: black; }
+            .acc-table-wrapper { overflow: visible; box-shadow: none; }
+            .sticky-name, .sticky-fee { position: static !important; background: white !important; border: 1px solid #ddd !important; }
+        }
     </style>
 </head>
 <body>
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-head"><h2>DASHBOARD</h2><button style="background:none; border:1px solid white; color:white; border-radius:20px; padding:5px 10px; cursor:pointer;" onclick="closeAll()">BACK</button></div>
+<div class="modal" id="editModal">
+    <div class="sidebar-head">
+        <h2>EDIT STUDENT</h2>
+        <button class="back-btn-side" onclick="closeAll()">BACK</button>
+    </div>
     <div class="sidebar-body">
-        <div class="input-wrap"><label>Student Name</label><input id="sName"></div>
-        <div class="input-wrap"><label>Fee</label><input id="sPrice" type="number"></div>
-        <div class="input-wrap"><label>Start Date</label><input id="sDate" type="date" value="2026-01-01"></div>
-        <div class="input-wrap"><label>Cycle (Wks)</label><input id="sCycle" type="number" value="4"></div>
-        <button class="action-btn" style="width:100%; background:var(--slate); color:white; padding:15px;" onclick="addStudent()">SAVE STUDENT</button>
+        <div class="input-wrap">
+            <label>Student Name</label>
+            <input id="editName" placeholder="Full Name">
+        </div>
+        <div class="input-wrap">
+            <label>Fee (SR)</label>
+            <input id="editPrice" type="number" placeholder="0.00">
+        </div>
+        <div class="input-wrap">
+            <label>Start Date</label>
+            <input id="editSDate" type="date">
+        </div>
+        <div class="input-wrap">
+            <label>Payment Cycle (Weeks)</label>
+            <input id="editCycle" type="number" placeholder="4">
+        </div>
+        <button class="action-btn" style="width:100%; background:var(--slate); color:white; padding:15px; margin-bottom:12px; font-size:12px;" onclick="updateStudent()">UPDATE STUDENT</button>
+        <button class="action-btn" style="width:100%; background:#fee2e2; color:#dc2626; padding:15px; font-size:12px;" onclick="deleteStudent()">DELETE STUDENT</button>
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+        <h2>DASHBOARD</h2>
+        <button class="back-btn-side" onclick="closeAll()">BACK</button>
+    </div>
+    <div class="sidebar-body">
+        <h3 style="font-size: 14px; font-weight: 900; color: var(--slate); margin-top: 0;">ADD NEW STUDENT</h3>
+        <div class="input-wrap">
+            <label>Student Name</label>
+            <input id="sName" placeholder="Enter student name">
+        </div>
+        <div class="input-wrap">
+            <label>Fee Amount</label>
+            <input id="sPrice" type="number" placeholder="SR 0.00">
+        </div>
+        <div class="input-wrap">
+            <label>Start Date</label>
+            <input id="sDate" type="date" value="2026-01-01">
+        </div>
+        <div class="input-wrap">
+            <label>Billing Cycle (Weeks)</label>
+            <input id="sCycle" type="number" value="4">
+        </div>
+        <button class="action-btn" style="width:100%; background:var(--slate); color:white; padding:15px; font-size:12px;" onclick="addStudent()">SAVE STUDENT</button>
+        
+        <hr>
+        
+        <h3 style="font-size: 14px; font-weight: 900; color: var(--slate);">LINK SCHEDULE</h3>
+        <div class="input-wrap">
+            <label>Select Student</label>
+            <select id="sSelect"></select>
+        </div>
+        <div class="input-wrap">
+            <label>Day of Week</label>
+            <select id="cDay">
+                <option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Mon">Monday</option><option value="Tue">Tuesday</option><option value="Wed">Wednesday</option><option value="Thu">Thursday</option><option value="Fri">Friday</option>
+            </select>
+        </div>
+        <div class="input-wrap">
+            <label>Class Time</label>
+            <input type="time" id="cTime">
+        </div>
+        <button class="action-btn" style="width:100%; background:var(--accent); color:white; padding:15px; font-size:12px;" onclick="addSchedule()">LINK SLOT</button>
     </div>
 </div>
 
@@ -100,6 +197,7 @@
     <div class="logo-text">SMART<span>TUTOR</span></div>
     <div class="nav-btns">
         <button class="action-btn pdf-btn" onclick="exportPDF()">PDF</button>
+        <button class="action-btn" style="background:#E2E8F0;" onclick="window.print()">PRNT</button>
         <button class="action-btn" onclick="toggleSidebar()">MENU</button>
     </div>
 </header>
@@ -108,22 +206,28 @@
     <div class="teacher-box">
         <div class="profile-img-container">
             <img id="teacherImg" class="profile-img" src="https://via.placeholder.com/150">
-            <label class="add-img-btn" for="tFile">+</label>
-            <input type="file" id="tFile" hidden onchange="updateTeacherImg(this)">
+            <label class="add-img-btn no-print" for="tFile">+</label>
+            <input type="file" id="tFile" hidden accept="image/*" onchange="updateTeacherImg(this)">
         </div>
-        <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:bold; outline:none;">
+        <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid rgba(255,255,255,0.2); font-size:16px; width:100%; font-weight:bold; outline:none; padding: 5px;">
     </div>
-    <div class="income-banner">ESTIMATED INCOME: <span id="totalIncome">0</span> SR</div>
+
+    <div class="income-banner">TOTAL ESTIMATED: <span id="totalIncome">0</span> SR</div>
+
+    <div id="scheduleGrid" class="no-print"></div>
+    
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
             <tbody id="accBody"></tbody>
+            <tfoot id="accFooter"></tfoot>
         </table>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('t_pro_v30')) || { students: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
+    let db = JSON.parse(localStorage.getItem('tutor_status_v25')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
+    let currentEditId = null;
 
     function init() {
         document.getElementById('teacherName').value = db.teacherName;
@@ -132,60 +236,111 @@
     }
 
     function render() {
-        const head = document.getElementById('accHeader'), body = document.getElementById('accBody');
+        const grid = document.getElementById('scheduleGrid'), head = document.getElementById('accHeader'), body = document.getElementById('accBody'), foot = document.getElementById('accFooter'), select = document.getElementById('sSelect');
+        grid.innerHTML = ''; select.innerHTML = '<option value="">Select Student</option>';
+
+        const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        days.forEach(d => grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`);
+
         let dates = []; 
-        let dBase = new Date('2026-01-01');
-        for(let i=0; i<25; i++) { dates.push(new Date(dBase)); dBase.setDate(dBase.getDate() + 7); }
+        let dBase = new Date('2026-01-01'); let dEnd = new Date('2026-06-25');
+        while(dBase <= dEnd) { dates.push(new Date(dBase)); dBase.setDate(dBase.getDate() + 7); }
 
         head.innerHTML = '<th class="sticky-name">Student</th><th class="sticky-fee">SR</th>';
-        dates.forEach(d => head.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`);
+        dates.forEach((d, i) => {
+            let isHol = db.holidays.includes(i);
+            head.innerHTML += `<th class="${isHol?'holiday-header':''}" onclick="toggleHoliday(${i})">${d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'})}</th>`;
+        });
 
         body.innerHTML = '';
-        let total = 0;
-        db.students.forEach((s, sIdx) => {
-            total += Number(s.price || 0);
-            let row = `<tr><td class="sticky-name" onclick="deleteStudent(${sIdx})">${s.name}</td><td class="sticky-fee">${s.price}</td>`;
-            dates.forEach((d, dIdx) => {
+        let grandTotal = 0;
+        let weeklyTotals = Array(dates.length).fill(0);
+
+        db.students.forEach(s => {
+            grandTotal += (s.price || 0);
+            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            s.schedules.forEach((sc, idx) => {
+                let target = document.getElementById(`slot-${sc.day}`);
+                if(target) target.innerHTML += `<div class="slot" onclick="deleteSlot(${s.id}, ${idx})"><b>${sc.time}</b><br>${s.name}</div>`;
+            });
+
+            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">${s.name}</td><td class="sticky-fee">${s.price}</td>`;
+            dates.forEach((d, i) => {
+                let isHol = db.holidays.includes(i);
+                let isPay = false;
                 let sStart = new Date(s.startDate);
-                let isPayWeek = false;
-                if (d >= sStart) {
+                if (!isHol && d >= sStart) {
                     let diff = Math.floor((d - sStart) / (1000*60*60*24*7));
-                    if (diff % (s.cycle || 4) === 0) isPayWeek = true;
+                    if (diff % (s.cycle || 4) === 0) { isPay = true; weeklyTotals[i] += s.price; }
                 }
                 
-                let stat = (s.map && s.map[dIdx]) || 0;
-                let content = stat === 1 ? '✓' : (stat === 2 ? '✕' : '');
-                let cls = stat === 1 ? 'status-paid' : (stat === 2 ? 'status-notpaid' : '');
-                let payCls = isPayWeek ? 'is-pay-week' : '';
+                let stat = s.financialMap[i] || 0;
+                let content = ''; let cls = '';
+                if(stat === 1) { content = '✓'; cls = 'status-paid'; }
+                else if(stat === 2) { content = '✕'; cls = 'status-notpaid'; }
 
-                row += `<td><div class="box ${payCls} ${cls}" onclick="cycleStatus(${sIdx},${dIdx})">${content}</div></td>`;
+                row += `<td class="${isHol?'holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${cls}" onclick="cycleStatus(${s.id},${i})">${content}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
         });
-        document.getElementById('totalIncome').innerText = total;
+
+        let fRow = `<tr><td colspan="2" class="sticky-name footer-label">TOTAL:</td>`;
+        weeklyTotals.forEach(v => fRow += `<td>${v > 0 ? v : '-'}</td>`);
+        foot.innerHTML = fRow + '</tr>';
+        document.getElementById('totalIncome').innerText = grandTotal;
     }
 
-    function cycleStatus(sIdx, dIdx) {
-        let s = db.students[sIdx];
-        if(!s.map) s.map = {};
-        s.map[dIdx] = ((s.map[dIdx] || 0) + 1) % 3;
+    function cycleStatus(id, i) {
+        if(db.holidays.includes(i)) return;
+        let s = db.students.find(x => x.id === id);
+        let current = s.financialMap[i] || 0;
+        s.financialMap[i] = (current + 1) % 3;
         save();
     }
 
+    function toggleHoliday(i) { const hIdx = db.holidays.indexOf(i); if(hIdx > -1) db.holidays.splice(hIdx, 1); else db.holidays.push(i); save(); }
     function addStudent() {
-        const n = document.getElementById('sName').value;
-        if(!n) return;
-        db.students.push({ name: n, price: +document.getElementById('sPrice').value, startDate: document.getElementById('sDate').value, cycle: +document.getElementById('sCycle').value, map: {} });
+        if(!document.getElementById('sName').value) return;
+        db.students.push({ id: Date.now(), name: document.getElementById('sName').value, price: +document.getElementById('sPrice').value, startDate: document.getElementById('sDate').value, cycle: +document.getElementById('sCycle').value, financialMap: {}, schedules: [] });
         save(); closeAll();
     }
-
-    function deleteStudent(idx) { if(confirm('Delete?')) { db.students.splice(idx, 1); save(); } }
-    function save() { localStorage.setItem('t_pro_v30', JSON.stringify(db)); render(); }
+    function openEdit(id) {
+        currentEditId = id; let s = db.students.find(x => x.id === id);
+        document.getElementById('editName').value = s.name;
+        document.getElementById('editPrice').value = s.price;
+        document.getElementById('editSDate').value = s.startDate;
+        document.getElementById('editCycle').value = s.cycle || 4;
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+    function updateStudent() {
+        let s = db.students.find(x => x.id === currentEditId);
+        s.name = document.getElementById('editName').value; s.price = +document.getElementById('editPrice').value;
+        s.startDate = document.getElementById('editSDate').value; s.cycle = +document.getElementById('editCycle').value;
+        save(); closeAll();
+    }
+    function deleteStudent() { if(confirm('Delete Student?')) { db.students = db.students.filter(x => x.id !== currentEditId); save(); closeAll(); } }
+    function addSchedule() {
+        let id = +document.getElementById('sSelect').value;
+        if(!id) return;
+        db.students.find(x => x.id === id).schedules.push({ day: document.getElementById('cDay').value, time: document.getElementById('cTime').value });
+        save(); closeAll();
+    }
+    function deleteSlot(sid, idx) { if(confirm('Delete Slot?')) { db.students.find(x => x.id === sid).schedules.splice(idx, 1); save(); } }
+    function updateTeacherImg(input) {
+        if (input.files && input.files[0]) {
+            let r = new FileReader();
+            r.onload = (e) => { db.teacherImg = e.target.result; save(); init(); };
+            r.readAsDataURL(input.files[0]);
+        }
+    }
+    function exportPDF() {
+        const element = document.getElementById('captureArea');
+        html2pdf().set({ margin: 0.2, filename: 'Report.pdf', jsPDF: { orientation: 'landscape' } }).from(element).save();
+    }
+    function save() { localStorage.setItem('tutor_status_v25', JSON.stringify(db)); render(); }
     function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
-    function closeAll() { document.querySelectorAll('.sidebar, .overlay').forEach(el => el.classList.remove('active')); }
-    function updateTeacherImg(input) { if (input.files[0]) { let r = new FileReader(); r.onload = (e) => { db.teacherImg = e.target.result; save(); init(); }; r.readAsDataURL(input.files[0]); } }
-    function exportPDF() { html2pdf().from(document.getElementById('captureArea')).save(); }
-
+    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
     window.onload = init;
 </script>
 </body>
