@@ -9,6 +9,7 @@
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
             --name-w: 160px; --fee-w: 70px;
+            --holiday-bg: #581c87; /* لون العطلة المميز */
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; direction: ltr; font-size: 13px; }
 
@@ -42,8 +43,13 @@
 
         .acc-table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .acc-table { border-collapse: separate; border-spacing: 0; width: 100%; color: #1E293B; }
-        .acc-table th { background: #1E293B; color: white; padding: 12px 5px; font-size: 10px; }
+        .acc-table th { background: #1E293B; color: white; padding: 12px 5px; font-size: 10px; cursor: pointer; }
         
+        /* تنسيق تمييز العطلات */
+        .holiday-header { background: var(--holiday-bg) !important; border-bottom: 2px solid #fff; }
+        .holiday-cell { background: #f3e8ff !important; border: 1px solid #d8b4fe !important; }
+        .holiday-cell .box { background: #e9d5ff !important; border-color: #c084fc !important; cursor: not-allowed; }
+
         .sticky-name { position: sticky; left: 0; z-index: 20; background: inherit !important; border-right: 1px solid #ddd !important; min-width: var(--name-w); display: flex; align-items: center; gap: 8px; padding: 5px 10px !important; }
         .row-student-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--gold); background: #eee; }
         .sticky-fee { position: sticky; left: var(--name-w); z-index: 20; background: inherit !important; border-right: 3px solid rgba(0,0,0,0.1) !important; font-weight: 900; min-width: var(--fee-w); text-align: center; }
@@ -87,8 +93,14 @@
     <input type="file" id="editSFile" hidden accept="image/*" onchange="previewImg(this, 'editStudentPreview')">
     <input id="editName" placeholder="Name">
     <input id="editPrice" type="number" placeholder="Fee">
-    <select id="editType"><option value="weeks">Weekly</option><option value="months">Monthly</option></select>
-    <input id="editCycle" type="number" placeholder="Cycle Count">
+    <select id="editType" onchange="toggleCycleInput('editType', 'editCycleWrapper')">
+        <option value="weeks">Weekly</option>
+        <option value="months">Monthly</option>
+    </select>
+    <div id="editCycleWrapper">
+        <label style="font-size: 11px; color: #64748b;">Cycle (Every X weeks)</label>
+        <input id="editCycle" type="number" placeholder="Cycle Count">
+    </div>
     <input id="editSDate" type="date">
     <button class="primary-btn" onclick="updateStudent()">Save Changes</button>
     <button class="primary-btn" style="background:#ef4444;" onclick="deleteStudent()">Delete Student</button>
@@ -106,8 +118,13 @@
         <input type="file" id="sFile" hidden accept="image/*" onchange="previewImg(this, 'newStudentPreview')">
         <input id="sName" placeholder="Name">
         <input id="sPrice" type="number" placeholder="Fee">
-        <select id="sType"><option value="weeks">Weekly</option><option value="months">Monthly</option></select>
-        <input id="sCycle" type="number" value="4" placeholder="Cycle Count">
+        <select id="sType" onchange="toggleCycleInput('sType', 'sCycleWrapper')">
+            <option value="weeks">Weekly</option>
+            <option value="months">Monthly</option>
+        </select>
+        <div id="sCycleWrapper">
+            <input id="sCycle" type="number" value="4" placeholder="Cycle Count (Weeks)">
+        </div>
         <input id="sDate" type="date">
         <button class="primary-btn" onclick="addStudent()">Add Student</button>
     </div>
@@ -167,6 +184,13 @@
         render();
     }
 
+    // تبديل ظهور حقل السايكل بناءً على نوع الحساب
+    function toggleCycleInput(selectId, wrapperId) {
+        const type = document.getElementById(selectId).value;
+        const wrapper = document.getElementById(wrapperId);
+        wrapper.style.display = (type === 'months') ? 'none' : 'block';
+    }
+
     function previewImg(input, previewId) {
         if (input.files && input.files[0]) {
             let reader = new FileReader();
@@ -196,7 +220,10 @@
         for(let i=0; i<12; i++) { dates.push(new Date(startBase)); startBase.setDate(startBase.getDate()+7); }
 
         header.innerHTML = '<th class="sticky-name">Student</th><th class="sticky-fee">Fees</th>';
-        dates.forEach((d, i) => header.innerHTML += `<th onclick="toggleHoliday(${i})">${d.toLocaleDateString('en-GB',{day:'2-digit', month:'2-digit'})}</th>`);
+        dates.forEach((d, i) => {
+            const isH = db.holidays.includes(i);
+            header.innerHTML += `<th class="${isH ? 'holiday-header' : ''}" onclick="toggleHoliday(${i})">${d.toLocaleDateString('en-GB',{day:'2-digit', month:'2-digit'})}</th>`;
+        });
 
         body.innerHTML = '';
         let grandTotal = 0;
@@ -222,8 +249,16 @@
                         let diffWeeks = Math.floor((d - sStart) / (7 * 24 * 60 * 60 * 1000));
                         if (diffWeeks % s.cycle === 0) isPay = true;
                     } else {
-                        let diffMonths = (d.getFullYear() - sStart.getFullYear()) * 12 + (d.getMonth() - sStart.getMonth());
-                        if (diffMonths % s.cycle === 0 && d.getDate() >= sStart.getDate() && d.getDate() < sStart.getDate() + 7) isPay = true;
+                        // منطق الحساب الشهري الذكي:
+                        // إذا كان اليوم في هذا الأسبوع هو نفس يوم الشهر الذي بدأ فيه الطالب، أو مر عليه أقل من 7 أيام (أي يقع في نطاق هذا الأسبوع)
+                        let targetDay = sStart.getDate();
+                        let currentMonthDate = new Date(d.getFullYear(), d.getMonth(), targetDay);
+                        
+                        // حساب المسافة بين يوم السبت في هذا العمود وبين يوم الاستحقاق الشهري
+                        let diffDays = (d - currentMonthDate) / (24 * 60 * 60 * 1000);
+                        
+                        // إذا كان يوم الاستحقاق يقع ضمن هذا الأسبوع (من السبت للجمعة)
+                        if (diffDays >= 0 && diffDays < 7) isPay = true;
                     }
                 }
 
@@ -231,7 +266,7 @@
                 let status = s.financialMap[i] || 0;
                 let cls = isHol ? 'holiday-cell' : (isPay ? 'is-pay-week' : '');
                 if(status == 1) cls = 'pay-paid'; else if(status == 2) cls = 'pay-unpaid'; else if(status == 3) cls = 'state-attended';
-                row += `<td><div class="box ${cls}" onclick="toggleBox(${s.id},${i})">${status==1?'OK':status==2?'!!':status==3?'✔':''}</div></td>`;
+                row += `<td class="${isHol ? 'holiday-cell' : ''}"><div class="box ${cls}" onclick="toggleBox(${s.id},${i})">${status==1?'OK':status==2?'!!':status==3?'✔':''}</div></td>`;
             });
             body.innerHTML += row + '</tr>';
         });
@@ -243,13 +278,23 @@
     }
 
     function toggleBox(id, i) {
+        if(db.holidays.includes(i)) return; // منع التعديل في أسابيع العطلة
         let s = db.students.find(x => x.id === id);
+        if(!s.financialMap) s.financialMap = {};
         s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 4;
         save();
     }
 
     function addStudent() {
-        const n = document.getElementById('sName').value, p = parseFloat(document.getElementById('sPrice').value), c = parseInt(document.getElementById('sCycle').value), t = document.getElementById('sType').value, d = document.getElementById('sDate').value, img = document.getElementById('newStudentPreview').src;
+        const n = document.getElementById('sName').value, 
+              p = parseFloat(document.getElementById('sPrice').value), 
+              t = document.getElementById('sType').value, 
+              d = document.getElementById('sDate').value, 
+              img = document.getElementById('newStudentPreview').src;
+        
+        let c = parseInt(document.getElementById('sCycle').value);
+        if(t === 'months') c = 1; // السايكل الشهري افتراضيا 1
+
         if(!n || isNaN(p)) return;
         db.students.push({ id: Date.now(), name: n, price: p, cycle: c, type: t, startDate: d || '2026-01-17', img: img.startsWith('data') ? img : '', financialMap: {}, schedules: [] });
         save(); closeAll();
@@ -263,6 +308,8 @@
         document.getElementById('editType').value = s.type;
         document.getElementById('editSDate').value = s.startDate;
         document.getElementById('editStudentPreview').src = s.img || '';
+        
+        toggleCycleInput('editType', 'editCycleWrapper');
         document.getElementById('editModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
     }
@@ -271,8 +318,8 @@
         let s = db.students.find(x => x.id === currentEditId);
         s.name = document.getElementById('editName').value;
         s.price = parseFloat(document.getElementById('editPrice').value);
-        s.cycle = parseInt(document.getElementById('editCycle').value);
         s.type = document.getElementById('editType').value;
+        s.cycle = (s.type === 'months') ? 1 : parseInt(document.getElementById('editCycle').value);
         s.startDate = document.getElementById('editSDate').value;
         s.img = document.getElementById('editStudentPreview').src;
         save(); closeAll();
@@ -287,7 +334,15 @@
     }
 
     function deleteSlot(sid, idx) { if(confirm('Delete slot?')) { db.students.find(x => x.id === sid).schedules.splice(idx, 1); save(); } }
-    function toggleHoliday(idx) { const hIdx = db.holidays.indexOf(idx); if(hIdx > -1) db.holidays.splice(hIdx, 1); else db.holidays.push(idx); save(); }
+    
+    function toggleHoliday(idx) { 
+        if(!db.holidays) db.holidays = [];
+        const hIdx = db.holidays.indexOf(idx); 
+        if(hIdx > -1) db.holidays.splice(hIdx, 1); 
+        else db.holidays.push(idx); 
+        save(); 
+    }
+
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); render(); }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.add('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(e => e.classList.remove('active')); }
