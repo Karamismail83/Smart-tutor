@@ -24,6 +24,7 @@
         .nav-btns { display: flex; gap: 8px; }
         .action-btn { background: #E2E8F0; color: #0F172A; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 11px; }
         .menu-btn { background: var(--gold); color: #000; }
+        .print-btn { background: #64748B; color: white; }
 
         .container { padding: 20px; }
         
@@ -63,7 +64,14 @@
         input, select, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: bold; font-family: inherit; }
         .primary-btn { background: #1E293B; color: white; border: none; cursor: pointer; }
 
-        @media print { .no-print { display: none !important; } .acc-table-wrapper { overflow: visible !important; } .sticky-name, .sticky-fee { position: static !important; } }
+        @media print { 
+            .no-print { display: none !important; } 
+            .acc-table-wrapper { overflow: visible !important; } 
+            .sticky-name, .sticky-fee { position: static !important; } 
+            body { background: white !important; color: black !important; }
+            .container { padding: 0; }
+            header { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -115,6 +123,7 @@
 <header>
     <div class="logo-area"><div class="logo-text">SMART<span>TUTOR</span></div></div>
     <div class="nav-btns no-print">
+        <button class="action-btn print-btn" onclick="window.print()">PRINT</button>
         <button class="action-btn" onclick="exportPDF()">PDF</button>
         <button class="action-btn menu-btn" onclick="toggleSidebar()">+ MENU</button>
     </div>
