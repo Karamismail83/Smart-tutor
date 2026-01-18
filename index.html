@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - No Plus Icon</title>
+    <title>Smart Tutor - Redo Restored</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -38,17 +38,17 @@
         .status-paid { background: #10b981 !important; color: white; border: none; }
         .status-notpaid { background: #ef4444 !important; color: white; border: none; }
 
-        .color-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
-        .color-radio { display: none; }
-        .color-circle { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; position: relative; }
-        .color-radio:checked + .color-circle::after { content: ''; position: absolute; inset: -4px; border: 2px solid var(--primary); border-radius: 50%; }
-
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 310px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         input, select { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-family: inherit; }
         .period-item { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+
+        .color-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        .color-radio { display: none; }
+        .color-circle { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; position: relative; }
+        .color-radio:checked + .color-circle::after { content: ''; position: absolute; inset: -4px; border: 2px solid var(--primary); border-radius: 50%; }
 
         @media print {
             @page { size: landscape; margin: 8mm; }
@@ -87,6 +87,7 @@
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="window.print()">PRINT</button>
         <button class="action-btn" onclick="undo()">↩</button>
+        <button class="action-btn" onclick="redo()">↪</button>
         <button class="action-btn" onclick="toggleSidebar()">ADD</button>
     </div>
 </header>
@@ -113,12 +114,14 @@
 
 <script>
     const PALETTE = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#6366f1', '#F06292', '#BA68C8', '#4DD0E1', '#81C784', '#FF8A65'];
-    let db = JSON.parse(localStorage.getItem('tutor_v130_final')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
-    let historyStack = [];
+    let db = JSON.parse(localStorage.getItem('tutor_v140_redo')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
+    let historyStack = [], redoStack = [];
 
-    function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
-    function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(false); } }
-    function save(isNew = true) { localStorage.setItem('tutor_v130_final', JSON.stringify(db)); render(); }
+    function commitChange() { historyStack.push(JSON.stringify(db)); redoStack = []; save(); }
+    function undo() { if (historyStack.length) { redoStack.push(JSON.stringify(db)); db = JSON.parse(historyStack.pop()); save(false); } }
+    function redo() { if (redoStack.length) { historyStack.push(JSON.stringify(db)); db = JSON.parse(redoStack.pop()); save(false); } }
+    
+    function save(isNew = true) { localStorage.setItem('tutor_v140_redo', JSON.stringify(db)); render(); }
 
     function formatTimeClean(t) { 
         if(!t) return ""; 
@@ -146,9 +149,7 @@
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`);
         
-        db.students.forEach(s => {
-            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-        });
+        db.students.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
         let allSchedules = [];
         db.students.forEach(s => {
