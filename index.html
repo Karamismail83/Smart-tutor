@@ -3,88 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Redo Restored</title>
+    <title>Smart Tutor - Holiday Shift Edition</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 115px; --box-s: 32px; --primary: #6366f1;
+            --name-w: 115px; --box-s: 32px;
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; }
         .container { padding: 10px; }
 
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
-        .profile-img-container { position: relative; width: 50px; height: 50px; flex-shrink: 0; cursor: pointer; }
-        .profile-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; background: #334155; }
+        .profile-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; background: #334155; cursor: pointer; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; overflow: hidden; }
         .day-label { width: 45px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; }
         .slots { flex: 1; display: flex; gap: 5px; padding: 5px; overflow-x: auto; }
-        .slot { flex-shrink: 0; min-width: 80px; background: var(--slate); padding: 5px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: white; }
+        .slot { flex-shrink: 0; min-width: 80px; padding: 5px; border-radius: 5px; text-align: center; color: white; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 6px 4px; }
-        .acc-table th { background: #1E293B; color: white; font-size: 9px; }
+        .acc-table th { background: #1E293B; color: white; font-size: 9px; cursor: pointer; }
         
-        .sticky-name { position: sticky; left: 0; z-index: 100; background: white !important; width: var(--name-w); font-weight: 900; color: #1E293B; cursor: pointer; border-right: 2px solid #ddd !important; text-align: left !important; padding-left: 12px !important; }
+        .holiday-col { background: #cbd5e1 !important; color: #94a3b8 !important; }
+        .holiday-col .box { opacity: 0.1; pointer-events: none; }
+        .sticky-name { position: sticky; left: 0; z-index: 100; background: white !important; width: var(--name-w); font-weight: 900; color: #1E293B; border-right: 2px solid #ddd !important; text-align: left !important; padding-left: 12px !important; }
 
-        .total-row { background: #f1f5f9; font-weight: bold; color: #1e293b; }
-        .total-row td { border-bottom: 2px solid #cbd5e1 !important; }
-
+        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
+        .total-row td { background: var(--gold) !important; font-size: 11px; }
+        
         .box { width: var(--box-s); height: var(--box-s); border-radius: 6px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .is-pay-week { border: 3px solid #b45309 !important; background: #fef3c7 !important; }
+        .is-pay-week { border: 2.5px solid #b45309 !important; background: #fef3c7 !important; }
         .status-paid { background: #10b981 !important; color: white; border: none; }
         .status-notpaid { background: #ef4444 !important; color: white; border: none; }
 
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 310px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .active { left: 0 !important; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; backdrop-filter: blur(3px); }
         .overlay.active { display: block; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-family: inherit; }
-        .period-item { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
-
-        .color-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
-        .color-radio { display: none; }
-        .color-circle { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; position: relative; }
-        .color-radio:checked + .color-circle::after { content: ''; position: absolute; inset: -4px; border: 2px solid var(--primary); border-radius: 50%; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; }
+        .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
 
         @media print {
-            @page { size: landscape; margin: 8mm; }
-            body { background: white !important; color: black !important; }
-            .no-print, header, .action-btn, .sidebar, .overlay, .modal { display: none !important; }
-            .sticky-name { position: static !important; }
+            @page { size: landscape; margin: 5mm; }
+            header, .action-btn, .sidebar, .overlay, .modal { display: none !important; }
         }
     </style>
 </head>
 <body>
+
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
 
 <div class="sidebar" id="sidebar">
-    <div id="sidebarContent">
-        <h2 style="margin-top:0">Control Panel ⚙️</h2>
-        <h3>New Student</h3>
-        <input id="sName" placeholder="Name">
-        <label style="font-size:10px; font-weight:800; color:#64748b">THEME COLOR</label>
-        <div class="color-grid" id="colorGrid"></div>
-        <input id="sPrice" type="number" placeholder="Fee Amount">
-        <input id="sDate" type="date" value="2026-01-18">
-        <input id="sCycle" type="number" value="4">
-        <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
-        <hr style="opacity:0.2; margin:20px 0">
-        <h3>Link Schedule</h3>
-        <select id="sSelect"></select>
-        <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
-        <input type="time" id="cTime">
-        <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
-    </div>
+    <h2 style="margin-top:0">Settings ⚙️</h2>
+    <h3>New Student</h3>
+    <input id="sName" placeholder="Name">
+    <input id="sPrice" type="number" placeholder="Fee">
+    <input id="sDate" type="date" value="2026-01-18">
+    <input id="sCycle" type="number" value="4" placeholder="Cycle">
+    <div id="palette" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:15px"></div>
+    <button class="action-btn" style="width:100%" onclick="addStudent()">Add Student</button>
+    <hr style="opacity:0.1; margin:15px 0">
+    <select id="sSelect"></select>
+    <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
+    <input type="time" id="cTime">
+    <button class="action-btn" style="width:100%; background:#4285F4; color:white" onclick="addSchedule()">Save Time</button>
 </div>
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-    <div style="display: flex; gap: 5px;">
+    <div>
         <button class="action-btn" onclick="window.print()">PRINT</button>
         <button class="action-btn" onclick="undo()">↩</button>
         <button class="action-btn" onclick="redo()">↪</button>
@@ -94,15 +85,10 @@
 
 <div class="container">
     <div class="teacher-box">
-        <label class="profile-img-container" for="tFile">
-            <img id="teacherImg" class="profile-img" src="https://via.placeholder.com/150">
-            <input type="file" id="tFile" hidden accept="image/*" onchange="updateTeacherImg(this)">
-        </label>
-        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:14px; width:100%; font-weight:bold; outline:none;">
+        <label for="tFile"><img id="teacherImg" class="profile-img" src="https://via.placeholder.com/150"><input type="file" id="tFile" hidden onchange="updateTeacherImg(this)"></label>
+        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:bold; outline:none; margin-left:10px">
     </div>
-
     <div id="scheduleGrid"></div>
-
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
@@ -113,157 +99,98 @@
 </div>
 
 <script>
-    const PALETTE = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#6366f1', '#F06292', '#BA68C8', '#4DD0E1', '#81C784', '#FF8A65'];
-    let db = JSON.parse(localStorage.getItem('tutor_v140_redo')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
+    const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#8e44ad', '#e67e22', '#1abc9c', '#2c3e50', '#000000', '#f472b6'];
+    let chosenColor = colors[0];
+    let db = JSON.parse(localStorage.getItem('tutor_shift_v8')) || { students: [], holidays: [], teacherName: '', teacherImg: 'https://via.placeholder.com/150' };
     let historyStack = [], redoStack = [];
 
-    function commitChange() { historyStack.push(JSON.stringify(db)); redoStack = []; save(); }
-    function undo() { if (historyStack.length) { redoStack.push(JSON.stringify(db)); db = JSON.parse(historyStack.pop()); save(false); } }
-    function redo() { if (redoStack.length) { historyStack.push(JSON.stringify(db)); db = JSON.parse(redoStack.pop()); save(false); } }
-    
-    function save(isNew = true) { localStorage.setItem('tutor_v140_redo', JSON.stringify(db)); render(); }
-
-    function formatTimeClean(t) { 
-        if(!t) return ""; 
-        let [h, m] = t.split(':'); 
-        let hours = parseInt(h) % 12 || 12; 
-        return hours + ":" + m;
+    function renderPalette() {
+        document.getElementById('palette').innerHTML = colors.map(c => `<div style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:${chosenColor===c?'2px solid white':'2px solid transparent'}" onclick="chosenColor='${c}';renderPalette()"></div>`).join('');
     }
 
-    function initColors(id, name, sel = PALETTE[0]) {
-        document.getElementById(id).innerHTML = PALETTE.map(c => `
-            <label><input type="radio" name="${name}" value="${c}" class="color-radio" ${c===sel?'checked':''}>
-            <div class="color-circle" style="background:${c}"></div></label>`).join('');
+    function commitChange() { historyStack.push(JSON.stringify(db)); redoStack = []; save(); }
+    function save() { localStorage.setItem('tutor_shift_v8', JSON.stringify(db)); render(); }
+    function undo() { if(historyStack.length) { redoStack.push(JSON.stringify(db)); db = JSON.parse(historyStack.pop()); save(); } }
+    function redo() { if(redoStack.length) { historyStack.push(JSON.stringify(db)); db = JSON.parse(redoStack.pop()); save(); } }
+
+    function format12h(t) {
+        if(!t) return '--:--';
+        let [h, m] = t.split(':'); h = parseInt(h) % 12 || 12;
+        return `${h}:${m}`;
     }
 
     function render() {
-        const grid = document.getElementById('scheduleGrid'), body = document.getElementById('accBody'), 
-              totalHeader = document.getElementById('accTotalHeader'), select = document.getElementById('sSelect');
-        
-        grid.innerHTML = ''; select.innerHTML = '<option value="">Student</option>';
-        initColors('colorGrid', 'sColor');
-
-        document.getElementById('teacherName').value = db.teacherName || '';
-        document.getElementById('teacherImg').src = db.teacherImg || 'https://via.placeholder.com/150';
+        const body = document.getElementById('accBody'), totalH = document.getElementById('accTotalHeader'), select = document.getElementById('sSelect');
+        document.getElementById('scheduleGrid').innerHTML = ''; 
+        select.innerHTML = '<option value="">Student...</option>';
+        document.getElementById('teacherImg').src = db.teacherImg;
+        document.getElementById('teacherName').value = db.teacherName;
 
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        days.forEach(d => grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`);
-        
-        db.students.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        days.forEach(d => document.getElementById('scheduleGrid').innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`);
 
-        let allSchedules = [];
         db.students.forEach(s => {
+            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
             s.schedules?.forEach((sc, idx) => {
-                allSchedules.push({ ...sc, studentName: s.name, color: s.color, studentId: s.id, scheduleIdx: idx });
+                let t = document.getElementById(`slot-${sc.day}`);
+                if(t) t.innerHTML += `<div class="slot" style="background:${s.color}" onclick="deleteSlot(${s.id}, ${idx})">${format12h(sc.time)}<br>${s.name}</div>`;
             });
         });
 
-        allSchedules.sort((a, b) => a.time.localeCompare(b.time));
-        allSchedules.forEach(sc => {
-            let t = document.getElementById(`slot-${sc.day}`);
-            if(t) t.innerHTML += `<div class="slot" style="background:${sc.color}" onclick="deleteSlot(${sc.studentId}, ${sc.scheduleIdx})"><b>${formatTimeClean(sc.time)}</b><br>${sc.studentName}</div>`;
-        });
-
-        let dates = []; 
-        let dBase = new Date('2026-01-17'), dEnd = new Date('2026-06-25');
-        while(dBase <= dEnd) {
-            let thu = new Date(dBase); thu.setDate(dBase.getDate() + 5); 
-            if(thu <= dEnd) dates.push(new Date(thu));
-            dBase.setDate(dBase.getDate() + 7);
-        }
+        let dates = []; let dBase = new Date('2026-01-17');
+        for(let i=0; i<24; i++){ let thu = new Date(dBase); thu.setDate(dBase.getDate()+5); dates.push(new Date(thu)); dBase.setDate(dBase.getDate()+7); }
         
-        let weeklyIncomeMap = Array(dates.length).fill(0);
-        let bodyHtml = '';
-
-        db.students.forEach(s => {
+        let weeklyIncome = Array(dates.length).fill(0);
+        
+        body.innerHTML = db.students.map(s => {
             let lastP = s.periods[s.periods.length-1];
-            let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">
-                <span style="color:${s.color}">${s.name}</span><br>
-                <small style="color:#64748b">${lastP.price}</small></td>`;
+            let rowHtml = `<tr><td class="sticky-name" onclick="openEdit(${s.id})"><span style="color:${s.color}">${s.name}</span><br><small>${lastP.price}</small></td>`;
             
             dates.forEach((d, i) => {
                 let isHol = db.holidays.includes(i), isPay = false;
                 let activeP = [...s.periods].reverse().find(p => d >= new Date(p.startDate));
+                
                 if (activeP && !isHol) {
-                    let sStart = new Date(activeP.startDate);
-                    let hCount = db.holidays.filter(hIdx => dates[hIdx] >= sStart && dates[hIdx] <= d).length;
-                    let totalW = Math.floor((d - sStart) / 604800000);
-                    if ((totalW - hCount) >= 0 && (totalW - hCount) % activeP.cycle === 0) { isPay = true; weeklyIncomeMap[i] += Number(activeP.price); }
+                    // Holiday Shifting Logic: Count holidays occurred since student started
+                    let holsBefore = db.holidays.filter(hIdx => hIdx < i && dates[hIdx] >= new Date(activeP.startDate)).length;
+                    let diffWeeks = Math.floor((d - new Date(activeP.startDate)) / 604800000);
+                    let adjustedWeeks = diffWeeks - holsBefore;
+
+                    if (adjustedWeeks >= 0 && adjustedWeeks % activeP.cycle === 0) {
+                        isPay = true;
+                        weeklyIncome[i] += Number(activeP.price);
+                    }
                 }
-                let stat = s.financialMap[i] || 0;
-                row += `<td class="${isHol?'holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${stat===1?'status-paid':stat===2?'status-notpaid':''}" onclick="cycleStatus(${s.id},${i})">${stat===1?'✓':stat===2?'✕':''}</div></td>`;
+                
+                let stat = s.finMap?.[i] || 0;
+                rowHtml += `<td class="${isHol?'holiday-col':''}"><div class="box ${isPay?'is-pay-week':''} ${stat===1?'status-paid':stat===2?'status-notpaid':''}" onclick="cycleStatus(${s.id},${i})">${stat===1?'✓':stat===2?'✕':''}</div></td>`;
             });
-            bodyHtml += row + '</tr>';
-        });
+            return rowHtml + '</tr>';
+        }).join('');
 
-        body.innerHTML = bodyHtml;
-        document.getElementById('accHeader').innerHTML = `<th class="sticky-name">CLASS LIST</th>` + dates.map((d, i) => `<th onclick="toggleHoliday(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
-        totalHeader.innerHTML = `<tr class="total-row"><td class="sticky-name">WEEK TOTAL</td>` + weeklyIncomeMap.map(val => `<td>${val || '-'}</td>`).join('') + `</tr>`;
+        document.getElementById('accHeader').innerHTML = `<th class="sticky-name">STUDENTS</th>` + dates.map((d, i) => `<th class="${db.holidays.includes(i)?'holiday-col':''}" onclick="toggleHol(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
+        totalH.innerHTML = `<tr class="total-row"><td class="sticky-name">TOTAL</td>` + weeklyIncome.map((v, i) => `<td class="${db.holidays.includes(i)?'holiday-col':''}">${v || '-'}</td>`).join('') + `</tr>`;
     }
 
-    function addStudent() {
-        let n = document.getElementById('sName').value, p = document.getElementById('sPrice').value, d = document.getElementById('sDate').value, c = document.getElementById('sCycle').value;
-        let col = document.querySelector('input[name="sColor"]:checked').value;
-        if(!n || !p) return;
-        commitChange();
-        let newId = Date.now();
-        db.students.push({ id: newId, name: n, color: col, financialMap: {}, schedules: [], periods: [{ startDate: d, price: Number(p), cycle: Number(c) }] });
-        save();
-        document.getElementById('sSelect').value = newId;
-    }
-
+    function toggleHol(i) { commitChange(); let idx=db.holidays.indexOf(i); if(idx>-1) db.holidays.splice(idx,1); else db.holidays.push(i); save(); }
+    function cycleStatus(id, i) { commitChange(); let s=db.students.find(x=>x.id===id); if(!s.finMap) s.finMap={}; s.finMap[i]=((s.finMap[i]||0)+1)%3; save(); }
+    function addStudent() { let n=document.getElementById('sName').value, p=document.getElementById('sPrice').value; if(!n||!p)return; commitChange(); db.students.push({id:Date.now(), name:n, color:chosenColor, schedules:[], finMap:{}, periods:[{startDate:document.getElementById('sDate').value, price:Number(p), cycle:Number(document.getElementById('sCycle').value)}]}); save(); }
+    function addSchedule() { let id=Number(document.getElementById('sSelect').value); if(!id)return; commitChange(); let s=db.students.find(x=>x.id===id); s.schedules.push({day:document.getElementById('cDay').value, time:document.getElementById('cTime').value}); save(); }
+    function deleteSlot(sid, idx) { if(confirm('Delete Session?')){ commitChange(); db.students.find(x=>x.id===sid).schedules.splice(idx,1); save(); } }
     function openEdit(id) {
         let s = db.students.find(x => x.id === id);
         let fields = document.getElementById('editFields');
-        let periodsHtml = s.periods.map((p, idx) => `
-            <div class="period-item">
-                <label>Start Date</label><input type="date" id="psd-${idx}" value="${p.startDate}">
-                <label>Fee</label><input type="number" id="pp-${idx}" value="${p.price}">
-                <label>Cycle</label><input type="number" id="pc-${idx}" value="${p.cycle}">
-            </div>`).join('');
-
-        fields.innerHTML = `<h3>Edit Student</h3>
-            <input id="en" value="${s.name}">
-            <div class="color-grid" id="editColorGrid"></div>
-            ${periodsHtml}
-            <button class="action-btn" style="width:100%; background:#3b82f6; color:white; margin-bottom:10px" onclick="addNewPeriod(${id})">+ New Period</button>
-            <button class="action-btn" style="width:100%" onclick="updateS(${id})">Save All</button>
-            <button class="action-btn" style="width:100%; background:red; color:white; margin-top:10px" onclick="delS(${id})">Delete</button>`;
-        
-        initColors('editColorGrid', 'eColor', s.color);
+        let phtml = s.periods.map((p, idx) => `<div class="period-card">Start: <input type="date" id="psd-${idx}" value="${p.startDate}"> Price: <input type="number" id="pp-${idx}" value="${p.price}"> Cycle: <input type="number" id="pc-${idx}" value="${p.cycle}"></div>`).join('');
+        fields.innerHTML = `<h3>Edit ${s.name}</h3><input id="en" value="${s.name}">${phtml}<button class="action-btn" onclick="addPField(${id})">+ New Period</button><button class="action-btn" onclick="updateS(${id})">Save</button><button class="action-btn" style="background:red;color:white;margin-top:10px" onclick="delS(${id})">Delete</button>`;
         document.getElementById('editModal').classList.add('active'); document.getElementById('overlay').classList.add('active');
     }
-
-    function addNewPeriod(id) {
-        let s = db.students.find(x => x.id === id);
-        let last = s.periods[s.periods.length-1];
-        s.periods.push({ startDate: '', price: last.price, cycle: last.cycle });
-        openEdit(id);
-    }
-
-    function updateS(id) {
-        commitChange();
-        let s = db.students.find(x => x.id === id);
-        s.name = document.getElementById('en').value;
-        s.color = document.querySelector('input[name="eColor"]:checked').value;
-        s.periods.forEach((p, idx) => {
-            p.startDate = document.getElementById(`psd-${idx}`).value;
-            p.price = Number(document.getElementById(`pp-${idx}`).value);
-            p.cycle = Number(document.getElementById(`pc-${idx}`).value);
-        });
-        closeAll();
-    }
-
-    function delS(id) { if(confirm('Delete?')) { commitChange(); db.students=db.students.filter(x=>x.id!==id); closeAll(); } }
-    function cycleStatus(id, i) { commitChange(); let s=db.students.find(x=>x.id===id); s.financialMap[i]=((s.financialMap[i]||0)+1)%3; save(false); }
-    function toggleHoliday(i) { commitChange(); let idx=db.holidays.indexOf(i); if(idx>-1) db.holidays.splice(idx,1); else db.holidays.push(i); save(false); }
-    function addSchedule() { let id=Number(document.getElementById('sSelect').value); if(!id) return; commitChange(); db.students.find(x=>x.id===id).schedules.push({day:document.getElementById('cDay').value, time:document.getElementById('cTime').value}); save(false); }
-    function deleteSlot(sid, idx) { if(confirm('Delete slot?')) { commitChange(); db.students.find(x=>x.id===sid).schedules.splice(idx,1); save(false); } }
+    function addPField(id) { let s=db.students.find(x=>x.id===id); s.periods.push({startDate:'2026-01-18', price:0, cycle:4}); openEdit(id); }
+    function updateS(id) { commitChange(); let s=db.students.find(x=>x.id===id); s.name=document.getElementById('en').value; s.periods.forEach((p, idx)=>{ p.startDate=document.getElementById(`psd-${idx}`).value; p.price=Number(document.getElementById(`pp-${idx}`).value); p.cycle=Number(document.getElementById(`pc-${idx}`).value); }); closeAll(); save(); }
+    function delS(id) { if(confirm('Delete Student?')){ commitChange(); db.students=db.students.filter(x=>x.id!==id); save(); closeAll(); } }
     function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
-    function updateTeacherImg(input) { if (input.files && input.files[0]) { let r = new FileReader(); r.onload = (e) => { commitChange(); db.teacherImg = e.target.result; save(false); }; r.readAsDataURL(input.files[0]); } }
-    
-    window.onload = render;
+    function updateTeacherImg(input) { if (input.files && input.files[0]) { let r=new FileReader(); r.onload=(e)=>{ commitChange(); db.teacherImg=e.target.result; save(); }; r.readAsDataURL(input.files[0]); } }
+    window.onload = () => { renderPalette(); render(); };
 </script>
 </body>
 </html>
