@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor Pro - Full Edit Edition</title>
+    <title>Smart Tutor Pro - Student Fees Total</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 110px; --box-s: 32px;
+            --name-w: 115px; --box-s: 32px;
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
@@ -26,7 +26,7 @@
         .slots { flex: 1; display: flex; gap: 5px; padding: 5px; overflow-x: auto; }
         .slot { flex-shrink: 0; min-width: 75px; background: var(--slate); padding: 5px; border-radius: 5px; text-align: center; border: 1px solid rgba(250,204,21,0.2); cursor: pointer; }
         
-        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; }
+        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 6px 4px; }
         .acc-table th { background: #1E293B; color: white; font-size: 9px; }
@@ -40,20 +40,26 @@
         .holiday-cell { background: #f3e8ff !important; }
         .holiday-header { background: #581c87 !important; color: white !important; }
 
-        /* UI */
+        @media print {
+            @page { size: landscape; margin: 10mm; }
+            .no-print, header, .sidebar, .modal, .overlay, .add-img-btn, #undoBtn, #redoBtn { display: none !important; }
+            body { background: white; color: black; }
+            .container { padding: 0; }
+            .teacher-box { border: 1px solid #ddd; background: #f8fafc; color: black; }
+            #teacherName { color: black !important; border: none !important; }
+            .day-row { background: #eee; border: 1px solid #ccc; page-break-inside: avoid; }
+            .slot { background: white; color: black; border: 1px solid #ccc; }
+            .sticky-name { position: static !important; border: 1px solid #e2e8f0 !important; }
+            .acc-table th { background: #334155 !important; }
+            .gold-txt { color: #b45309 !important; }
+        }
+        .gold-txt { color: var(--gold); font-weight: 900; }
+
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 300px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         input, select { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; }
-        .edit-card { background: #f9fafb; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; }
-
-        @media print {
-            @page { size: landscape; }
-            .no-print, header, .sidebar, .modal, .overlay { display: none !important; }
-            body { background: white; color: black; }
-            .sticky-name { position: static !important; border: 1px solid #e2e8f0 !important; }
-        }
     </style>
 </head>
 <body>
@@ -78,6 +84,7 @@
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
+        <button class="action-btn" onclick="window.print()">PRINT 🖨️</button>
         <button class="action-btn" id="undoBtn" onclick="undo()">↩️</button>
         <button class="action-btn" id="redoBtn" onclick="redo()">↪️</button>
         <button class="action-btn no-print" onclick="toggleSidebar()">MENU</button>
@@ -94,7 +101,7 @@
         <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name" style="background:transparent; color:white; border:none; border-bottom:1px solid #444; font-size:14px; width:100%; font-weight:bold; outline:none;">
     </div>
 
-    <div id="scheduleGrid" class="no-print"></div>
+    <div id="scheduleGrid"></div>
 
     <div class="acc-table-wrapper">
         <table class="acc-table">
@@ -145,9 +152,8 @@
         if(!t) return ""; 
         let [h, m] = t.split(':'); 
         h = parseInt(h);
-        let suffix = "PM"; // بناءً على تعليماتك باستخدام PM دائماً
         h = h % 12 || 12; 
-        return h + ":" + m + " " + suffix; 
+        return h + ":" + m; 
     }
 
     function render() {
@@ -167,12 +173,9 @@
             dBase.setDate(dBase.getDate() + 7);
         }
         
-        // تعديل الهيدر ليحوي خانة واحدة مدمجة للاسم والسعر
-        head.innerHTML = `<th class="sticky-name">Student (SR)</th>`;
-        dates.forEach((d, i) => head.innerHTML += `<th class="${db.holidays.includes(i)?'holiday-header':''}" onclick="toggleHoliday(${i})">${d.getDate()}/${d.getMonth()+1}</th>`);
-        
         body.innerHTML = ''; let weeklyIncome = Array(dates.length).fill(0);
-        
+        let feesSum = 0; // مجموع رسوم الطلاب
+
         db.students.forEach(s => {
             select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
             s.schedules?.forEach((sc, idx) => {
@@ -184,8 +187,8 @@
             s.periods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
             
             let lastP = s.periods[s.periods.length-1];
-            
-            // وضع السعر تحت الاسم في نفس الخلية
+            feesSum += Number(lastP.price); // إضافة سعر اشتراك الطالب للمجموع
+
             let row = `<tr><td class="sticky-name" onclick="openEdit(${s.id})">
                 <div style="line-height:1.2">${s.name}</div>
                 <div style="color:#64748b; font-size:9px; margin-top:2px">${lastP.price} SR</div>
@@ -202,7 +205,8 @@
                     }).length;
                     let totalW = Math.floor((d - sStart) / 604800000);
                     if ((totalW - hCount) >= 0 && (totalW - hCount) % activeP.cycle === 0) {
-                        isPay = true; weeklyIncome[i] += Number(activeP.price);
+                        isPay = true; 
+                        weeklyIncome[i] += Number(activeP.price);
                     }
                 }
                 let stat = s.financialMap[i] || 0, cls = stat===1?'status-paid':(stat===2?'status-notpaid':'');
@@ -211,8 +215,14 @@
             body.innerHTML += row + '</tr>';
         });
 
-        // تعديل colspan الفوتر ليكون 1 بدلاً من 2
-        let fRow = `<tr><td colspan="1">TOTAL:</td>`;
+        // الهيدر يعرض مجموع الرسوم الحالية لجميع الطلاب
+        head.innerHTML = `<th class="sticky-name" style="background:#1e293b !important; color:white;">
+            <span class="gold-txt">TOTAL</span><br>
+            <span style="font-size:10px">${feesSum} SR</span>
+        </th>`;
+        dates.forEach((d, i) => head.innerHTML += `<th class="${db.holidays.includes(i)?'holiday-header':''}" onclick="toggleHoliday(${i})">${d.getDate()}/${d.getMonth()+1}</th>`);
+
+        let fRow = `<tr><td class="sticky-name" style="background:#f1f5f9 !important">WEEKLY:</td>`;
         dates.forEach((_, i) => fRow += `<td>${weeklyIncome[i] > 0 ? weeklyIncome[i] : '-'}</td>`);
         foot.innerHTML = fRow + '</tr>';
     }
@@ -229,7 +239,7 @@
         let s = db.students.find(x => x.id === id);
         let html = `<h3>Edit Student</h3><label>Full Name</label><input id="en" value="${s.name}">`;
         s.periods.forEach((p, idx) => {
-            html += `<div class="edit-card">
+            html += `<div class="edit-card" style="background:#f9fafb; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #eee;">
                 <strong>Period ${idx+1}</strong><br>
                 <label>Start Date</label><input type="date" id="psd-${idx}" value="${p.startDate}">
                 <label>Price (SR)</label><input type="number" id="pp-${idx}" value="${p.price}">
