@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Advanced Periods</title>
+    <title>Smart Tutor - Colors Update</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -101,7 +101,9 @@
 </div>
 
 <script>
-    const PALETTE = ['#7F1D1D', '#7C2D12', '#78350F', '#365314', '#14532D', '#065F46', '#164E63', '#1E40AF', '#3730A3', '#581C87', '#701A75', '#171717'];
+    // --- باليتة الألوان المحدثة ---
+    const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
+    
     let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '' };
     let historyStack = [];
 
@@ -162,8 +164,8 @@
                     let eff = totalWeeks - hCount;
                     if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price); }
                 }
-                let st = s.financialMap[i] || 0;
-                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st==1?'status-paid':st==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':(st==1?'✓':st==2?'✕':'')}</div></td>`;
+                let st_val = s.financialMap[i] || 0;
+                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':(st_val==1?'✓':st_val==2?'✕':'')}</div></td>`;
             });
             return row + '</tr>';
         }).join('');
@@ -188,7 +190,6 @@
     }
     function addSchedule() { let id = Number(document.getElementById('sSelect').value), d = document.getElementById('cDay').value, t = document.getElementById('cTime').value; if(!id) return; commitChange(); db.students.find(x => x.id === id).schedules.push({ day: d, time: t }); save(); closeAll(); }
 
-    // --- نافذة التعديل مع الدورات المتعددة ---
     function openEdit(id) {
         const s = db.students.find(x => x.id === id);
         let phtml = s.periods.map((p, idx) => `
@@ -227,7 +228,6 @@
         let s = db.students.find(x => x.id === id);
         s.name = document.getElementById('en').value;
         s.color = document.getElementById('hidden_ecg').value;
-        
         let newPeriods = [];
         document.querySelectorAll('.period-card').forEach(card => {
             newPeriods.push({
@@ -236,9 +236,7 @@
                 cycle: Number(card.querySelector('.p-cycle').value)
             });
         });
-        // ترتيب الدورات حسب التاريخ لضمان دقة الحسابات
         s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
-        
         save(); closeAll();
     }
 
