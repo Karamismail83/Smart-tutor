@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Colors Update</title>
+    <title>Smart Tutor - Sorted Schedule</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
             --name-w: 100px; --box-s: 24px; --primary: #6366f1;
             --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
         }
+        @media print { @page { size: landscape; } }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
         .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; }
@@ -22,8 +23,8 @@
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 40px; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .slots { flex: 1; display: flex; gap: 3px; padding: 4px; overflow: hidden; align-items: center; }
-        .slot { flex: 1; min-width: 0; background: var(--slate); padding: 4px 2px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .slots { flex: 1; display: flex; gap: 3px; padding: 4px; overflow-x: auto; align-items: center; }
+        .slot { flex: 0 0 auto; min-width: 70px; background: var(--slate); padding: 4px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: pointer; }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
@@ -64,9 +65,9 @@
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date" value="2026-01-18">
     <input id="sCycle" type="number" value="4">
-    <button class="action-btn" style="width:100%" onclick="addStudent()">Save</button>
+    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
-    <h3>Add Slot</h3>
+    <h3>Add Slot (Session)</h3>
     <select id="sSelect"></select>
     <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
     <select id="cTime"></select>
@@ -101,9 +102,7 @@
 </div>
 
 <script>
-    // --- باليتة الألوان المحدثة ---
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
-    
     let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '' };
     let historyStack = [];
 
@@ -113,7 +112,7 @@
         for(let h = 10; h <= 22; h++){
             for(let m of [0, 15, 30, 45]){
                 if(h === 22 && m > 0) continue;
-                let hh = h <= 12 ? h : h - 12;
+                let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
                 let mm = m.toString().padStart(2, '0');
                 let ampm = h < 12 ? 'AM' : 'PM';
                 let t = `${hh}:${mm} ${ampm}`;
@@ -122,6 +121,16 @@
                 sel.appendChild(o);
             }
         }
+    }
+
+    // دالة تحويل الوقت لرقم من أجل الترتيب
+    function timeToMinutes(t) {
+        if (!t) return 0;
+        let [time, ampm] = t.split(' ');
+        let [hrs, mins] = time.split(':').map(Number);
+        if (ampm === 'PM' && hrs !== 12) hrs += 12;
+        if (ampm === 'AM' && hrs === 12) hrs = 0;
+        return hrs * 60 + mins;
     }
 
     function save() { localStorage.setItem('tutor_v360', JSON.stringify(db)); render(); }
@@ -133,19 +142,36 @@
               totalH = document.getElementById('accTotalHeader'), sSelect = document.getElementById('sSelect');
         grid.innerHTML = ''; sSelect.innerHTML = '<option value="">Select Student</option>';
         document.getElementById('teacherName').value = db.teacherName || '';
+        
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`; });
         
+        // تجميع الحصص وترتيبها زمنياً قبل العرض
+        let allSchedules = [];
         db.students.forEach(s => {
             sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            s.schedules?.forEach((sc, idx) => {
-                let div = document.createElement('div'); div.className = 'slot'; div.style.background = s.color;
-                div.innerHTML = `<b>${sc.time}</b><br>${s.name}`;
-                div.onclick = () => { if(confirm('Del?')) { commitChange(); s.schedules.splice(idx,1); save(); } };
-                document.getElementById(`slot-${sc.day}`)?.appendChild(div);
+            s.schedules?.forEach(sc => {
+                allSchedules.push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id });
             });
         });
 
+        allSchedules.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+        allSchedules.forEach(sc => {
+            let div = document.createElement('div'); div.className = 'slot'; div.style.background = sc.studentColor;
+            div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}`;
+            div.onclick = () => { 
+                if(confirm('Delete this slot?')) { 
+                    commitChange(); 
+                    let parent = db.students.find(x => x.id === sc.studentId);
+                    parent.schedules = parent.schedules.filter(s => !(s.day === sc.day && s.time === sc.time));
+                    save(); 
+                } 
+            };
+            document.getElementById(`slot-${sc.day}`)?.appendChild(div);
+        });
+
+        // الحسابات المالية
         let dates = []; let dBase = new Date('2026-01-17');
         for(let i=0; i<24; i++){ let thu = new Date(dBase); thu.setDate(dBase.getDate()+5); dates.push(new Date(thu)); dBase.setDate(dBase.getDate()+7); }
         let income = Array(dates.length).fill(0);
@@ -196,7 +222,7 @@
             <div class="period-card">
                 <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
                 <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks</label><input type="number" class="p-cycle" value="${p.cycle}">
+                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
@@ -207,7 +233,7 @@
             <hr>
             <h4>Billing Periods</h4>
             <div id="editPeriods">${phtml}</div>
-            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add New Price/Period</button>
+            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
             <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
         `;
@@ -219,7 +245,7 @@
     function addNewPeriod() {
         const div = document.createElement('div');
         div.className = 'period-card';
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="2026-01-18"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="2026-01-18"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
@@ -240,7 +266,7 @@
         save(); closeAll();
     }
 
-    function del(id) { if(confirm('Del?')) { commitChange(); db.students = db.students.filter(x => x.id !== id); save(); closeAll(); } }
+    function del(id) { if(confirm('Delete student and all their records?')) { commitChange(); db.students = db.students.filter(x => x.id !== id); save(); closeAll(); } }
 
     async function loadPhoto() { let d = await openPhotoDB(); let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; }
     function openPhotoDB() { return new Promise((res) => { let req = indexedDB.open("SmartTutorPhotoDB", 1); req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); req.onsuccess = (e) => res(e.target.result); }); }
