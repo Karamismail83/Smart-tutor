@@ -56,123 +56,25 @@
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
-        /* ========================================================= */
-        /*   تنسيقات الطباعة الاحترافية العرضية (A4 Landscape)          */
-        /* ========================================================= */
         @media print {
-            @page {
-                size: A4 landscape;
-                margin: 5mm;
-            }
-            html, body {
-                background: #ffffff !important;
-                color: #000000 !important;
-                font-family: Arial, sans-serif !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            
-            header, .sidebar, .modal, .overlay, .action-btn {
-                display: none !important;
-            }
-
-            .container {
-                padding: 0 !important;
-                width: 100% !important;
-            }
-            
-            .teacher-box {
-                background: #f8fafc !important;
-                border: 2px solid #0f172a !important;
-                border-radius: 6px !important;
-                padding: 6px 12px !important;
-                margin-bottom: 8px !important;
-                box-shadow: none !important;
-            }
-            #teacherName {
-                color: #0f172a !important;
-                border-bottom: 2px solid #0f172a !important;
-                font-size: 16px !important;
-                font-weight: bold !important;
-            }
-            
-            .day-row {
-                background: #f8fafc !important;
-                border: 1px solid #94a3b8 !important;
-                margin-bottom: 2px !important;
-                min-height: 32px !important;
-                align-items: center !important;
-                page-break-inside: avoid;
-            }
-            .day-label {
-                background: #0f172a !important;
-                color: #ffffff !important;
-                font-size: 9px !important;
-                width: 35px !important;
-            }
-            .slots {
-                padding: 2px 4px !important;
-                gap: 3px !important;
-                min-height: 30px !important;
-                align-items: center !important;
-            }
-            .slot {
-                border: 1px solid #334155 !important;
-                color: #ffffff !important;
-                font-size: 8px !important;
-                padding: 2px 4px !important;
-                min-width: 60px !important;
-                box-shadow: none !important;
-            }
-
-            .acc-table-wrapper {
-                background: transparent !important;
-                box-shadow: none !important;
-                border: 1px solid #64748b !important;
-                margin-top: 8px !important;
-                overflow: visible !important;
-                page-break-inside: avoid;
-            }
-            .acc-table {
-                width: 100% !important;
-                table-layout: fixed !important;
-            }
-            .acc-table th {
-                background: #0f172a !important;
-                color: #ffffff !important;
-                font-size: 7.5px !important;
-                padding: 2px 1px !important;
-            }
-            .acc-table td {
-                border: 1px solid #cbd5e1 !important;
-                padding: 1px !important;
-            }
-            .sticky-name {
-                color: #ffffff !important;
-                border-right: 2px solid #0f172a !important;
-                font-size: 8.5px !important;
-                padding-left: 4px !important;
-                width: 80px !important;
-            }
-            .box {
-                width: 18px !important;
-                height: 18px !important;
-                font-size: 10px !important;
-                border: 1px solid #64748b !important;
-            }
-            .total-row {
-                background: #f1f5f9 !important;
-                color: #000000 !important;
-                font-size: 8px !important;
-            }
-            .grand-total-cell {
-                background: #0f172a !important;
-                color: #ffffff !important;
-                font-size: 9px !important;
-            }
+            @page { size: A4 landscape; margin: 5mm; }
+            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            header, .sidebar, .modal, .overlay, .action-btn { display: none !important; }
+            .container { padding: 0 !important; width: 100% !important; }
+            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
+            #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
+            .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
+            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
+            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
+            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 8px !important; padding: 2px 4px !important; min-width: 60px !important; box-shadow: none !important; }
+            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
+            .acc-table { width: 100% !important; table-layout: fixed !important; }
+            .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
+            .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
+            .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 80px !important; }
+            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
+            .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
+            .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
         }
     </style>
 </head>
@@ -436,6 +338,11 @@
             let div = document.createElement('div'); 
             div.className = 'slot'; 
             div.style.background = sc.studentColor;
+            
+            if (sc.offset) {
+                div.style.marginLeft = `${sc.offset}px`;
+            }
+
             div.draggable = true;
             div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
             setupTouchDrag(div, sc.studentId, sc.day, sc.time);
@@ -488,6 +395,9 @@
         let student = db.students.find(s => s.id === studentId);
         if (!student) return;
 
+        let slot = student.schedules.find(s => s.day === currentDay && s.time === currentTime);
+        let currentOffset = slot?.offset || 0;
+
         let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
 
@@ -502,6 +412,9 @@
             <label>Time</label>
             <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
 
+            <label>Horizontal Offset (px)</label>
+            <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
+
             <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
             <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
         `;
@@ -513,6 +426,7 @@
     function updateSlot(studentId, oldDay, oldTime) {
         let newDay = document.getElementById('editSlotDay').value;
         let newTime = document.getElementById('editSlotTime').value;
+        let newOffset = Number(document.getElementById('editSlotOffset').value) || 0;
 
         commitChange();
         let student = db.students.find(s => s.id === studentId);
@@ -521,6 +435,7 @@
             if (slot) {
                 slot.day = newDay;
                 slot.time = newTime;
+                slot.offset = newOffset;
                 save();
             }
         }
@@ -557,7 +472,7 @@
         save(); closeAll();
     }
     
-    function addSchedule() { let id = Number(document.getElementById('sSelect').value), d = document.getElementById('cDay').value, t = document.getElementById('cTime').value; if(!id) return; commitChange(); db.students.find(x => x.id === id).schedules.push({ day: d, time: t }); save(); closeAll(); }
+    function addSchedule() { let id = Number(document.getElementById('sSelect').value), d = document.getElementById('cDay').value, t = document.getElementById('cTime').value; if(!id) return; commitChange(); db.students.find(x => x.id === id).schedules.push({ day: d, time: t, offset: 0 }); save(); closeAll(); }
 
     function openEdit(id) {
         const s = db.students.find(x => x.id === id);
