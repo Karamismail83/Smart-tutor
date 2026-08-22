@@ -59,6 +59,9 @@
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
+    <h3>Course Start Date 📅</h3>
+    <input id="courseBaseDate" type="date" onchange="updateCourseBaseDate(this.value)">
+    <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
@@ -103,7 +106,7 @@
 
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
-    let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '' };
+    let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '', courseStartDate: '2026-01-17' };
     let historyStack = [];
 
     function initLessonTimes() {
@@ -123,7 +126,6 @@
         }
     }
 
-    // دالة تحويل الوقت لرقم من أجل الترتيب
     function timeToMinutes(t) {
         if (!t) return 0;
         let [time, ampm] = t.split(' ');
@@ -137,16 +139,24 @@
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
     function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
 
+    function updateCourseBaseDate(newDate) {
+        if(!newDate) return;
+        commitChange();
+        db.courseStartDate = newDate;
+        save();
+    }
+
     function render() {
         const grid = document.getElementById('scheduleGrid'), body = document.getElementById('accBody'), 
               totalH = document.getElementById('accTotalHeader'), sSelect = document.getElementById('sSelect');
         grid.innerHTML = ''; sSelect.innerHTML = '<option value="">Select Student</option>';
         document.getElementById('teacherName').value = db.teacherName || '';
+        document.getElementById('courseBaseDate').value = db.courseStartDate || '2026-01-17';
+        document.getElementById('sDate').value = db.courseStartDate || '2026-01-17';
         
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`; });
         
-        // تجميع الحصص وترتيبها زمنياً قبل العرض
         let allSchedules = [];
         db.students.forEach(s => {
             sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
@@ -171,9 +181,17 @@
             document.getElementById(`slot-${sc.day}`)?.appendChild(div);
         });
 
-        // الحسابات المالية
-        let dates = []; let dBase = new Date('2026-01-17');
-        for(let i=0; i<24; i++){ let thu = new Date(dBase); thu.setDate(dBase.getDate()+5); dates.push(new Date(thu)); dBase.setDate(dBase.getDate()+7); }
+        let dates = []; 
+        let startDateVal = db.courseStartDate || '2026-01-17';
+        let dBase = new Date(startDateVal);
+        
+        for(let i=0; i<24; i++){ 
+            let thu = new Date(dBase); 
+            thu.setDate(dBase.getDate()+5); 
+            dates.push(new Date(thu)); 
+            dBase.setDate(dBase.getDate()+7); 
+        }
+        
         let income = Array(dates.length).fill(0);
         let grandTotal = db.students.reduce((acc, s) => acc + (s.periods[s.periods.length-1].price || 0), 0);
 
@@ -245,7 +263,8 @@
     function addNewPeriod() {
         const div = document.createElement('div');
         div.className = 'period-card';
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="2026-01-18"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        let defaultDate = db.courseStartDate || '2026-01-17';
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
