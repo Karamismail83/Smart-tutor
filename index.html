@@ -21,12 +21,12 @@
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
-        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 40px; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .slots { flex: 1; display: flex; gap: 4px; padding: 4px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 38px; }
+        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; }
+        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        .slots { flex: 1; display: flex; gap: 6px; padding: 6px 8px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: grab; user-select: none; touch-action: none; position: relative; z-index: 10; }
+        .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 9.5px; cursor: grab; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
         
@@ -75,7 +75,6 @@
                 padding: 0 !important;
             }
             
-            /* إخفاء الواجهات الإضافية تماماً */
             header, .sidebar, .modal, .overlay, .action-btn {
                 display: none !important;
             }
@@ -85,7 +84,6 @@
                 width: 100% !important;
             }
             
-            /* كارت اسم المعلم في رأس الورقة */
             .teacher-box {
                 background: #f8fafc !important;
                 border: 2px solid #0f172a !important;
@@ -101,12 +99,12 @@
                 font-weight: bold !important;
             }
             
-            /* جدول الأيام والمواعيد */
             .day-row {
                 background: #f8fafc !important;
                 border: 1px solid #94a3b8 !important;
                 margin-bottom: 2px !important;
-                min-height: 28px !important;
+                min-height: 32px !important;
+                align-items: center !important;
                 page-break-inside: avoid;
             }
             .day-label {
@@ -116,9 +114,10 @@
                 width: 35px !important;
             }
             .slots {
-                padding: 2px !important;
-                gap: 2px !important;
-                min-height: 26px !important;
+                padding: 2px 4px !important;
+                gap: 3px !important;
+                min-height: 30px !important;
+                align-items: center !important;
             }
             .slot {
                 border: 1px solid #334155 !important;
@@ -129,7 +128,6 @@
                 box-shadow: none !important;
             }
 
-            /* الجدول المالي */
             .acc-table-wrapper {
                 background: transparent !important;
                 box-shadow: none !important;
