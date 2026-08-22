@@ -57,94 +57,123 @@
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
         /* ========================================================= */
-        /*   تحسينات الطباعة والتصدير الاحترافي بملف الـ PDF           */
+        /*   تنسيقات الطباعة الاحترافية العرضية (A4 Landscape)          */
         /* ========================================================= */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 8mm;
+                margin: 5mm;
             }
-            body {
+            html, body {
                 background: #ffffff !important;
                 color: #000000 !important;
                 font-family: Arial, sans-serif !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-            }
-            header, .sidebar, .modal, .overlay, .action-btn {
-                display: none !important;
-            }
-            .container {
+                width: 100% !important;
+                margin: 0 !important;
                 padding: 0 !important;
             }
             
-            /* رأس الصفحة في التقرير المطبوع */
+            /* إخفاء الواجهات الإضافية تماماً */
+            header, .sidebar, .modal, .overlay, .action-btn {
+                display: none !important;
+            }
+
+            .container {
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            /* كارت اسم المعلم في رأس الورقة */
             .teacher-box {
                 background: #f8fafc !important;
                 border: 2px solid #0f172a !important;
-                border-radius: 8px !important;
-                padding: 8px 12px !important;
-                margin-bottom: 12px !important;
+                border-radius: 6px !important;
+                padding: 6px 12px !important;
+                margin-bottom: 8px !important;
+                box-shadow: none !important;
             }
             #teacherName {
                 color: #0f172a !important;
                 border-bottom: 2px solid #0f172a !important;
-                font-size: 18px !important;
+                font-size: 16px !important;
+                font-weight: bold !important;
             }
             
-            /* تنسيق جدول الأيام والمواعيد */
+            /* جدول الأيام والمواعيد */
             .day-row {
-                background: #f1f5f9 !important;
-                border: 1px solid #cbd5e1 !important;
-                margin-bottom: 3px !important;
+                background: #f8fafc !important;
+                border: 1px solid #94a3b8 !important;
+                margin-bottom: 2px !important;
+                min-height: 28px !important;
                 page-break-inside: avoid;
             }
             .day-label {
                 background: #0f172a !important;
                 color: #ffffff !important;
-                font-size: 10px !important;
+                font-size: 9px !important;
+                width: 35px !important;
+            }
+            .slots {
+                padding: 2px !important;
+                gap: 2px !important;
+                min-height: 26px !important;
             }
             .slot {
-                border: 1px solid #475569 !important;
+                border: 1px solid #334155 !important;
                 color: #ffffff !important;
                 font-size: 8px !important;
-                padding: 3px !important;
+                padding: 2px 4px !important;
+                min-width: 60px !important;
                 box-shadow: none !important;
             }
 
-            /* تنسيق جدول المتابعة المالية */
+            /* الجدول المالي */
             .acc-table-wrapper {
+                background: transparent !important;
                 box-shadow: none !important;
-                border: 1px solid #94a3b8 !important;
-                margin-top: 10px !important;
+                border: 1px solid #64748b !important;
+                margin-top: 8px !important;
+                overflow: visible !important;
                 page-break-inside: avoid;
             }
             .acc-table {
                 width: 100% !important;
+                table-layout: fixed !important;
             }
             .acc-table th {
                 background: #0f172a !important;
                 color: #ffffff !important;
-                font-size: 8px !important;
+                font-size: 7.5px !important;
+                padding: 2px 1px !important;
             }
             .acc-table td {
                 border: 1px solid #cbd5e1 !important;
-                padding: 2px !important;
+                padding: 1px !important;
             }
             .sticky-name {
                 color: #ffffff !important;
                 border-right: 2px solid #0f172a !important;
+                font-size: 8.5px !important;
+                padding-left: 4px !important;
+                width: 80px !important;
             }
             .box {
+                width: 18px !important;
+                height: 18px !important;
+                font-size: 10px !important;
                 border: 1px solid #64748b !important;
             }
             .total-row {
-                background: #e2e8f0 !important;
+                background: #f1f5f9 !important;
                 color: #000000 !important;
+                font-size: 8px !important;
             }
             .grand-total-cell {
                 background: #0f172a !important;
                 color: #ffffff !important;
+                font-size: 9px !important;
             }
         }
     </style>
