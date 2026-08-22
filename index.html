@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Sorted Schedule</title>
+    <title>Smart Tutor - Fixed Schedule Application</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -17,7 +17,7 @@
         .container { padding: 10px; }
 
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
-        .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; }
+        .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
@@ -26,7 +26,6 @@
         .slots { flex: 1; display: flex; gap: 3px; padding: 4px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 38px; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        /* تحسينات خانة الموعد القابلة للسحب */
         .slot { flex: 0 0 auto; min-width: 70px; background: var(--slate); padding: 4px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: grab; user-select: none; touch-action: none; position: relative; z-index: 10; }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
@@ -39,10 +38,10 @@
         .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
         .sticky-name { position: sticky; left: 0; z-index: 100; width: var(--name-w); font-weight: 900; cursor: pointer; border-right: 2px solid #ddd !important; text-align: left !important; padding-left: 8px !important; color: white !important; }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: black; }
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: black; cursor: pointer; }
         .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; }
-        .status-notpaid { background: #fee2e2 !important; }
+        .status-paid { background: #d1fae5 !important; color: #047857; }
+        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
         
         .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
         .is-holiday-cell { background: var(--holiday-bg) !important; }
@@ -52,7 +51,7 @@
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         
-        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
@@ -99,8 +98,8 @@
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
-        <button class="action-btn" onclick="undo()">↩</button>
-        <button class="action-btn" onclick="toggleSidebar()">ADD</button>
+        <button class="action-btn" onclick="undo()">↩️ UNDO</button>
+        <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
 </header>
 
@@ -130,6 +129,7 @@
 
     function initLessonTimes() {
         const sel = document.getElementById('cTime');
+        if (!sel) return;
         sel.innerHTML = '';
         for(let h = 10; h <= 22; h++){
             for(let m of [0, 15, 30, 45]){
@@ -207,7 +207,6 @@
         }
     }
 
-    // --- آليات نقل وسحب الموعد من صف لآخر ---
     function moveSlot(studentId, fromDay, time, targetDay) {
         if (!targetDay || fromDay === targetDay) return;
         commitChange();
@@ -221,7 +220,6 @@
         }
     }
 
-    // أجهزة الكمبيوتر (Mouse Drag)
     function handleDragStart(e, studentId, day, time) {
         draggedData = { studentId, day, time };
         e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
@@ -245,7 +243,6 @@
         }
     }
 
-    // الهواتف الذكية (Touch Drag)
     function setupTouchDrag(el, studentId, day, time) {
         let isDragging = false;
 
@@ -284,9 +281,16 @@
     }
 
     function render() {
-        const grid = document.getElementById('scheduleGrid'), body = document.getElementById('accBody'), 
-              totalH = document.getElementById('accTotalHeader'), sSelect = document.getElementById('sSelect');
-        grid.innerHTML = ''; sSelect.innerHTML = '<option value="">Select Student</option>';
+        const grid = document.getElementById('scheduleGrid');
+        const body = document.getElementById('accBody');
+        const totalH = document.getElementById('accTotalHeader');
+        const sSelect = document.getElementById('sSelect');
+        
+        if (!grid || !body || !totalH || !sSelect) return;
+
+        grid.innerHTML = ''; 
+        sSelect.innerHTML = '<option value="">Select Student</option>';
+        
         document.getElementById('teacherName').value = db.teacherName || '';
         document.getElementById('courseBaseDate').value = db.courseStartDate || '2026-01-17';
         document.getElementById('sDate').value = db.courseStartDate || '2026-01-17';
@@ -354,7 +358,8 @@
                     if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price); }
                 }
                 let st_val = s.financialMap[i] || 0;
-                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':(st_val==1?'✓':st_val==2?'✕':'')}</div></td>`;
+                let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : '');
+                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
             });
             return row + '</tr>';
         }).join('');
@@ -368,7 +373,13 @@
     function st(id, i) { commitChange(); let s=db.students.find(x=>x.id===id); s.financialMap[i]=((s.financialMap[i]||0)+1)%3; save(); }
     function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
-    function initColors(id, radioName, sel = PALETTE[0]) { document.getElementById(id).innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`; }
+    
+    function initColors(id, radioName, sel = PALETTE[0]) { 
+        const target = document.getElementById(id);
+        if(!target) return;
+        target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`; 
+    }
+    
     function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
     
     function addStudent() { 
@@ -377,6 +388,7 @@
         db.students.push({ id: Date.now(), name: n, color: col, financialMap: {}, schedules: [], periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value), cycle: Number(document.getElementById('sCycle').value) }] }); 
         save(); closeAll();
     }
+    
     function addSchedule() { let id = Number(document.getElementById('sSelect').value), d = document.getElementById('cDay').value, t = document.getElementById('cTime').value; if(!id) return; commitChange(); db.students.find(x => x.id === id).schedules.push({ day: d, time: t }); save(); closeAll(); }
 
     function openEdit(id) {
