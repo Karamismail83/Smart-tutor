@@ -21,12 +21,14 @@
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
-        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; }
+        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-        .slots { flex: 1; display: flex; gap: 6px; padding: 6px 8px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
+        
+        .slots { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 9.5px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        /* جعل خانات المواعيد أكنز وأضيق مع تصغير الخط والحشو الداخلي */
+        .slot { flex: 0 0 auto; min-width: 58px; background: var(--slate); padding: 3px 5px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 8.5px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
         
@@ -65,8 +67,8 @@
             #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
             .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
             .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
-            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
-            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 8px !important; padding: 2px 4px !important; min-width: 60px !important; box-shadow: none !important; }
+            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; flex-wrap: wrap !important; }
+            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 3px !important; min-width: 50px !important; box-shadow: none !important; }
             .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
             .acc-table { width: 100% !important; table-layout: fixed !important; }
             .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
