@@ -27,8 +27,6 @@
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
         .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 9.5px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .slot:active { cursor: grabbing; }
-        .slot.dragging { opacity: 0.3; transform: scale(0.95); }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
@@ -47,6 +45,10 @@
         .is-holiday-cell { background: var(--holiday-bg) !important; }
 
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        /* نافذة منبثقة واسعة خاصة للجدول المؤقت */
+        .modal.wide-modal { width: 95%; max-width: 900px; left: 50%; transform: translateX(-50%); top: 5%; height: 90vh; border-radius: 12px; display: none; }
+        .modal.wide-modal.active { display: block; left: 50%; }
+
         .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
@@ -55,32 +57,24 @@
         .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
-
-        @media print {
-            @page { size: A4 landscape; margin: 5mm; }
-            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            header, .sidebar, .modal, .overlay, .action-btn { display: none !important; }
-            .container { padding: 0 !important; width: 100% !important; }
-            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
-            #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
-            .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
-            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
-            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
-            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 8px !important; padding: 2px 4px !important; min-width: 60px !important; box-shadow: none !important; }
-            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
-            .acc-table { width: 100% !important; table-layout: fixed !important; }
-            .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
-            .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
-            .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 80px !important; }
-            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
-            .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
-            .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
-        }
     </style>
 </head>
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
+
+<!-- نافذة الجدول المؤقت المطابق -->
+<div class="modal wide-modal" id="tempScheduleModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px; margin-bottom:15px;">
+        <h3 style="margin:0; color:#0f172a;">📋 نسخة مطابقة مؤقتة للجدول</h3>
+        <div>
+            <button class="action-btn" style="background:#10b981; color:white;" onclick="saveTempAsMain()">اعتماد كجدول رئيسي 💾</button>
+            <button class="action-btn" style="background:#ef4444; color:white;" onclick="closeAll()">إغلاق ✕</button>
+        </div>
+    </div>
+    <p style="font-size:11px; color:#64748b; margin-top:0;">هذه نسخة طبق الأصل من جدولك الحالي. يمكنك التعديل عليها بحرية مؤقتاً:</p>
+    <div id="tempScheduleContent" style="max-height: calc(100vh - 160px); overflow-y: auto; background:#0f172a; padding:10px; border-radius:8px;"></div>
+</div>
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
@@ -120,7 +114,8 @@
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
-        <button class="action-btn" style="background:#10b981; color:white;" onclick="openTempManager()">📋 المواعيد المؤقتة (نسخ وتعديل)</button>
+        <!-- الزر الجديد المطلوب بجانب زر الإضافة -->
+        <button class="action-btn" style="background:#3b82f6; color:white;" onclick="openTempCloneModal()">📋 جدول مؤقت</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
 </header>
@@ -146,11 +141,10 @@
 
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
-    let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '', courseStartDate: '2026-01-17', tempSchedules: [] };
-    if (!db.tempSchedules) db.tempSchedules = [];
+    let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '', courseStartDate: '2026-01-17' };
+    let tempDb = null; // نسخة مؤقتة للجدول
 
     let historyStack = [];
-    let draggedData = null;
 
     function getTimeOptionsHTML(selectedTime = '') {
         let html = '';
@@ -223,7 +217,6 @@
                     if (confirm('Are you sure you want to restore this backup? Current data will be replaced.')) {
                         commitChange();
                         db = importedData;
-                        if (!db.tempSchedules) db.tempSchedules = [];
                         save();
                         alert('Data restored successfully!');
                         closeAll();
@@ -234,93 +227,6 @@
             };
             reader.readAsText(input.files[0]);
         }
-    }
-
-    function moveSlot(studentId, fromContext, fromDayOrId, time, targetContext, targetDay) {
-        commitChange();
-        let student = db.students.find(s => s.id === studentId);
-        if (!student) return;
-
-        let slotObj = null;
-
-        if (fromContext === 'regular') {
-            let idx = student.schedules.findIndex(s => s.day === fromDayOrId && s.time === time);
-            if (idx > -1) {
-                slotObj = student.schedules.splice(idx, 1)[0];
-            }
-        }
-
-        if (!slotObj) return;
-
-        if (targetContext === 'regular') {
-            if (!targetDay) return;
-            student.schedules.push({
-                day: targetDay,
-                time: slotObj.time,
-                offset: slotObj.offset || 0
-            });
-        }
-        save();
-    }
-
-    function handleDragStart(e, studentId, context, dayOrId, time) {
-        draggedData = { studentId, context, dayOrId, time };
-        e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.currentTarget.classList.add('drag-over');
-    }
-
-    function handleDragLeave(e) {
-        e.currentTarget.classList.remove('drag-over');
-    }
-
-    function handleDrop(e, targetDay) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('drag-over');
-        if (draggedData) {
-            moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
-            draggedData = null;
-        }
-    }
-
-    function setupTouchDrag(el, studentId, context, dayOrId, time) {
-        let isDragging = false;
-
-        el.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            draggedData = { studentId, context, dayOrId, time };
-            el.classList.add('dragging');
-        }, {passive: true});
-
-        el.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            let touch = e.touches[0];
-            let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-            
-            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
-            let dropZone = targetEl ? targetEl.closest('.slots') : null;
-            if (dropZone) dropZone.classList.add('drag-over');
-        }, {passive: true});
-
-        el.addEventListener('touchend', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            el.classList.remove('dragging');
-            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
-
-            let touch = e.changedTouches[0];
-            let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-            let dropZone = targetEl ? targetEl.closest('.slots') : null;
-            
-            if (dropZone && draggedData) {
-                let targetDay = dropZone.id.replace('slot-', '');
-                moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
-            }
-            draggedData = null;
-        });
     }
 
     function render() {
@@ -340,7 +246,7 @@
         
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { 
-            grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${d}')"></div></div>`; 
+            grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}"></div></div>`; 
         });
         
         let allSchedules = [];
@@ -357,15 +263,7 @@
             let div = document.createElement('div'); 
             div.className = 'slot'; 
             div.style.background = sc.studentColor;
-            
-            if (sc.offset) {
-                div.style.marginLeft = `${sc.offset}px`;
-            }
-
-            div.draggable = true;
-            div.ondragstart = (e) => handleDragStart(e, sc.studentId, 'regular', sc.day, sc.time);
-            setupTouchDrag(div, sc.studentId, 'regular', sc.day, sc.time);
-            
+            if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
             div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}`;
             div.onclick = () => openSlotModal(sc.studentId, sc.day, sc.time);
             document.getElementById(`slot-${sc.day}`)?.appendChild(div);
@@ -410,68 +308,66 @@
         initColors('colorGridAdd', 'sColor');
     }
 
-    // إدارة الجداول المؤقتة والنسخ
-    function openTempManager() {
-        if (!db.tempSchedules) db.tempSchedules = [];
-        
-        let listHTML = db.tempSchedules.map((ts, idx) => `
-            <div class="period-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b>${ts.title || ('جدول مؤقت رقم ' + (idx + 1))}</b><br>
-                    <small style="color:#64748b">عدد الحصص: ${ts.students?.reduce((acc,s)=>acc+(s.schedules?.length||0), 0) || 0}</small>
-                </div>
-                <div style="display:flex; gap:5px;">
-                    <button class="action-btn" style="background:#3b82f6; color:white; padding:4px 8px; font-size:10px;" onclick="loadTempSchedule(${ts.id})">استرجاع/تعديل</button>
-                    <button class="action-btn" style="background:#ef4444; color:white; padding:4px 8px; font-size:10px;" onclick="deleteTempSchedule(${ts.id})">حذف</button>
-                </div>
-            </div>
-        `).join('') || '<p style="color:#64748b; text-align:center;">لا توجد جدول مؤقتة محفوظة</p>';
-
-        document.getElementById('editFields').innerHTML = `
-            <h3>📋 إدارة الجداول المؤقتة</h3>
-            <p style="font-size:10px; color:#64748b;">قم بنساخ الجدول الحالي بالكامل لتعديله بحرية أو الرجوع له لاحقاً:</p>
-            <button class="action-btn" style="width:100%; margin-bottom:15px; background:var(--primary); color:white;" onclick="createSnapshot()">➕ نسخ الجدول الحالي بالكامل</button>
-            <hr style="opacity:0.1; margin-bottom:15px;">
-            <h4>الجداول المحفوظة:</h4>
-            <div style="max-height:300px; overflow-y:auto;">${listHTML}</div>
-        `;
-        document.getElementById('editModal').classList.add('active');
+    // فتح نافذة النسخة المطابقة المؤقتة
+    function openTempCloneModal() {
+        tempDb = JSON.parse(JSON.stringify(db)); // عمل نسخة طبق الأصل
+        renderTempCloneGrid();
+        document.getElementById('tempScheduleModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
     }
 
-    function createSnapshot() {
-        let title = prompt('أدخل اسم أو وصف لهذا الجدول المؤقت:', 'جدول مؤقت ' + new Date().toLocaleDateString());
-        if (!title) return;
+    function renderTempCloneGrid() {
+        const container = document.getElementById('tempScheduleContent');
+        const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        
+        let html = `<div style="margin-bottom:10px; font-weight:bold; color:var(--gold);">تعديل حصص النسخة المؤقتة:</div>`;
+        days.forEach(d => {
+            html += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="temp-slot-${d}"></div></div>`;
+        });
+        
+        container.innerHTML = html;
 
-        let snapshot = {
-            id: Date.now(),
-            title: title,
-            students: JSON.parse(JSON.stringify(db.students))
-        };
+        let allSchedules = [];
+        tempDb.students.forEach(s => {
+            s.schedules?.forEach(sc => {
+                allSchedules.push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id });
+            });
+        });
 
-        db.tempSchedules.push(snapshot);
-        save();
-        openTempManager();
+        allSchedules.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+        allSchedules.forEach(sc => {
+            let div = document.createElement('div'); 
+            div.className = 'slot'; 
+            div.style.background = sc.studentColor;
+            div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}`;
+            // عند الضغط على حصة في النسخة المؤقتة، يمكنك حذفها أو تعديل وقتها مؤقتاً
+            div.onclick = () => editTempSlotModal(sc.studentId, sc.day, sc.time);
+            document.getElementById(`temp-slot-${sc.day}`)?.appendChild(div);
+        });
     }
 
-    function loadTempSchedule(id) {
-        let ts = db.tempSchedules.find(t => t.id == id);
-        if (!ts) return;
-
-        if (confirm(`هل أنت متأكد من استبدال الجدول الحالي بالنسخة المؤقتة "${ts.title}"؟`)) {
-            commitChange();
-            db.students = JSON.parse(JSON.stringify(ts.students));
-            save();
-            closeAll();
-            alert('تم استرجاع وتفعيل الجدول المؤقت بنجاح!');
+    function editTempSlotModal(studentId, day, time) {
+        let student = tempDb.students.find(s => s.id === studentId);
+        if(!student) return;
+        
+        let newTime = prompt(`تعديل وقت حصة الطالب (${student.name}) في يوم (${day}):`, time);
+        if(newTime !== null) {
+            let slot = student.schedules.find(s => s.day === day && s.time === time);
+            if(slot) {
+                slot.time = newTime;
+                renderTempCloneGrid();
+            }
         }
     }
 
-    function deleteTempSchedule(id) {
-        if (confirm('هل أنت متأكد من حذف هذه النسخة المؤقتة؟')) {
-            db.tempSchedules = db.tempSchedules.filter(t => t.id != id);
+    function saveTempAsMain() {
+        if(confirm('هل أنت متأكد من اعتماد هذه النسخة المؤقتة كجدول رئيسي؟')) {
+            commitChange();
+            db = JSON.parse(JSON.stringify(tempDb));
             save();
-            openTempManager();
+            closeAll();
+            alert('تم اعتماد التعديلات وحفظها في الجدول الرئيسي بنجاح!');
         }
     }
 
