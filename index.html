@@ -25,8 +25,9 @@
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .slots { flex: 1; display: flex; gap: 3px; padding: 4px; overflow-x: auto; align-items: center; transition: background 0.2s; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.2); border-radius: 4px; }
-        .slot { flex: 0 0 auto; min-width: 70px; background: var(--slate); padding: 4px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: grab; user-select: none; }
+        .slot { flex: 0 0 auto; min-width: 70px; background: var(--slate); padding: 4px; border-radius: 4px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 9px; cursor: grab; user-select: none; touch-action: none; }
         .slot:active { cursor: grabbing; opacity: 0.6; }
+        .dragging { opacity: 0.4; }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
@@ -123,6 +124,7 @@
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     let db = JSON.parse(localStorage.getItem('tutor_v360')) || { students: [], holidays: [], teacherName: '', courseStartDate: '2026-01-17' };
     let historyStack = [];
+    let draggedData = null;
 
     function initLessonTimes() {
         const sel = document.getElementById('cTime');
@@ -203,8 +205,22 @@
         }
     }
 
+    function moveSlot(studentId, fromDay, time, targetDay) {
+        if (fromDay === targetDay) return;
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (student) {
+            let slot = student.schedules.find(s => s.day === fromDay && s.time === time);
+            if (slot) {
+                slot.day = targetDay;
+                save();
+            }
+        }
+    }
+
     function handleDragStart(e, studentId, day, time) {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ studentId, day, time }));
+        draggedData = { studentId, day, time };
+        e.dataTransfer?.setData('text/plain', JSON.stringify(draggedData));
     }
 
     function handleDragOver(e) {
@@ -219,19 +235,29 @@
     function handleDrop(e, targetDay) {
         e.preventDefault();
         e.currentTarget.classList.remove('drag-over');
-        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-        
-        if (data.day === targetDay) return;
-
-        commitChange();
-        let student = db.students.find(s => s.id === data.studentId);
-        if (student) {
-            let slot = student.schedules.find(s => s.day === data.day && s.time === data.time);
-            if (slot) {
-                slot.day = targetDay;
-                save();
-            }
+        if (draggedData) {
+            moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
+            draggedData = null;
         }
+    }
+
+    function setupTouchDrag(el, studentId, day, time) {
+        el.addEventListener('touchstart', (e) => {
+            draggedData = { studentId, day, time };
+            el.classList.add('dragging');
+        }, {passive: true});
+
+        el.addEventListener('touchend', (e) => {
+            el.classList.remove('dragging');
+            let touch = e.changedTouches[0];
+            let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            let dropZone = targetEl ? targetEl.closest('.slots') : null;
+            if (dropZone && draggedData) {
+                let targetDay = dropZone.id.replace('slot-', '');
+                moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
+            }
+            draggedData = null;
+        });
     }
 
     function render() {
@@ -263,8 +289,10 @@
             div.style.background = sc.studentColor;
             div.draggable = true;
             div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
+            setupTouchDrag(div, sc.studentId, sc.day, sc.time);
+            
             div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}`;
-            div.onclick = () => { 
+            div.onclick = (e) => { 
                 if(confirm('Delete this slot?')) { 
                     commitChange(); 
                     let parent = db.students.find(x => x.id === sc.studentId);
@@ -287,10 +315,10 @@
         }
         
         let income = Array(dates.length).fill(0);
-        let grandTotal = db.students.reduce((acc, s) => acc + (s.periods[s.periods.length-1].price || 0), 0);
+        let grandTotal = db.students.reduce((acc, s) => acc + (s.periods[s.periods.length-1]?.price || 0), 0);
 
         body.innerHTML = db.students.map(s => {
-            let lastP = s.periods[s.periods.length-1];
+            let lastP = s.periods[s.periods.length-1] || { price: 0 };
             let row = `<tr><td class="sticky-name" style="background:${s.color} !important;" onclick="openEdit(${s.id})">${s.name}<br><small>${lastP.price}</small></td>`;
             dates.forEach((d, i) => {
                 let isHol = db.holidays.includes(i), isPay = false;
@@ -319,73 +347,4 @@
     function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
     function initColors(id, radioName, sel = PALETTE[0]) { document.getElementById(id).innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`; }
     function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
-    
-    function addStudent() { 
-        let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
-        if(!n) return; commitChange(); 
-        db.students.push({ id: Date.now(), name: n, color: col, financialMap: {}, schedules: [], periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value), cycle: Number(document.getElementById('sCycle').value) }] }); 
-        save(); closeAll();
-    }
-    function addSchedule() { let id = Number(document.getElementById('sSelect').value), d = document.getElementById('cDay').value, t = document.getElementById('cTime').value; if(!id) return; commitChange(); db.students.find(x => x.id === id).schedules.push({ day: d, time: t }); save(); closeAll(); }
-
-    function openEdit(id) {
-        const s = db.students.find(x => x.id === id);
-        let phtml = s.periods.map((p, idx) => `
-            <div class="period-card">
-                <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
-                <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
-                ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
-            </div>`).join('');
-
-        document.getElementById('editFields').innerHTML = `
-            <h3>Edit Student</h3>
-            <label>Name</label><input id="en" value="${s.name}">
-            <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
-            <hr>
-            <h4>Billing Periods</h4>
-            <div id="editPeriods">${phtml}</div>
-            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
-        `;
-        initColors('ecg', 'eColor', s.color);
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    function addNewPeriod() {
-        const div = document.createElement('div');
-        div.className = 'period-card';
-        let defaultDate = db.courseStartDate || '2026-01-17';
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
-        document.getElementById('editPeriods').appendChild(div);
-    }
-
-    function up(id) {
-        commitChange();
-        let s = db.students.find(x => x.id === id);
-        s.name = document.getElementById('en').value;
-        s.color = document.getElementById('hidden_ecg').value;
-        let newPeriods = [];
-        document.querySelectorAll('.period-card').forEach(card => {
-            newPeriods.push({
-                startDate: card.querySelector('.p-date').value,
-                price: Number(card.querySelector('.p-price').value),
-                cycle: Number(card.querySelector('.p-cycle').value)
-            });
-        });
-        s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
-        save(); closeAll();
-    }
-
-    function del(id) { if(confirm('Delete student and all their records?')) { commitChange(); db.students = db.students.filter(x => x.id !== id); save(); closeAll(); } }
-
-    async function loadPhoto() { let d = await openPhotoDB(); let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; }
-    function openPhotoDB() { return new Promise((res) => { let req = indexedDB.open("SmartTutorPhotoDB", 1); req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); req.onsuccess = (e) => res(e.target.result); }); }
-    function handleImageUpload(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = async () => { const canvas = document.createElement('canvas'); canvas.width = 150; canvas.height = 150; canvas.getContext('2d').drawImage(img,0,0,150,150); const url = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('teacherImg').src = url; let d = await openPhotoDB(); d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); }; img.src = e.target.result; }; reader.readAsDataURL(input.files[0]); } }
-
-    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
-</script>
-</body>
-</html>
+   
