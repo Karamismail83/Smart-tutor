@@ -67,6 +67,13 @@
         <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
     </div>
 
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Backup & Restore 💾</h3>
+        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
+        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
+        <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
+    </div>
+
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Name">
@@ -145,7 +152,6 @@
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
     function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
 
-    // دالة إعادة ضبط تاريخ البداية لجميع الطلاب دفعة واحدة
     function resetAllStudentsStartDate() {
         let newDate = document.getElementById('courseBaseDate').value;
         if(!newDate) { alert('الرجاء اختيار تاريخ صحيح أولاً'); return; }
@@ -161,6 +167,37 @@
             save();
             alert('تم إعادة ضبط تاريخ بداية الكورس لجميع الطلاب بنجاح!');
             closeAll();
+        }
+    }
+
+    function exportBackup() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importBackup(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (confirm('هل أنت تأكد من استعادة هذه النسخة الاحتياطية؟ سيتم استبدال البيانات الحالية.')) {
+                        commitChange();
+                        db = importedData;
+                        save();
+                        alert('تم استعادة البيانات بنجاح!');
+                        closeAll();
+                    }
+                } catch (err) {
+                    alert('ملف النسخة الاحتياطية غير صالح!');
+                }
+            };
+            reader.readAsText(input.files[0]);
         }
     }
 
