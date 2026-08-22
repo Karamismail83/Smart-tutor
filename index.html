@@ -21,12 +21,6 @@
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
-        /* Temporary Schedule Section Styles */
-        .temp-schedule-container { background: var(--slate); border: 2px dashed var(--gold); border-radius: 10px; padding: 10px; margin-bottom: 15px; }
-        .temp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; color: var(--gold); }
-        .temp-slots { display: flex; gap: 6px; overflow-x: auto; min-height: 42px; align-items: center; padding: 4px; }
-        .temp-slots.drag-over { background: rgba(250, 204, 21, 0.15); border-radius: 6px; }
-
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
         .slots { flex: 1; display: flex; gap: 6px; padding: 6px 8px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
@@ -65,7 +59,7 @@
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            header, .sidebar, .modal, .overlay, .action-btn, .temp-schedule-container { display: none !important; }
+            header, .sidebar, .modal, .overlay, .action-btn { display: none !important; }
             .container { padding: 0 !important; width: 100% !important; }
             .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
             #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
@@ -126,6 +120,7 @@
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
+        <button class="action-btn" style="background:#10b981; color:white;" onclick="openTempManager()">📋 المواعيد المؤقتة (نسخ وتعديل)</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
 </header>
@@ -137,17 +132,6 @@
         </div>
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
         <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
-    </div>
-
-    <!-- Temporary Schedule Box -->
-    <div class="temp-schedule-container">
-        <div class="temp-header">
-            <span>⏳ مواعيد مؤقتة / احتياطية (Temporary Slots)</span>
-            <button class="action-btn" style="font-size:10px; padding:3px 8px;" onclick="openAddTempSlotModal()">+ إضافة مؤقت</button>
-        </div>
-        <div class="temp-slots" id="tempSlotsContainer" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToTemp(event)">
-            <!-- Temp slots rendered here -->
-        </div>
     </div>
 
     <div id="scheduleGrid"></div>
@@ -259,36 +243,21 @@
 
         let slotObj = null;
 
-        // Remove from source
         if (fromContext === 'regular') {
             let idx = student.schedules.findIndex(s => s.day === fromDayOrId && s.time === time);
             if (idx > -1) {
                 slotObj = student.schedules.splice(idx, 1)[0];
             }
-        } else if (fromContext === 'temp') {
-            let idx = db.tempSchedules.findIndex(s => s.id == fromDayOrId);
-            if (idx > -1) {
-                let tempItem = db.tempSchedules.splice(idx, 1)[0];
-                slotObj = { day: 'Temp', time: tempItem.time, offset: 0, note: tempItem.note };
-            }
         }
 
         if (!slotObj) return;
 
-        // Add to target
         if (targetContext === 'regular') {
             if (!targetDay) return;
             student.schedules.push({
                 day: targetDay,
                 time: slotObj.time,
                 offset: slotObj.offset || 0
-            });
-        } else if (targetContext === 'temp') {
-            db.tempSchedules.push({
-                id: Date.now(),
-                studentId: studentId,
-                time: slotObj.time,
-                note: slotObj.note || ''
             });
         }
         save();
@@ -317,15 +286,6 @@
         }
     }
 
-    function handleDropToTemp(e) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('drag-over');
-        if (draggedData && draggedData.context !== 'temp') {
-            moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'temp', null);
-            draggedData = null;
-        }
-    }
-
     function setupTouchDrag(el, studentId, context, dayOrId, time) {
         let isDragging = false;
 
@@ -340,8 +300,8 @@
             let touch = e.touches[0];
             let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
             
-            document.querySelectorAll('.slots, .temp-slots').forEach(s => s.classList.remove('drag-over'));
-            let dropZone = targetEl ? targetEl.closest('.slots, .temp-slots') : null;
+            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
+            let dropZone = targetEl ? targetEl.closest('.slots') : null;
             if (dropZone) dropZone.classList.add('drag-over');
         }, {passive: true});
 
@@ -349,21 +309,15 @@
             if (!isDragging) return;
             isDragging = false;
             el.classList.remove('dragging');
-            document.querySelectorAll('.slots, .temp-slots').forEach(s => s.classList.remove('drag-over'));
+            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
 
             let touch = e.changedTouches[0];
             let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-            let dropZone = targetEl ? targetEl.closest('.slots, .temp-slots') : null;
+            let dropZone = targetEl ? targetEl.closest('.slots') : null;
             
             if (dropZone && draggedData) {
-                if (dropZone.id === 'tempSlotsContainer') {
-                    if (draggedData.context !== 'temp') {
-                        moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'temp', null);
-                    }
-                } else {
-                    let targetDay = dropZone.id.replace('slot-', '');
-                    moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
-                }
+                let targetDay = dropZone.id.replace('slot-', '');
+                moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
             }
             draggedData = null;
         });
@@ -371,15 +325,13 @@
 
     function render() {
         const grid = document.getElementById('scheduleGrid');
-        const tempContainer = document.getElementById('tempSlotsContainer');
         const body = document.getElementById('accBody');
         const totalH = document.getElementById('accTotalHeader');
         const sSelect = document.getElementById('sSelect');
         
-        if (!grid || !body || !totalH || !sSelect || !tempContainer) return;
+        if (!grid || !body || !totalH || !sSelect) return;
 
         grid.innerHTML = ''; 
-        tempContainer.innerHTML = '';
         sSelect.innerHTML = '<option value="">Select Student</option>';
         
         document.getElementById('teacherName').value = db.teacherName || '';
@@ -398,26 +350,6 @@
                 allSchedules.push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id });
             });
         });
-
-        // Render Temp Slots
-        if (db.tempSchedules && db.tempSchedules.length > 0) {
-            db.tempSchedules.forEach(ts => {
-                let student = db.students.find(s => s.id === ts.studentId);
-                if (!student) return;
-                let div = document.createElement('div');
-                div.className = 'slot';
-                div.style.background = student.color;
-                div.draggable = true;
-                div.ondragstart = (e) => handleDragStart(e, student.id, 'temp', ts.id, ts.time);
-                setupTouchDrag(div, student.id, 'temp', ts.id, ts.time);
-                
-                div.innerHTML = `<b>${ts.time}</b><br>${student.name}<br><small style="font-size:8px">${ts.note || 'مؤقت'}</small>`;
-                div.onclick = () => openTempSlotModal(ts.id);
-                tempContainer.appendChild(div);
-            });
-        } else {
-            tempContainer.innerHTML = '<span style="color:#64748b; font-size:10px; padding:5px;">اسحب الحصص إلى هنا أو اضغط إضافة مؤقت</span>';
-        }
 
         allSchedules.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
@@ -478,75 +410,69 @@
         initColors('colorGridAdd', 'sColor');
     }
 
-    function openAddTempSlotModal() {
-        let studentOptions = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    // إدارة الجداول المؤقتة والنسخ
+    function openTempManager() {
+        if (!db.tempSchedules) db.tempSchedules = [];
+        
+        let listHTML = db.tempSchedules.map((ts, idx) => `
+            <div class="period-card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <b>${ts.title || ('جدول مؤقت رقم ' + (idx + 1))}</b><br>
+                    <small style="color:#64748b">عدد الحصص: ${ts.students?.reduce((acc,s)=>acc+(s.schedules?.length||0), 0) || 0}</small>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="action-btn" style="background:#3b82f6; color:white; padding:4px 8px; font-size:10px;" onclick="loadTempSchedule(${ts.id})">استرجاع/تعديل</button>
+                    <button class="action-btn" style="background:#ef4444; color:white; padding:4px 8px; font-size:10px;" onclick="deleteTempSchedule(${ts.id})">حذف</button>
+                </div>
+            </div>
+        `).join('') || '<p style="color:#64748b; text-align:center;">لا توجد جدول مؤقتة محفوظة</p>';
+
         document.getElementById('editFields').innerHTML = `
-            <h3>إضافة موعد مؤقت جديد ⏳</h3>
-            <label>اختر الطالب</label>
-            <select id="tempStudentId">${studentOptions}</select>
-            <label>الوقت</label>
-            <select id="tempTime">${getTimeOptionsHTML()}</select>
-            <label>ملاحظة (اختياري)</label>
-            <input id="tempNote" placeholder="مثلاً: بدل حصة السبت">
-            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="saveNewTempSlot()">حفظ الموعد المؤقت 💾</button>
+            <h3>📋 إدارة الجداول المؤقتة</h3>
+            <p style="font-size:10px; color:#64748b;">قم بنساخ الجدول الحالي بالكامل لتعديله بحرية أو الرجوع له لاحقاً:</p>
+            <button class="action-btn" style="width:100%; margin-bottom:15px; background:var(--primary); color:white;" onclick="createSnapshot()">➕ نسخ الجدول الحالي بالكامل</button>
+            <hr style="opacity:0.1; margin-bottom:15px;">
+            <h4>الجداول المحفوظة:</h4>
+            <div style="max-height:300px; overflow-y:auto;">${listHTML}</div>
         `;
         document.getElementById('editModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
     }
 
-    function saveNewTempSlot() {
-        let sId = Number(document.getElementById('tempStudentId').value);
-        let time = document.getElementById('tempTime').value;
-        let note = document.getElementById('tempNote').value;
-        if (!sId) return;
+    function createSnapshot() {
+        let title = prompt('أدخل اسم أو وصف لهذا الجدول المؤقت:', 'جدول مؤقت ' + new Date().toLocaleDateString());
+        if (!title) return;
 
-        commitChange();
-        db.tempSchedules.push({
+        let snapshot = {
             id: Date.now(),
-            studentId: sId,
-            time: time,
-            note: note
-        });
+            title: title,
+            students: JSON.parse(JSON.stringify(db.students))
+        };
+
+        db.tempSchedules.push(snapshot);
         save();
-        closeAll();
+        openTempManager();
     }
 
-    function openTempSlotModal(tempId) {
-        let ts = db.tempSchedules.find(t => t.id == tempId);
+    function loadTempSchedule(id) {
+        let ts = db.tempSchedules.find(t => t.id == id);
         if (!ts) return;
-        let student = db.students.find(s => s.id === ts.studentId);
 
-        document.getElementById('editFields').innerHTML = `
-            <h3>تعديل موعد مؤقت ⏰</h3>
-            <label>الطالب</label>
-            <input value="${student ? student.name : ''}" disabled style="background:#f1f5f9; color:#64748b;">
-            <label>الوقت</label>
-            <select id="editTempTime">${getTimeOptionsHTML(ts.time)}</select>
-            <label>ملاحظة</label>
-            <input id="editTempNote" value="${ts.note || ''}">
-            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateTempSlot(${tempId})">حفظ التعديلات 💾</button>
-            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteTempSlot(${tempId})">حذف الموعد 🗑️</button>
-        `;
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    function updateTempSlot(tempId) {
-        let ts = db.tempSchedules.find(t => t.id == tempId);
-        if (ts) {
+        if (confirm(`هل أنت متأكد من استبدال الجدول الحالي بالنسخة المؤقتة "${ts.title}"؟`)) {
             commitChange();
-            ts.time = document.getElementById('editTempTime').value;
-            ts.note = document.getElementById('editTempNote').value;
+            db.students = JSON.parse(JSON.stringify(ts.students));
             save();
+            closeAll();
+            alert('تم استرجاع وتفعيل الجدول المؤقت بنجاح!');
         }
-        closeAll();
     }
 
-    function deleteTempSlot(tempId) {
-        commitChange();
-        db.tempSchedules = db.tempSchedules.filter(t => t.id != tempId);
-        save();
-        closeAll();
+    function deleteTempSchedule(id) {
+        if (confirm('هل أنت متأكد من حذف هذه النسخة المؤقتة؟')) {
+            db.tempSchedules = db.tempSchedules.filter(t => t.id != id);
+            save();
+            openTempManager();
+        }
     }
 
     function openSlotModal(studentId, currentDay, currentTime) {
