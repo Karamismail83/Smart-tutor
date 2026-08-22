@@ -59,8 +59,14 @@
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
-    <h3>Course Start Date 📅</h3>
-    <input id="courseBaseDate" type="date" onchange="updateCourseBaseDate(this.value)">
+    
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+        <label style="font-size:11px; color:#64748b;">تاريخ بداية الكورس لجميع الطلاب:</label>
+        <input id="courseBaseDate" type="date">
+        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+    </div>
+
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Name">
@@ -139,11 +145,23 @@
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
     function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
 
-    function updateCourseBaseDate(newDate) {
-        if(!newDate) return;
-        commitChange();
-        db.courseStartDate = newDate;
-        save();
+    // دالة إعادة ضبط تاريخ البداية لجميع الطلاب دفعة واحدة
+    function resetAllStudentsStartDate() {
+        let newDate = document.getElementById('courseBaseDate').value;
+        if(!newDate) { alert('الرجاء اختيار تاريخ صحيح أولاً'); return; }
+        
+        if(confirm('هل أنت تأكد من تغيير تاريخ بداية الكورس لجميع الطلاب إلى ' + newDate + '؟')) {
+            commitChange();
+            db.courseStartDate = newDate;
+            db.students.forEach(student => {
+                if(student.periods && student.periods.length > 0) {
+                    student.periods[0].startDate = newDate;
+                }
+            });
+            save();
+            alert('تم إعادة ضبط تاريخ بداية الكورس لجميع الطلاب بنجاح!');
+            closeAll();
+        }
     }
 
     function render() {
