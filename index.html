@@ -62,7 +62,7 @@
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
-        <label style="font-size:11px; color:#64748b;">تاريخ بداية الكورس لجميع الطلاب:</label>
+        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
         <input id="courseBaseDate" type="date">
         <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
     </div>
@@ -154,9 +154,9 @@
 
     function resetAllStudentsStartDate() {
         let newDate = document.getElementById('courseBaseDate').value;
-        if(!newDate) { alert('الرجاء اختيار تاريخ صحيح أولاً'); return; }
+        if(!newDate) { alert('Please select a valid date first'); return; }
         
-        if(confirm('هل أنت تأكد من تغيير تاريخ بداية الكورس لجميع الطلاب إلى ' + newDate + '؟')) {
+        if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
             commitChange();
             db.courseStartDate = newDate;
             db.students.forEach(student => {
@@ -165,7 +165,7 @@
                 }
             });
             save();
-            alert('تم إعادة ضبط تاريخ بداية الكورس لجميع الطلاب بنجاح!');
+            alert('Course start date reset for all students successfully!');
             closeAll();
         }
     }
@@ -186,15 +186,15 @@
             reader.onload = (e) => {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    if (confirm('هل أنت تأكد من استعادة هذه النسخة الاحتياطية؟ سيتم استبدال البيانات الحالية.')) {
+                    if (confirm('Are you sure you want to restore this backup? Current data will be replaced.')) {
                         commitChange();
                         db = importedData;
                         save();
-                        alert('تم استعادة البيانات بنجاح!');
+                        alert('Data restored successfully!');
                         closeAll();
                     }
                 } catch (err) {
-                    alert('ملف النسخة الاحتياطية غير صالح!');
+                    alert('Invalid backup file!');
                 }
             };
             reader.readAsText(input.files[0]);
