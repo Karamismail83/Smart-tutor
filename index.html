@@ -26,7 +26,7 @@
         .slots { flex: 1; display: flex; gap: 6px; padding: 6px 8px; overflow-x: auto; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 9.5px; cursor: grab; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .slot { flex: 0 0 auto; min-width: 75px; background: var(--slate); padding: 5px 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 9.5px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
         
@@ -246,10 +246,8 @@
     let historyStack = [];
     let draggedData = null;
 
-    function initLessonTimes() {
-        const sel = document.getElementById('cTime');
-        if (!sel) return;
-        sel.innerHTML = '';
+    function getTimeOptionsHTML(selectedTime = '') {
+        let html = '';
         for(let h = 10; h <= 22; h++){
             for(let m of [0, 15, 30, 45]){
                 if(h === 22 && m > 0) continue;
@@ -257,11 +255,16 @@
                 let mm = m.toString().padStart(2, '0');
                 let ampm = h < 12 ? 'AM' : 'PM';
                 let t = `${hh}:${mm} ${ampm}`;
-                let o = document.createElement('option');
-                o.value = t; o.textContent = t;
-                sel.appendChild(o);
+                let isSel = (t === selectedTime) ? 'selected' : '';
+                html += `<option value="${t}" ${isSel}>${t}</option>`;
             }
         }
+        return html;
+    }
+
+    function initLessonTimes() {
+        const sel = document.getElementById('cTime');
+        if (sel) sel.innerHTML = getTimeOptionsHTML();
     }
 
     function timeToMinutes(t) {
@@ -438,14 +441,7 @@
             setupTouchDrag(div, sc.studentId, sc.day, sc.time);
             
             div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}`;
-            div.onclick = (e) => { 
-                if(confirm('Delete this slot?')) { 
-                    commitChange(); 
-                    let parent = db.students.find(x => x.id === sc.studentId);
-                    parent.schedules = parent.schedules.filter(s => !(s.day === sc.day && s.time === sc.time));
-                    save(); 
-                } 
-            };
+            div.onclick = () => openSlotModal(sc.studentId, sc.day, sc.time);
             document.getElementById(`slot-${sc.day}`)?.appendChild(div);
         });
 
@@ -486,6 +482,59 @@
         document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${db.holidays.includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
         totalH.innerHTML = `<tr class="total-row"><td class="sticky-name">WEEKLY</td>` + income.map(v => `<td>${v||'-'}</td>`).join('') + `</tr>`;
         initColors('colorGridAdd', 'sColor');
+    }
+
+    function openSlotModal(studentId, currentDay, currentTime) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
+
+        document.getElementById('editFields').innerHTML = `
+            <h3>Edit Session Slot ⏰</h3>
+            <label>Student Name</label>
+            <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
+            
+            <label>Day</label>
+            <select id="editSlotDay">${daysOptions}</select>
+
+            <label>Time</label>
+            <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
+
+            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
+            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+        `;
+
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function updateSlot(studentId, oldDay, oldTime) {
+        let newDay = document.getElementById('editSlotDay').value;
+        let newTime = document.getElementById('editSlotTime').value;
+
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (student) {
+            let slot = student.schedules.find(s => s.day === oldDay && s.time === oldTime);
+            if (slot) {
+                slot.day = newDay;
+                slot.time = newTime;
+                save();
+            }
+        }
+        closeAll();
+    }
+
+    function deleteSlot(studentId, day, time) {
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (student) {
+            student.schedules = student.schedules.filter(s => !(s.day === day && s.time === time));
+            save();
+        }
+        closeAll();
     }
 
     function th(i) { commitChange(); let idx = db.holidays.indexOf(i); if(idx > -1) db.holidays.splice(idx,1); else db.holidays.push(i); save(); }
