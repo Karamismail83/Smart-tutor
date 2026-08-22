@@ -27,7 +27,6 @@
         .slots { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        /* تقليل الحشو الأفقي يمين ويسار النص مع الحفاظ على حجم الخط الطبيعي */
         .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
@@ -38,7 +37,7 @@
         .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
         .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
         .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
-        .sticky-name { position: sticky; left: 0; z-index: 100; width: var(--name-w); font-weight: 900; cursor: pointer; border-right: 2px solid #ddd !important; text-align: left !important; padding-left: 8px !important; color: white !important; }
+        .sticky-name { position: sticky; left: 0; z-index: 100; width: var(--name-w); font-weight: 900; border-right: 2px solid #ddd !important; text-align: left !important; padding-left: 6px !important; color: white !important; display: flex; align-items: center; justify-content: space-between; gap: 4px; box-sizing: border-box; }
 
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
         .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
@@ -58,11 +57,19 @@
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
+        /* حاوية طباعة جدول الطالب المنفرد (تكون مخفية في العرض العادي) */
+        #studentPrintContainer { display: none; }
+
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            header, .sidebar, .modal, .overlay, .action-btn { display: none !important; }
-            .container { padding: 0 !important; width: 100% !important; }
+            header, .sidebar, .modal, .overlay, .action-btn, .container { display: none !important; }
+            
+            /* إظهار جدول الطالب المنفرد فقط عند الطباعة إذا كان مفعلاً */
+            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
+            body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
+            body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
+
             .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
             #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
             .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
@@ -83,6 +90,9 @@
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
+
+<!-- حاوية مخصصة لطباعة مواعيد الطالب الواحد -->
+<div id="studentPrintContainer"></div>
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
@@ -120,7 +130,7 @@
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
-        <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
+        <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
@@ -185,6 +195,74 @@
     function save() { localStorage.setItem('tutor_v360', JSON.stringify(db)); render(); }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
     function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
+
+    function printFullSchedule() {
+        document.body.classList.remove('print-single-student');
+        window.print();
+    }
+
+    // دالة طباعة جدول مواعيد طالب منفرد لولي الأمر
+    function printSingleStudent(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if(!student) return;
+
+        let teacherName = db.teacherName || 'Teacher';
+        let schedulesHTML = '';
+
+        if(!student.schedules || student.schedules.length === 0) {
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
+        } else {
+            // ترتيب المواعيد زمنياً
+            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+            sortedSchedules.forEach(sc => {
+                schedulesHTML += `
+                    <tr>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        let printContainer = document.getElementById('studentPrintContainer');
+        printContainer.innerHTML = `
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 22px;">SMART TUTOR</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule / جدول المواعيد الأسبوعي</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
+                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #0f172a; color: #ffffff;">
+                            <th style="padding: 12px 15px; text-align: right; font-size: 13px;">Day (اليوم)</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time (الوقت)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${schedulesHTML}
+                    </tbody>
+                </table>
+
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
+                    Thank you for trusting us with your child's education. / شكراً لثقتكم بنا.
+                </div>
+            </div>
+        `;
+
+        document.body.classList.add('print-single-student');
+        window.print();
+    }
 
     function resetAllStudentsStartDate() {
         let newDate = document.getElementById('courseBaseDate').value;
@@ -386,7 +464,14 @@
 
         body.innerHTML = db.students.map(s => {
             let lastP = s.periods[s.periods.length-1] || { price: 0 };
-            let row = `<tr><td class="sticky-name" style="background:${s.color} !important;" onclick="openEdit(${s.id})">${s.name}<br><small>${lastP.price}</small></td>`;
+            
+            // إضافة زر الطباعة بجوار اسم الطالب في الجدول المالي
+            let nameCellContent = `
+                <span style="cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</span>
+                <button onclick="printSingleStudent(${s.id})" title="Print Student Schedule" style="background:transparent; border:none; cursor:pointer; font-size:12px; padding:0; display:inline-flex; align-items:center;">🖨️</button>
+            `;
+
+            let row = `<tr><td class="sticky-name" style="background:${s.color} !important;">${nameCellContent}</td>`;
             dates.forEach((d, i) => {
                 let isHol = db.holidays.includes(i), isPay = false;
                 let activeP = [...s.periods].reverse().find(p => d >= new Date(p.startDate));
