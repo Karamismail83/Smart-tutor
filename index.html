@@ -28,9 +28,17 @@
         .slots { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: box-shadow 0.2s, transform 0.2s; }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
+        
+        /* تأثير الطيف الضوئي عند النسخ بالضغط المطول */
+        .slot.copy-ready {
+            box-shadow: 0 0 12px 3px #38bdf8, 0 0 20px 6px rgba(56, 189, 248, 0.6) !important;
+            border: 2px solid #38bdf8 !important;
+            transform: scale(1.05);
+        }
+
         .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
@@ -361,7 +369,11 @@
     }
 
     function handleDragStart(e, studentId, day, time) {
-        draggedData = { action: 'move', studentId, day, time };
+        if (copiedSlot && copiedSlot.studentId === studentId && copiedSlot.time === time) {
+            draggedData = { action: 'copy' };
+        } else {
+            draggedData = { action: 'move', studentId, day, time };
+        }
         e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
     }
 
@@ -373,10 +385,10 @@
         e.currentTarget.classList.remove('drag-over');
         if (!draggedData) return;
 
-        if (draggedData.action === 'move') {
-            moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
-        } else if (draggedData.action === 'copy') {
+        if (draggedData.action === 'copy') {
             pasteSlotData(targetDay);
+        } else if (draggedData.action === 'move') {
+            moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
         }
         draggedData = null;
     }
@@ -385,23 +397,22 @@
         let pressTimer = null;
         let isLongPress = false;
 
-        el.addEventListener('touchstart', () => {
+        const startPress = () => {
             isLongPress = false;
             pressTimer = setTimeout(() => {
                 isLongPress = true;
-                copySlotData(studentId, day, time);
-            }, 600);
-        }, {passive: true});
+                copySlotData(studentId, day, time, el);
+            }, 500);
+        };
 
-        el.addEventListener('touchend', () => { clearTimeout(pressTimer); });
-        el.addEventListener('mousedown', () => {
-            isLongPress = false;
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                copySlotData(studentId, day, time);
-            }, 600);
-        });
-        el.addEventListener('mouseup', () => { clearTimeout(pressTimer); });
+        const cancelPress = () => {
+            clearTimeout(pressTimer);
+        };
+
+        el.addEventListener('touchstart', startPress, {passive: true});
+        el.addEventListener('touchend', cancelPress);
+        el.addEventListener('mousedown', startPress);
+        el.addEventListener('mouseup', cancelPress);
 
         el.onclick = (e) => {
             if (isLongPress) return;
@@ -409,7 +420,7 @@
         };
     }
 
-    function copySlotData(studentId, day, time) {
+    function copySlotData(studentId, day, time, el) {
         let student = db.students.find(s => s.id === studentId);
         if (!student) return;
         let slot = (student.schedules || []).find(s => s.day === day && s.time === time);
@@ -422,9 +433,13 @@
             status: 0
         };
         
-        // تجهيز بيانات السحب لتكون "نسخ"
         draggedData = { action: 'copy' };
-        showToast(`Copied slot: ${student.name} (${slot.time}). Now drag to target day to paste! 📋`);
+        
+        // إظهار طيف بلون مختلف حول الأيقونة المستهدفة
+        document.querySelectorAll('.slot').forEach(s => s.classList.remove('copy-ready'));
+        el.classList.add('copy-ready');
+
+        showToast(`تم نسخ الحصة: ${student.name} (${slot.time}). اسحبها الآن لليوم المستهدف للّصق! ✨`);
     }
 
     function pasteSlotData(targetDay) {
@@ -441,10 +456,9 @@
             status: copiedSlot.status
         });
         
-        // تفريغ النسخ لمرة واحدة فقط
-        copiedSlot = null;
+        copiedSlot = null; 
         save();
-        showToast(`Pasted to ${targetDay} successfully! ✨`);
+        showToast(`تم اللصق في ${targetDay} بنجاح! 🎯`);
     }
 
     function render() {
