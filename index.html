@@ -28,10 +28,9 @@
         .slots { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: box-shadow 0.2s, transform 0.2s; }
+        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
-
         .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
         
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
@@ -68,14 +67,11 @@
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
         #studentPrintContainer { display: none; }
-        
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        #toast.show { transform: translateX(-50%) translateY(0); }
 
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
+            header, .sidebar, .modal, .overlay, .action-btn, .container { display: none !important; }
             
             body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
             body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
@@ -101,8 +97,8 @@
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
+
 <div id="studentPrintContainer"></div>
-<div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
@@ -178,13 +174,6 @@
     let historyStack = [];
     let draggedData = null;
 
-    function showToast(message) {
-        let toast = document.getElementById('toast');
-        toast.innerText = message;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2500);
-    }
-
     function getTimeOptionsHTML(selectedTime = '') {
         let html = '';
         for(let h = 10; h <= 22; h++){
@@ -221,7 +210,9 @@
     }
 
     function save() { 
-        try { localStorage.setItem('tutor_v390', JSON.stringify(db)); } catch(e) {}
+        try {
+            localStorage.setItem('tutor_v390', JSON.stringify(db)); 
+        } catch(e) {}
         render(); 
     }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
@@ -261,10 +252,12 @@
                         <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
                     </div>
                 </div>
+
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
                     <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
+
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
@@ -272,8 +265,11 @@
                             <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
                         </tr>
                     </thead>
-                    <tbody>${schedulesHTML}</tbody>
+                    <tbody>
+                        ${schedulesHTML}
+                    </tbody>
                 </table>
+
                 <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
                     Thank you for trusting us with your education.
                 </div>
@@ -284,7 +280,10 @@
     function printSingleStudent(studentId) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
+
+        let printContainer = document.getElementById('studentPrintContainer');
+        printContainer.innerHTML = generateStudentReportHTML(student);
+
         document.body.classList.add('print-single-student');
         window.print();
     }
@@ -292,27 +291,38 @@
     function downloadStudentImage(studentId) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
+
         let tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '0';
+        tempDiv.style.width = '650px';
         tempDiv.innerHTML = generateStudentReportHTML(student);
         document.body.appendChild(tempDiv);
+
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
             let link = document.createElement('a');
             link.download = `Student_Report_${student.name}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             document.body.removeChild(tempDiv);
-        }).catch(() => { document.body.removeChild(tempDiv); });
+        }).catch(err => {
+            alert('Failed to generate image!');
+            document.body.removeChild(tempDiv);
+        });
     }
 
     function resetAllStudentsStartDate() {
         let newDate = document.getElementById('courseBaseDate').value;
         if(!newDate) { alert('Please select a valid date first'); return; }
+        
         if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
             commitChange();
             db.courseStartDate = newDate;
             db.students.forEach(student => {
-                if(student.periods && student.periods.length > 0) student.periods[0].startDate = newDate;
+                if(student.periods && student.periods.length > 0) {
+                    student.periods[0].startDate = newDate;
+                }
             });
             save();
             alert('Course start date reset for all students successfully!');
@@ -343,37 +353,100 @@
                         alert('Data restored successfully!');
                         closeAll();
                     }
-                } catch (err) { alert('Invalid backup file!'); }
+                } catch (err) {
+                    alert('Invalid backup file!');
+                }
             };
             reader.readAsText(input.files[0]);
         }
     }
 
-    function moveSlot(studentId, fromDay, time, targetDay) {
+    function moveSlot(studentId, fromContext, fromDayOrId, time, targetContext, targetDay) {
         commitChange();
         let student = db.students.find(s => s.id === studentId);
         if (!student) return;
-        let idx = student.schedules.findIndex(s => s.day === fromDay && s.time === time);
-        if (idx > -1) {
-            student.schedules[idx].day = targetDay;
+
+        let slotObj = null;
+
+        if (fromContext === 'regular') {
+            let idx = student.schedules.findIndex(s => s.day === fromDayOrId && s.time === time);
+            if (idx > -1) {
+                slotObj = student.schedules.splice(idx, 1)[0];
+            }
+        }
+
+        if (!slotObj) return;
+
+        if (targetContext === 'regular') {
+            if (!targetDay) return;
+            student.schedules.push({
+                day: targetDay,
+                time: slotObj.time,
+                offset: slotObj.offset || 0,
+                status: slotObj.status || 0
+            });
         }
         save();
     }
 
-    function handleDragStart(e, studentId, day, time) {
-        draggedData = { studentId, day, time };
+    function handleDragStart(e, studentId, context, dayOrId, time) {
+        draggedData = { studentId, context, dayOrId, time };
         e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
     }
 
-    function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-    function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-    
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+
     function handleDrop(e, targetDay) {
         e.preventDefault();
         e.currentTarget.classList.remove('drag-over');
-        if (!draggedData) return;
-        moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
-        draggedData = null;
+        if (draggedData) {
+            moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
+            draggedData = null;
+        }
+    }
+
+    function setupTouchDrag(el, studentId, context, dayOrId, time) {
+        let isDragging = false;
+
+        el.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            draggedData = { studentId, context, dayOrId, time };
+            el.classList.add('dragging');
+        }, {passive: true});
+
+        el.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            let touch = e.touches[0];
+            let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
+            let dropZone = targetEl ? targetEl.closest('.slots') : null;
+            if (dropZone) dropZone.classList.add('drag-over');
+        }, {passive: true});
+
+        el.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            el.classList.remove('dragging');
+            document.querySelectorAll('.slots').forEach(s => s.classList.remove('drag-over'));
+
+            let touch = e.changedTouches[0];
+            let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            let dropZone = targetEl ? targetEl.closest('.slots') : null;
+            
+            if (dropZone && draggedData) {
+                let targetDay = dropZone.id.replace('slot-', '');
+                moveSlot(draggedData.studentId, draggedData.context, draggedData.dayOrId, draggedData.time, 'regular', targetDay);
+            }
+            draggedData = null;
+        });
     }
 
     function render() {
@@ -393,15 +466,7 @@
         
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { 
-            grid.innerHTML += `
-                <div class="day-row">
-                    <div class="day-label">${d}</div>
-                    <div class="slots" id="slot-${d}" 
-                         ondragover="handleDragOver(event)" 
-                         ondragleave="handleDragLeave(event)" 
-                         ondrop="handleDrop(event, '${d}')">
-                    </div>
-                </div>`; 
+            grid.innerHTML += `<div class="day-row"><div class="day-label">${d}</div><div class="slots" id="slot-${d}" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${d}')"></div></div>`; 
         });
         
         let allSchedules = [];
@@ -423,18 +488,27 @@
             div.className = 'slot'; 
             div.style.background = sc.studentColor || '#3b82f6';
             
-            if (sc.status === 1) div.style.border = '2px solid #22c55e';
-            else if (sc.status === 2) { div.style.border = '2px solid #ef4444'; div.style.opacity = '0.7'; }
-            else if (sc.status === 3) { div.style.border = '2px dashed #facc15'; div.style.opacity = '0.6'; }
+            if (sc.status === 1) { // Present
+                div.style.border = '2px solid #22c55e';
+            } else if (sc.status === 2) { // Absent
+                div.style.border = '2px solid #ef4444';
+                div.style.opacity = '0.7';
+            } else if (sc.status === 3) { // Cancelled
+                div.style.border = '2px dashed #facc15';
+                div.style.opacity = '0.6';
+            }
 
-            if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
+            if (sc.offset) {
+                div.style.marginLeft = `${sc.offset}px`;
+            }
 
             div.draggable = true;
-            div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
-            div.onclick = () => openSlotModal(sc.studentId, sc.day, sc.time);
+            div.ondragstart = (e) => handleDragStart(e, sc.studentId, 'regular', sc.day, sc.time);
+            setupTouchDrag(div, sc.studentId, 'regular', sc.day, sc.time);
             
             let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
             div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
+            div.onclick = () => openSlotModal(sc.studentId, sc.day, sc.time);
             document.getElementById(`slot-${sc.day}`)?.appendChild(div);
         });
 
@@ -709,12 +783,15 @@
                 const img = new Image(); 
                 img.onload = async () => { 
                     const canvas = document.createElement('canvas'); 
-                    canvas.width = 150; canvas.height = 150; 
+                    canvas.width = 150; 
+                    canvas.height = 150; 
                     canvas.getContext('2d').drawImage(img,0,0,150,150); 
                     const url = canvas.toDataURL('image/jpeg', 0.7); 
                     document.getElementById('teacherImg').src = url; 
                     let d = await openPhotoDB(); 
-                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                    if(d) {
+                        d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                    }
                 }; 
                 img.src = e.target.result; 
             }; 
