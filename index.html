@@ -1,59 +1,799 @@
-// دالة لتفعيل ميزة السحب والإفلات على المواعيد
-function enableDragAndDrop() {
-    // تحديد جميع المواعيد (slots) وحاويات الأيام (slots containers)
-    const draggables = document.querySelectorAll('.slot');
-    const containers = document.querySelectorAll('.slots');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Tutor - Professional Print Schedule</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
+            --name-w: 120px; --box-s: 24px; --primary: #6366f1;
+            --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
+        }
+        
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+        .container { padding: 10px; }
 
-    draggables.forEach(draggable => {
-        // جعل العنصر قابلاً للسحب
-        draggable.setAttribute('draggable', 'true');
+        .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
+        .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
+        .profile-img { width: 100%; height: 100%; object-fit: cover; }
+        #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
-        // عند بدء السحب
-        draggable.addEventListener('dragstart', () => {
-            draggable.classList.add('dragging');
+        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
+        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        
+        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
+        .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
+        
+        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
+        .slot:active { cursor: grabbing; }
+        .slot.dragging { opacity: 0.4; transform: scale(0.95); }
+        .slot.wide-slot { min-width: 62px; }
+
+        .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
+        
+        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
+        .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
+        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
+        .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
+        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
+        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        
+        .sticky-name { 
+            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
+            font-weight: 900; border-right: 2px solid #ddd !important; 
+            text-align: left !important; padding: 4px 6px !important; 
+            color: white !important; box-sizing: border-box; 
+            cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
+        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+        .status-paid { background: #d1fae5 !important; color: #047857; }
+        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+        
+        .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
+        .is-holiday-cell { background: var(--holiday-bg) !important; }
+
+        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .active { left: 0 !important; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
+        .overlay.active { display: block; }
+        
+        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
+        .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
+        .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+        .color-circle.selected { border-color: #000; transform: scale(1.1); }
+
+        #studentPrintContainer { display: none; }
+        
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
+            
+            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
+            body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
+            body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
+
+            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
+            #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
+            .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
+            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
+            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
+            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; box-shadow: none !important; }
+            .slot.wide-slot { min-width: 58px !important; }
+            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
+            .acc-table { width: 100% !important; table-layout: fixed !important; }
+            .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
+            .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
+            .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 90px !important; }
+            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
+            .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
+            .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="modal" id="editModal"><div id="editFields"></div></div>
+<div id="studentPrintContainer"></div>
+<div id="toast"></div>
+
+<div class="sidebar" id="sidebar">
+    <h2 style="margin-top:0">Settings ⚙️</h2>
+    
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
+        <input id="courseBaseDate" type="date">
+        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+    </div>
+
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Backup & Restore 💾</h3>
+        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
+        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
+        <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
+    </div>
+
+    <hr style="margin:15px 0; opacity:0.1">
+    <h3>Add Student</h3>
+    <input id="sName" placeholder="Student Name">
+    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
+    <input id="sPrice" type="number" placeholder="Price">
+    <input id="sDate" type="date">
+    <input id="sCycle" type="number" value="4">
+    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
+    <hr style="margin:20px 0; opacity:0.1">
+    <h3>Add Slot (Session)</h3>
+    <select id="sSelect"></select>
+    <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
+    <select id="cTime"></select>
+    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
+</div>
+
+<header>
+    <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
+    <div style="display: flex; gap: 5px;">
+        <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
+        <button class="action-btn" onclick="undo()">↩️ UNDO</button>
+        <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="teacher-box">
+        <div class="profile-img-container" onclick="document.getElementById('tFile').click()">
+            <img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+        </div>
+        <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
+        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
+    </div>
+
+    <div id="scheduleGrid"></div>
+    <div class="acc-table-wrapper">
+        <table class="acc-table">
+            <thead><tr id="accHeader"></tr></thead>
+            <thead id="accTotalHeader"></thead> 
+            <tbody id="accBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
+    
+    let db;
+    try {
+        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+    } catch(e) {
+        db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+    }
+
+    let historyStack = [];
+    let draggedData = null;
+
+    function showToast(message) {
+        let toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    }
+
+    function getTimeOptionsHTML(selectedTime = '') {
+        let html = '';
+        for(let h = 10; h <= 22; h++){
+            for(let m of [0, 15, 30, 45]){
+                if(h === 22 && m > 0) continue;
+                let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                let mm = m.toString().padStart(2, '0');
+                let ampm = h < 12 ? 'AM' : 'PM';
+                let t = `${hh}:${mm} ${ampm}`;
+                let isSel = (t === selectedTime) ? 'selected' : '';
+                html += `<option value="${t}" ${isSel}>${t}</option>`;
+            }
+        }
+        return html;
+    }
+
+    function initLessonTimes() {
+        const sel = document.getElementById('cTime');
+        if (sel) sel.innerHTML = getTimeOptionsHTML();
+    }
+
+    function timeToMinutes(t) {
+        if (!t) return 0;
+        let parts = t.split(' ');
+        if(parts.length < 2) return 0;
+        let [time, ampm] = parts;
+        let timeParts = time.split(':');
+        if(timeParts.length < 2) return 0;
+        let hrs = Number(timeParts[0]);
+        let mins = Number(timeParts[1]);
+        if (ampm === 'PM' && hrs !== 12) hrs += 12;
+        if (ampm === 'AM' && hrs === 12) hrs = 0;
+        return hrs * 60 + mins;
+    }
+
+    function save() { 
+        try { localStorage.setItem('tutor_v390', JSON.stringify(db)); } catch(e) {}
+        render(); 
+    }
+    function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
+    function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
+
+    function printFullSchedule() {
+        document.body.classList.remove('print-single-student');
+        window.print();
+    }
+
+    function generateStudentReportHTML(student) {
+        let teacherName = db.teacherName || 'Teacher';
+        let schedulesHTML = '';
+
+        if(!student.schedules || student.schedules.length === 0) {
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
+        } else {
+            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+            sortedSchedules.forEach(sc => {
+                schedulesHTML += `
+                    <tr>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        return `
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 22px;">SMART TUTOR</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
+                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #0f172a; color: #ffffff;">
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>${schedulesHTML}</tbody>
+                </table>
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
+                    Thank you for trusting us with your education.
+                </div>
+            </div>
+        `;
+    }
+
+    function printSingleStudent(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if(!student) return;
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
+        document.body.classList.add('print-single-student');
+        window.print();
+    }
+
+    function downloadStudentImage(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if(!student) return;
+        let tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
+        tempDiv.innerHTML = generateStudentReportHTML(student);
+        document.body.appendChild(tempDiv);
+        html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = `Student_Report_${student.name}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            document.body.removeChild(tempDiv);
+        }).catch(() => { document.body.removeChild(tempDiv); });
+    }
+
+    function resetAllStudentsStartDate() {
+        let newDate = document.getElementById('courseBaseDate').value;
+        if(!newDate) { alert('Please select a valid date first'); return; }
+        if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
+            commitChange();
+            db.courseStartDate = newDate;
+            db.students.forEach(student => {
+                if(student.periods && student.periods.length > 0) student.periods[0].startDate = newDate;
+            });
+            save();
+            alert('Course start date reset for all students successfully!');
+            closeAll();
+        }
+    }
+
+    function exportBackup() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importBackup(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (confirm('Are you sure you want to restore this backup? Current data will be replaced.')) {
+                        commitChange();
+                        db = importedData;
+                        save();
+                        alert('Data restored successfully!');
+                        closeAll();
+                    }
+                } catch (err) { alert('Invalid backup file!'); }
+            };
+            reader.readAsText(input.files[0]);
+        }
+    }
+
+    function moveSlot(studentId, fromDay, time, targetDay) {
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+        let idx = student.schedules.findIndex(s => s.day === fromDay && s.time === time);
+        if (idx > -1) {
+            student.schedules[idx].day = targetDay;
+        }
+        save();
+    }
+
+    function handleDragStart(e, studentId, day, time) {
+        draggedData = { studentId, day, time };
+        e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
+    }
+
+    function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    
+    function handleDrop(e, targetDay) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (!draggedData) return;
+        moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
+        draggedData = null;
+    }
+
+    function enableHorizontalDrag() {
+        let isDraggingHorizontal = false;
+        let startX = 0;
+        let currentSlot = null;
+        let initialOffset = 0;
+
+        document.querySelectorAll('.slot').forEach(slot => {
+            slot.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                isDraggingHorizontal = true;
+                currentSlot = slot;
+                startX = e.clientX;
+                initialOffset = parseFloat(slot.getAttribute('data-offset')) || 0;
+                slot.style.zIndex = '100';
+            });
         });
 
-        // عند انتهاء السحب
-        draggable.addEventListener('dragend', () => {
-            draggable.classList.remove('dragging');
-            
-            // يمكنك هنا استدعاء دالة لتحديث قاعدة البيانات (db) بالترتيب الجديد
-            // commitChange(); 
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingHorizontal || !currentSlot) return;
+            let diffX = e.clientX - startX;
+            let newOffset = initialOffset + diffX;
+            currentSlot.style.marginLeft = `${newOffset}px`;
         });
-    });
 
-    containers.forEach(container => {
-        // عند مرور العنصر المسحوب فوق حاوية اليوم
-        container.addEventListener('dragover', e => {
-            e.preventDefault(); // ضروري للسماح بالإفلات
-            
-            // تحديد العنصر الذي سيتم الإفلات قبله بناءً على موقع الماوس أفقياً (X-axis)
-            const afterElement = getDragAfterElement(container, e.clientX);
-            const draggable = document.querySelector('.dragging');
-            
-            if (afterElement == null) {
-                container.appendChild(draggable); // وضعه في النهاية إذا لم يكن هناك عنصر بعده
-            } else {
-                container.insertBefore(draggable, afterElement); // وضعه قبل العنصر المحسوب
+        window.addEventListener('mouseup', () => {
+            if (isDraggingHorizontal && currentSlot) {
+                let sId = Number(currentSlot.getAttribute('data-studentid'));
+                let day = currentSlot.getAttribute('data-day');
+                let time = currentSlot.getAttribute('data-time');
+                let finalMarginLeft = parseFloat(currentSlot.style.marginLeft) || 0;
+
+                let student = db.students.find(s => s.id === sId);
+                if (student && student.schedules) {
+                    let targetSlot = student.schedules.find(s => s.day === day && s.time === time);
+                    if (targetSlot) {
+                        commitChange();
+                        targetSlot.offset = Math.round(finalMarginLeft);
+                        save();
+                    }
+                }
+                isDraggingHorizontal = false;
+                currentSlot = null;
             }
         });
-    });
-}
+    }
 
-// دالة مساعدة لحساب الموقع الأفقي الدقيق (للسحب بالعرض)
-function getDragAfterElement(container, x) {
-    // الحصول على جميع المواعيد في الحاوية باستثناء العنصر الذي يتم سحبه حالياً
-    const draggableElements = [...container.querySelectorAll('.slot:not(.dragging)')];
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        // حساب المسافة بين منتصف العنصر ومؤشر الماوس أفقياً
-        const offset = x - box.left - box.width / 2;
+    function render() {
+        const grid = document.getElementById('scheduleGrid');
+        const body = document.getElementById('accBody');
+        const totalH = document.getElementById('accTotalHeader');
+        const sSelect = document.getElementById('sSelect');
         
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+        if (!grid || !body || !totalH || !sSelect) return;
+
+        grid.innerHTML = ''; 
+        sSelect.innerHTML = '<option value="">Select Student</option>';
+        
+        document.getElementById('teacherName').value = db.teacherName || '';
+        document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
+        document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
+        
+        const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        days.forEach(d => { 
+            grid.innerHTML += `
+                <div class="day-row">
+                    <div class="day-label">${d}</div>
+                    <div class="slots" id="slot-${d}" 
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)" 
+                         ondrop="handleDrop(event, '${d}')">
+                    </div>
+                </div>`; 
+        });
+        
+        let allSchedulesByDay = {};
+        days.forEach(d => allSchedulesByDay[d] = []);
+
+        if(db.students && Array.isArray(db.students)) {
+            db.students.forEach(s => {
+                sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                if(s.schedules && Array.isArray(s.schedules)) {
+                    s.schedules.forEach(sc => {
+                        if(allSchedulesByDay[sc.day]) {
+                            allSchedulesByDay[sc.day].push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id, minutes: timeToMinutes(sc.time) });
+                        }
+                    });
+                }
+            });
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
+
+        days.forEach(d => {
+            let daySlots = allSchedulesByDay[d];
+            daySlots.sort((a, b) => a.minutes - b.minutes);
+
+            daySlots.forEach((sc, index) => {
+                let div = document.createElement('div'); 
+                div.className = 'slot'; 
+                div.style.background = sc.studentColor || '#3b82f6';
+                div.setAttribute('data-studentid', sc.studentId);
+                div.setAttribute('data-day', sc.day);
+                div.setAttribute('data-time', sc.time);
+                div.setAttribute('data-offset', sc.offset || 0);
+
+                if (index < daySlots.length - 1) {
+                    let nextSc = daySlots[index + 1];
+                    let diffMinutes = nextSc.minutes - sc.minutes;
+                    if (diffMinutes > 60) {
+                        div.classList.add('wide-slot');
+                    }
+                }
+
+                if (sc.status === 1) div.style.border = '2px solid #22c55e';
+                else if (sc.status === 2) { div.style.border = '2px solid #ef4444'; div.style.opacity = '0.7'; }
+                else if (sc.status === 3) { div.style.border = '2px dashed #facc15'; div.style.opacity = '0.6'; }
+
+                if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
+
+                div.draggable = true;
+                div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
+                div.onclick = (e) => {
+                    if (!e.defaultPrevented) openSlotModal(sc.studentId, sc.day, sc.time);
+                };
+                
+                let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
+                div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
+                document.getElementById(`slot-${sc.day}`)?.appendChild(div);
+            });
+        });
+
+        enableHorizontalDrag();
+
+        let dates = []; 
+        let startDateVal = db.courseStartDate || new Date().toISOString().slice(0,10);
+        let dBase = new Date(startDateVal);
+        
+        for(let i=0; i<24; i++){ 
+            let thu = new Date(dBase); 
+            thu.setDate(dBase.getDate()+5); 
+            dates.push(new Date(thu)); 
+            dBase.setDate(dBase.getDate()+7); 
+        }
+        
+        let income = Array(dates.length).fill(0);
+        let grandTotal = 0;
+        if(db.students) {
+            grandTotal = db.students.reduce((acc, s) => {
+                let lastPeriod = s.periods && s.periods.length ? s.periods[s.periods.length-1] : { price: 0 };
+                return acc + (lastPeriod.price || 0);
+            }, 0);
+        }
+
+        body.innerHTML = (db.students || []).map(s => {
+            if(!s.financialMap) s.financialMap = {};
+            let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
+            dates.forEach((d, i) => {
+                let isHol = (db.holidays || []).includes(i), isPay = false;
+                let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+                if (activeP && !isHol) {
+                    let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
+                    let hCount = 0;
+                    for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
+                    let eff = totalWeeks - hCount;
+                    if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+                }
+                let st_val = s.financialMap[i] || 0;
+                let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : '');
+                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
+            });
+            return row + '</tr>';
+        }).join('');
+        
+        document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
+        totalH.innerHTML = `<tr class="total-row"><td class="sticky-name">WEEKLY</td>` + income.map(v => `<td>${v||'-'}</td>`).join('') + `</tr>`;
+        initColors('colorGridAdd', 'sColor');
+    }
+
+    function openSlotModal(studentId, currentDay, currentTime) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        let slot = (student.schedules || []).find(s => s.day === currentDay && s.time === currentTime);
+        let currentOffset = slot?.offset || 0;
+        let currentStatus = slot?.status || 0;
+
+        let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
+
+        document.getElementById('editFields').innerHTML = `
+            <h3>Edit Session Slot ⏰</h3>
+            <label>Student Name</label>
+            <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
+            
+            <label>Day</label>
+            <select id="editSlotDay">${daysOptions}</select>
+
+            <label>Time</label>
+            <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
+
+            <label>Attendance Status</label>
+            <select id="editSlotStatus">
+                <option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
+                <option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
+                <option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
+                <option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
+            </select>
+
+            <label>Horizontal Offset (px)</label>
+            <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
+
+            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
+            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+        `;
+
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function updateSlot(studentId, oldDay, oldTime) {
+        let newDay = document.getElementById('editSlotDay').value;
+        let newTime = document.getElementById('editSlotTime').value;
+        let newStatus = Number(document.getElementById('editSlotStatus').value);
+        let newOffset = Number(document.getElementById('editSlotOffset').value) || 0;
+
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (student && student.schedules) {
+            let slot = student.schedules.find(s => s.day === oldDay && s.time === oldTime);
+            if (slot) {
+                slot.day = newDay;
+                slot.time = newTime;
+                slot.status = newStatus;
+                slot.offset = newOffset;
+                save();
+            }
+        }
+        closeAll();
+    }
+
+    function deleteSlot(studentId, day, time) {
+        commitChange();
+        let student = db.students.find(s => s.id === studentId);
+        if (student && student.schedules) {
+            student.schedules = student.schedules.filter(s => !(s.day === day && s.time === time));
+            save();
+        }
+        closeAll();
+    }
+
+    function th(i) { 
+        commitChange(); 
+        if(!db.holidays) db.holidays = [];
+        let idx = db.holidays.indexOf(i); 
+        if(idx > -1) db.holidays.splice(idx,1); 
+        else db.holidays.push(i); 
+        save(); 
+    }
+
+    function st(id, i) { 
+        commitChange(); 
+        let s = db.students.find(x => x.id === id); 
+        if(s) {
+            if(!s.financialMap) s.financialMap = {}; 
+            s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 3; 
+            save(); 
+        }
+    }
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
+    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
+    
+    function initColors(id, radioName, sel = PALETTE[0]) { 
+        const target = document.getElementById(id);
+        if(!target) return;
+        target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`; 
+    }
+    
+    function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
+    
+    function addStudent() { 
+        let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
+        if(!n) return; commitChange(); 
+        if(!db.students) db.students = [];
+        db.students.push({ 
+            id: Date.now(), 
+            name: n, 
+            color: col, 
+            financialMap: {}, 
+            schedules: [], 
+            periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }] 
+        }); 
+        save(); closeAll();
+    }
+    
+    function addSchedule() { 
+        let id = Number(document.getElementById('sSelect').value);
+        let d = document.getElementById('cDay').value;
+        let t = document.getElementById('cTime').value; 
+        if(!id) return; 
+        commitChange(); 
+        let student = db.students.find(x => x.id === id);
+        if(student) {
+            if(!student.schedules) student.schedules = [];
+            student.schedules.push({ day: d, time: t, offset: 0, status: 0 }); 
+            save(); 
+        }
+        closeAll(); 
+    }
+
+    function openEdit(id) {
+        const s = db.students.find(x => x.id === id);
+        if(!s) return;
+        let phtml = (s.periods || []).map((p, idx) => `
+            <div class="period-card">
+                <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
+                <label>Price</label><input type="number" class="p-price" value="${p.price}">
+                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
+                ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
+            </div>`).join('');
+
+        document.getElementById('editFields').innerHTML = `
+            <h3>Edit Student</h3>
+            <label>Name</label><input id="en" value="${s.name}">
+            <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+            <hr>
+            <h4>Billing Periods</h4>
+            <div id="editPeriods">${phtml}</div>
+            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+            
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
+            </div>
+
+            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
+            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+        `;
+        initColors('ecg', 'eColor', s.color);
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function addNewPeriod() {
+        const div = document.createElement('div');
+        div.className = 'period-card';
+        let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        document.getElementById('editPeriods').appendChild(div);
+    }
+
+    function up(id) {
+        commitChange();
+        let s = db.students.find(x => x.id === id);
+        if(s) {
+            s.name = document.getElementById('en').value;
+            s.color = document.getElementById('hidden_ecg').value;
+            let newPeriods = [];
+            document.querySelectorAll('.period-card').forEach(card => {
+                newPeriods.push({
+                    startDate: card.querySelector('.p-date').value,
+                    price: Number(card.querySelector('.p-price').value || 0),
+                    cycle: Number(card.querySelector('.p-cycle').value || 4)
+                });
+            });
+            s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+            save(); 
+        }
+        closeAll();
+    }
+
+    function del(id) { 
+        if(confirm('Delete student and all their records?')) { 
+            commitChange(); 
+            db.students = db.students.filter(x => x.id !== id); 
+            save(); 
+            closeAll(); 
+        } 
+    }
+
+    async function loadPhoto() { 
+        try {
+            let d = await openPhotoDB(); 
+            let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); 
+            req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; 
+        } catch(e) {}
+    }
+
+    function openPhotoDB() { 
+        return new Promise((res) => { 
+            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
+            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
+            req.onsuccess = (e) => res(e.target.result); 
+            req.onerror = () => res(null);
+        }); 
+    }
+
+    function handleImageUpload(input) { 
+        if (input.files && input.files[0]) { 
+            const reader = new FileReader(); 
+            reader.onload = (e) => { 
+                const img = new Image(); 
+                img.onload = async () => { 
+                    const canvas = document.createElement('canvas'); 
+                    canvas.width = 150; canvas.height = 150; 
+                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
+                    const url = canvas.toDataURL('image/jpeg', 0.7); 
+                    document.getElementById('teacherImg').src = url; 
+                    let d = await openPhotoDB(); 
+                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                }; 
+                img.src = e.target.result; 
+            }; 
+            reader.readAsDataURL(input.files[0]); 
+        } 
+    }
+
+    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+</script>
+</body>
+</html>
