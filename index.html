@@ -31,7 +31,7 @@
         .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; touch-action: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: box-shadow 0.2s, transform 0.2s; }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.3; transform: scale(0.95); }
-        .slot.wide-slot { min-width: 75px; }
+        .slot.wide-slot { min-width: 62px; }
 
         .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
         
@@ -88,7 +88,7 @@
             .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
             .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; flex-wrap: wrap !important; }
             .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; box-shadow: none !important; }
-            .slot.wide-slot { min-width: 70px !important; }
+            .slot.wide-slot { min-width: 58px !important; }
             .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
             .acc-table { width: 100% !important; table-layout: fixed !important; }
             .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
@@ -431,7 +431,7 @@
                 div.className = 'slot'; 
                 div.style.background = sc.studentColor || '#3b82f6';
                 
-                // تحقق من الفارق الزمني مع الحصة التالية لنفس اليوم (أكبر من ساعة -> عرض مرة ونصف)
+                // زيادة خفيفة ومعتدلة في العرض إذا كان الفارق أكبر من ساعة
                 if (index < daySlots.length - 1) {
                     let nextSc = daySlots[index + 1];
                     let diffMinutes = nextSc.minutes - sc.minutes;
