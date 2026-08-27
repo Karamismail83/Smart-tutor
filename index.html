@@ -1,265 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Mr.Karam Ismail</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tutor - Mr. Karam Ismail</title>
     <style>
-        :root {
-            --bg-dark: #0F172A; 
-            --gold: #FACC15; 
-            --slate: #1E293B;
-            --name-w: 95px; 
-            --box-s: 22px;
+        body {
+            margin: 0;
+            background: #0F172A;
+            color: #ffffff;
+            font-family: Tahoma, sans-serif;
+            padding: 10px;
         }
+        header {
+            background: #1E293B;
+            padding: 12px;
+            border-bottom: 2px solid #FACC15;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+        }
+        .logo { font-size: 15px; font-weight: bold; color: #FACC15; }
         
-        * { box-sizing: border-box; }
-        body { 
-            margin: 0; 
-            background: var(--bg-dark); 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            font-size: 11px; 
-            overflow-x: hidden; 
+        .teacher-box {
+            background: #1E293B;
+            margin-top: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(250,204,21,0.3);
+            font-weight: bold;
+            color: #FACC15;
         }
 
-        /* Header */
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 12px 15px; 
-            background: var(--slate); 
-            border-bottom: 2px solid var(--gold); 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
+        /* Schedule */
+        .day-box {
+            background: rgba(255,255,255,0.05);
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .logo { font-size: 16px; font-weight: 900; letter-spacing: 0.5px; }
-        .logo span { color: var(--gold); }
-        .action-btn { 
-            background: var(--gold); 
-            color: #000; 
-            border: none; 
-            padding: 7px 14px; 
-            border-radius: 6px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            margin-left: 5px; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 4px; 
-            font-size: 11px; 
-        }
-
-        .container { padding: 12px; }
-
-        /* Teacher Info Box */
-        .teacher-box { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            background: var(--slate); 
-            padding: 12px 15px; 
-            border-radius: 12px; 
-            margin-bottom: 15px; 
-            border: 1px solid rgba(250,204,21,0.25); 
-        }
-        .profile-img-container { 
-            width: 42px; 
-            height: 42px; 
-            flex-shrink: 0; 
-            border-radius: 50%; 
-            border: 2px solid var(--gold); 
-            background: #334155; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 20px; 
-        }
-        .teacher-details { display: flex; flex-direction: column; justify-content: center; }
-        .teacher-name { color: var(--gold); font-size: 15px; font-weight: 900; margin-bottom: 2px; }
-        .teacher-phone { color: #94a3b8; font-size: 11px; }
-
-        /* Schedule Grid */
-        .day-row { 
-            display: flex; 
-            background: rgba(255,255,255,0.04); 
-            margin-bottom: 6px; 
-            border-radius: 8px; 
-            min-height: 46px; 
-            align-items: stretch; 
-            overflow: hidden;
-        }
-        .day-label { 
-            width: 42px; 
-            background: var(--gold); 
-            color: #000; 
-            font-weight: 900; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            flex-shrink: 0; 
-            font-size: 11px; 
-        }
-        .slots { 
-            flex: 1; 
-            display: flex; 
-            flex-wrap: nowrap; 
-            overflow-x: auto; 
-            gap: 6px; 
-            padding: 6px; 
-            align-items: center; 
-            scrollbar-width: none;
-        }
-        .slots::-webkit-scrollbar { display: none; }
-        
-        .slot { 
-            flex: 0 0 auto; 
-            min-width: 65px; 
-            padding: 6px 8px; 
-            border-radius: 6px; 
-            text-align: center; 
-            color: white; 
-            font-size: 10px; 
-            font-weight: bold; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .slot-time { font-size: 9px; opacity: 0.9; margin-top: 2px; font-weight: normal; }
-        .no-sessions { color: #64748b; padding-left: 8px; font-style: italic; }
-
-        /* Accounting Table - Stable Alignment */
-        .acc-table-wrapper { 
-            width: 100%; 
-            overflow-x: auto; 
-            background: #fff; 
-            border-radius: 10px; 
-            margin-top: 15px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-        }
-        .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; table-layout: fixed; }
-        .acc-table th, .acc-table td { 
-            border: 1px solid #cbd5e1; 
-            text-align: center; 
-            padding: 6px 2px; 
-            font-size: 10px; 
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .acc-table th { background: #1E293B; color: white; font-size: 10px; font-weight: 800; }
-        
-        .acc-table th:not(.sticky-name), .acc-table td:not(.sticky-name) { width: 38px; }
-        .acc-table th:last-child, .acc-table td:last-child { width: 45px; }
-
-        .sticky-name { 
-            position: sticky; 
-            left: 0; 
-            z-index: 10; 
-            width: var(--name-w) !important; 
-            min-width: var(--name-w) !important;
-            font-weight: 900; 
-            border-right: 2px solid #94a3b8 !important; 
-            text-align: center !important; 
-            color: white !important; 
+        .day-name {
+            background: #FACC15;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
             font-size: 11px;
-            padding: 6px 4px !important;
+            min-width: 35px;
+            text-align: center;
+        }
+        .slots-container {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            flex: 1;
+        }
+        .slot-pill {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            font-weight: bold;
         }
 
-        .box { 
-            width: var(--box-s); 
-            height: var(--box-s); 
-            border-radius: 4px; 
-            border: 1px solid #cbd5e1; 
-            background: #fee2e2; 
-            margin: auto; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
+        /* Accounting Table */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #000;
+            font-size: 11px;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 4px;
+            text-align: center;
+        }
+        th {
+            background: #1E293B;
+            color: #fff;
+        }
+        .student-name-col {
+            font-weight: bold;
+            color: #fff;
+            text-align: right;
+            padding-right: 8px;
+        }
+        .pay-week {
+            background: #fef3c7 !important;
         }
         
-        .is-pay-week { 
-            background: #fef3c7 !important; 
-            border-right: 2px solid #b45309 !important; 
-            border-left: 2px solid #b45309 !important; 
+        /* Checkbox Box */
+        .box {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #94a3b8;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
         }
-        
-        .status-paid { background: #d1fae5 !important; color: #047857; border-color: #10b981; }
-        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+        .not-paid { background: #fee2e2; color: #b91c1c; }
+        .is-paid { background: #d1fae5; color: #047857; }
 
-        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; font-weight: 900 !important; }
-
-        /* Sidebar Modal */
-        .sidebar { position: fixed; top: 0; left: -110%; width: 300px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .sidebar.active { left: 0 !important; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
-        .overlay.active { display: block; }
-        input { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 6px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; }
-        #toast.show { transform: translateX(-50%) translateY(0); }
+        .total-footer {
+            background: #FACC15;
+            font-weight: bold;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-<div id="toast"></div>
-
-<div class="sidebar" id="sidebar">
-    <h2 style="margin-top:0">Add Student ➕</h2>
-    <input id="sName" placeholder="Student Name">
-    <label style="font-size:10px; color:#64748b">Student Color:</label>
-    <input id="sColor" type="color" value="#3B82F6" style="height:35px; padding:0; cursor:pointer;">
-    <input id="sPrice" type="number" placeholder="Price (default 200)" value="200">
-    <button class="action-btn" style="width:100%; justify-content:center; background:var(--gold); color:black; margin-top:10px;" onclick="addStudent()">Save Student</button>
-</div>
-
 <header>
-    <div class="logo">SMART<span>TUTOR</span></div>
-    <div>
-        <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
-        <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
-    </div>
+    <div class="logo">Smart Tutor</div>
+    <div style="font-size: 12px; color: #FACC15;">Mr. Karam Ismail</div>
 </header>
 
-<div class="container">
-    <div class="teacher-box">
-        <div class="profile-img-container">👤</div>
-        <div class="teacher-details">
-            <div class="teacher-name">Mr.Karam Ismail</div>
-            <div class="teacher-phone">Teacher Phone Number</div>
-        </div>
-    </div>
+<div class="teacher-box">
+    👤 الأستاذ: كرم إسماعيل
+</div>
 
-    <div id="scheduleGrid"></div>
+<!-- Schedule Section -->
+<div id="scheduleSection"></div>
 
-    <div class="acc-table-wrapper">
-        <table class="acc-table">
-            <thead>
-                <tr>
-                    <th class="sticky-name" style="background:#1E293B;">Student</th>
-                    <th>W1</th>
-                    <th>W2</th>
-                    <th>W3</th>
-                    <th class="is-pay-week">W4</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody id="accBody"></tbody>
-            <tfoot id="accFooter"></tfoot>
-        </table>
-    </div>
+<!-- Financial Table -->
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>الطالب</th>
+                <th>W1</th>
+                <th>W2</th>
+                <th>W3</th>
+                <th class="pay-week">W4</th>
+                <th>الإجمالي</th>
+            </tr>
+        </thead>
+        <tbody id="accBody"></tbody>
+        <tfoot id="accFooter"></tfoot>
+    </table>
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_smart_tutor_db_v3';
-    const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const dataKey = "karam_tutor_clean_db_v1";
+    const days = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
 
-    let initialData = {
+    let db = JSON.parse(localStorage.getItem(dataKey)) || {
         students: [
             { id: 's1', name: 'آدم', color: '#EF4444', price: 200, payments: {} },
             { id: 's2', name: 'الفريدة', color: '#10B981', price: 200, payments: {} },
@@ -270,152 +172,86 @@
             { id: 's7', name: 'المري', color: '#EC4899', price: 200, payments: {} }
         ],
         schedule: {
-            'Sat': [
-                { time: '11:30 AM', studentId: 's1' },
-                { time: '3:15 PM', studentId: 's2' },
-                { time: '1:00 PM', studentId: 's3' },
-                { time: '5:15 PM', studentId: 's4' },
-                { time: '6:30 PM', studentId: 's5' }
-            ],
-            'Sun': [
-                { time: '3:45 PM', studentId: 's1' },
-                { time: '5:00 PM', studentId: 's2' },
-                { time: '2:00 PM', studentId: 's6' },
-                { time: '7:15 PM', studentId: 's7' }
-            ],
-            'Mon': [
-                { time: '3:45 PM', studentId: 's1' },
-                { time: '2:00 PM', studentId: 's6' },
-                { time: '5:00 PM', studentId: 's4' },
-                { time: '6:15 PM', studentId: 's7' }
-            ],
-            'Tue': [
-                { time: '4:15 PM', studentId: 's2' },
-                { time: '2:00 PM', studentId: 's3' },
-                { time: '6:15 PM', studentId: 's5' }
-            ],
-            'Wed': [
-                { time: '2:00 PM', studentId: 's1' },
-                { time: '3:15 PM', studentId: 's2' },
-                { time: '5:15 PM', studentId: 's7' },
-                { time: '6:30 PM', studentId: 's5' }
-            ],
-            'Thu': [
-                { time: '2:00 PM', studentId: 's3' }
-            ],
-            'Fri': []
+            'السبت': [{time: '11:30 AM', id: 's1'}, {time: '3:15 PM', id: 's2'}],
+            'الأحد': [{time: '3:45 PM', id: 's1'}, {time: '5:00 PM', id: 's2'}],
+            'الإثنين': [{time: '3:45 PM', id: 's1'}],
+            'الثلاثاء': [{time: '4:15 PM', id: 's2'}],
+            'الأربعاء': [{time: '2:00 PM', id: 's1'}],
+            'الخميس': [{time: '2:00 PM', id: 's3'}],
+            'الجمعة': []
         }
     };
 
-    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialData;
-
-    function showToast(msg) {
-        let t = document.getElementById('toast');
-        t.innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2000);
-    }
-
-    function save() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    function saveData() {
+        localStorage.setItem(dataKey, JSON.stringify(db));
         render();
     }
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    }
-
-    function closeSidebar() {
-        document.getElementById('sidebar').classList.remove('active');
-        document.getElementById('overlay').classList.remove('active');
-    }
-
-    function addStudent() {
-        let name = document.getElementById('sName').value.trim();
-        let color = document.getElementById('sColor').value;
-        let price = Number(document.getElementById('sPrice').value) || 200;
-        if(!name) { showToast('Please enter student name'); return; }
-
-        db.students.push({ id: 's_' + Date.now(), name, color, price, payments: {} });
-        document.getElementById('sName').value = '';
-        closeSidebar();
-        save();
-        showToast('Student added');
-    }
-
-    function togglePayment(studentId, weekIdx) {
-        let st = db.students.find(s => s.id === studentId);
-        if(st) {
-            if(!st.payments) st.payments = {};
-            st.payments[weekIdx] = !st.payments[weekIdx];
-            save();
+    function togglePay(studentId, weekIdx) {
+        if (!db.students.find(s => s.id === studentId).payments) {
+            db.students.find(s => s.id === studentId).payments = {};
         }
+        let current = db.students.find(s => s.id === studentId).payments[weekIdx] || false;
+        db.students.find(s => s.id === studentId).payments[weekIdx] = !current;
+        saveData();
     }
 
     function render() {
-        let schedHTML = '';
+        // Render Schedule
+        let schedHtml = '';
         days.forEach(day => {
             let slots = db.schedule[day] || [];
-            schedHTML += `<div class="day-row"><div class="day-label">${day}</div><div class="slots">`;
-            if(slots.length === 0) {
-                schedHTML += `<span class="no-sessions">No sessions</span>`;
+            schedHtml += `<div class="day-box"><div class="day-name">${day}</div><div class="slots-container">`;
+            if (slots.length === 0) {
+                schedHtml += `<span style="color:#94a3b8; font-size:10px;">لا توجد مواعيد</span>`;
             } else {
                 slots.forEach(slot => {
-                    let st = db.students.find(s => s.id === slot.studentId);
-                    let name = st ? st.name : 'Unknown';
+                    let st = db.students.find(s => s.id === slot.id);
+                    let name = st ? st.name : '';
                     let color = st ? st.color : '#334155';
-                    schedHTML += `
-                        <div class="slot" style="background:${color}">
-                            <div>${name}</div>
-                            <div class="slot-time">${slot.time}</div>
-                        </div>
-                    `;
+                    schedHtml += `<div class="slot-pill" style="background:${color}; color:#fff;">${name} (${slot.time})</div>`;
                 });
             }
-            schedHTML += `</div></div>`;
+            schedHtml += `</div></div>`;
         });
-        document.getElementById('scheduleGrid').innerHTML = schedHTML;
+        document.getElementById('scheduleSection').innerHTML = schedHtml;
 
-        let totalWeeks = 4;
-        let bodyHTML = '';
-        let grandTotals = new Array(totalWeeks).fill(0);
-        let grandSum = 0;
+        // Render Table
+        let bodyHtml = '';
+        let totals = [0, 0, 0, 0];
+        let grandTotalSum = 0;
 
         db.students.forEach(st => {
-            let studentTotal = 0;
-            let rowHTML = `<tr><td class="sticky-name" style="background:${st.color}">${st.name}</td>`;
+            let studentSum = 0;
+            bodyHtml += `<tr><td class="student-name-col" style="background:${st.color};">${st.name}</td>`;
             
-            for(let i = 0; i < totalWeeks; i++) {
-                let isPay = (i === 3);
+            for (let i = 0; i < 4; i++) {
                 let isPaid = st.payments?.[i] || false;
-                if(isPaid) {
-                    studentTotal += st.price;
-                    grandTotals[i] += st.price;
+                if (isPaid) {
+                    studentSum += st.price;
+                    totals[i] += st.price;
                 }
-                rowHTML += `
-                    <td class="${isPay ? 'is-pay-week' : ''}">
-                        <div class="box ${isPaid ? 'status-paid' : 'status-notpaid'}" onclick="togglePayment('${st.id}', ${i})">
+                bodyHtml += `
+                    <td class="${i === 3 ? 'pay-week' : ''}">
+                        <div class="box ${isPaid ? 'is-paid' : 'not-paid'}" onclick="togglePay('${st.id}', ${i})">
                             ${isPaid ? '✓' : ''}
                         </div>
                     </td>
                 `;
             }
-            rowHTML += `<td style="font-weight:bold; background:#f8fafc; color:#000;">${studentTotal}</td></tr>`;
-            bodyHTML += rowHTML;
-            grandSum += studentTotal;
+            bodyHtml += `<td style="font-weight:bold; background:#f8fafc;">${studentSum}</td></tr>`;
+            grandTotalSum += studentSum;
         });
-        document.getElementById('accBody').innerHTML = bodyHTML;
+        document.getElementById('accBody').innerHTML = bodyHtml;
 
-        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
-        for(let i = 0; i < totalWeeks; i++) {
-            footerHTML += `<th>${grandTotals[i]}</th>`;
-        }
-        footerHTML += `<th class="grand-total-cell">${grandSum}</th></tr>`;
-        document.getElementById('accFooter').innerHTML = footerHTML;
+        let footerHtml = `<tr class="total-footer"><td style="text-align:right; padding-right:8px;">الإجمالي</td>`;
+        totals.forEach(t => { footerHtml += `<td>${t}</td>`; });
+        footerHtml += `<td>${grandTotalSum}</td></tr>`;
+        document.getElementById('accFooter').innerHTML = footerHtml;
     }
 
-    window.onload = render;
+    render();
 </script>
+
 </body>
 </html>
