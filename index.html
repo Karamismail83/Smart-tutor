@@ -235,49 +235,63 @@
     }
 
     function generateStudentReportHTML(student) {
-        let teacherName = db.teacherName || 'Teacher';
+        let teacherName = db.teacherName || 'Teacher / المعلم';
         let schedulesHTML = '';
 
+        // جلب تفاصيل الفترة الأخيرة الخاصة بحساب الطالب وتكلفته ودورة الأسابيع
+        let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+        let studentPrice = lastPeriod.price || 0;
+        let cycleWeeks = lastPeriod.cycle || 4;
+
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found / لا توجد مواعيد مسجلة</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
             sortedSchedules.forEach(sc => {
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${sc.day}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
             });
         }
 
         return `
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
+            <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: rtl;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 22px;">SMART TUTOR</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule</p>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / جدول الدروس الذكي</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Weekly Schedule / الجدول الأسبوعي الرسمي</p>
                     </div>
-                    <div style="text-align: right;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
+                    <div style="text-align: left;">
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher / المعلم: ${teacherName}</span>
                     </div>
                 </div>
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student Name / اسم الطالب: ${student.name}</h3>
+                        <p style="margin: 0; font-size: 11px; color: #64748b;">Assigned weekly session times and financial details:</p>
+                    </div>
+                    <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
+                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Account / Fee (حساب الطالب):</div>
+                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / لكل ${cycleWeeks} أسابيع (Every ${cycleWeeks} Weeks)</div>
+                    </div>
                 </div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
+                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">Day / اليوم</th>
+                            <th style="padding: 10px 15px; text-align: left; font-size: 12px; direction: ltr;">Time / الوقت</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
-                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
-                    Thank you for trusting us with your education.
+
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; color: #94a3b8; font-size: 10px;">
+                    Thank you for trusting us with your education. / شكراً لتثقتكم بنا.
                 </div>
             </div>
         `;
@@ -295,7 +309,7 @@
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
         let tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
+        tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '680px';
         tempDiv.innerHTML = generateStudentReportHTML(student);
         document.body.appendChild(tempDiv);
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
@@ -707,7 +721,7 @@
             <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
+                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF (عربي/En)</button>
                 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
             </div>
 
