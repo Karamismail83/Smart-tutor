@@ -234,6 +234,7 @@
         window.print();
     }
 
+    // تم تعديل هذه الدالة لإضافة الحساب ومدة الأسابيع
     function generateStudentReportHTML(student) {
         let teacherName = db.teacherName || 'Teacher';
         let schedulesHTML = '';
@@ -252,6 +253,10 @@
             });
         }
 
+        let lastPeriod = student.periods && student.periods.length > 0 ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+        let price = lastPeriod.price || 0;
+        let cycle = lastPeriod.cycle || 4;
+
         return `
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
@@ -264,7 +269,13 @@
                     </div>
                 </div>
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    
+                    <div style="background: #e2e8f0; padding: 6px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px;">
+                        <span style="font-weight: bold; color: #0f172a; font-size: 14px;">الحساب: ${price}</span>
+                        <span style="font-weight: bold; color: #b45309; font-size: 13px; margin-left: 6px;">(كل ${cycle} أسابيع)</span>
+                    </div>
+
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
