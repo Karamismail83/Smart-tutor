@@ -269,13 +269,13 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; direction: rtl;">
                     <div>
-                        <span style="font-size: 12px; color: #64748b; display: block;">Billing Cycle & Rate:</span>
-                        <strong style="font-size: 14px; color: #0f172a;">Every ${lastPeriod.cycle || 4} Weeks</strong>
+                        <span style="font-size: 12px; color: #64748b; display: block;">دورة الفوترة والرسوم:</span>
+                        <strong style="font-size: 14px; color: #0f172a; direction: ltr; unicode-bidi: embed; display: inline-block;">Every ${lastPeriod.cycle || 4} Weeks</strong> <span style="font-size: 13px; color: #0f172a;">كل ٤ أسابيع</span>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size: 12px; color: #64748b; display: block;">Amount Due:</span>
+                        <span style="font-size: 12px; color: #64748b; display: block;">المبلغ المستحق:</span>
                         <strong style="font-size: 16px; color: #047857;">${lastPeriod.price || 0}</strong>
                     </div>
                 </div>
