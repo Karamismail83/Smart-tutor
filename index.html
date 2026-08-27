@@ -234,8 +234,8 @@
         window.print();
     }
 
-    // تم تعديل هذه الدالة لإضافة الحساب ومدة الأسابيع
-    function generateStudentReportHTML(student) {
+    // توليد تقرير الطالب مع دعم خيار إظهار/إخفاء الحساب وجملة الأسابيع بدون أقواس
+    function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
         let schedulesHTML = '';
 
@@ -257,6 +257,16 @@
         let price = lastPeriod.price || 0;
         let cycle = lastPeriod.cycle || 4;
 
+        let accountSectionHTML = '';
+        if (showAccount) {
+            accountSectionHTML = `
+                <div style="background: #e2e8f0; padding: 6px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px;">
+                    <span style="font-weight: bold; color: #0f172a; font-size: 14px;">الحساب: ${price}</span>
+                    <span style="font-weight: bold; color: #b45309; font-size: 13px; margin-left: 6px;">كل ${cycle} أسابيع</span>
+                </div>
+            `;
+        }
+
         return `
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
@@ -270,12 +280,7 @@
                 </div>
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
                     <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
-                    
-                    <div style="background: #e2e8f0; padding: 6px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px;">
-                        <span style="font-weight: bold; color: #0f172a; font-size: 14px;">الحساب: ${price}</span>
-                        <span style="font-weight: bold; color: #b45309; font-size: 13px; margin-left: 6px;">(كل ${cycle} أسابيع)</span>
-                    </div>
-
+                    ${accountSectionHTML}
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
@@ -295,19 +300,21 @@
     }
 
     function printSingleStudent(studentId) {
+        let showAcc = document.getElementById('printAccountCheck')?.checked ?? true;
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, showAcc);
         document.body.classList.add('print-single-student');
         window.print();
     }
 
     function downloadStudentImage(studentId) {
+        let showAcc = document.getElementById('printAccountCheck')?.checked ?? true;
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
         let tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-        tempDiv.innerHTML = generateStudentReportHTML(student);
+        tempDiv.innerHTML = generateStudentReportHTML(student, showAcc);
         document.body.appendChild(tempDiv);
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
             let link = document.createElement('a');
@@ -717,6 +724,11 @@
             <div id="editPeriods">${phtml}</div>
             <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="printAccountCheck" checked style="width: auto; margin: 0;">
+                <label for="printAccountCheck" style="margin: 0; font-size: 12px; cursor: pointer; color: #0f172a; font-weight: bold;">إظهار الحساب وجملة الأسابيع عند الطباعة / الحفظ</label>
+            </div>
+
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
                 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
                 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
