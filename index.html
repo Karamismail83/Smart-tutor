@@ -415,13 +415,11 @@
             if(imgEl) imgEl.src = db.teacherImg;
         }
 
-        // تحديث القائمة المنسدلة للطلاب في السايدبار
         const sSelect = document.getElementById('sSelect');
         if(sSelect) {
             sSelect.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
 
-        // رسم جدول الحصص اليومي
         const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
         let scheduleGridHTML = '';
         days.forEach(day => {
@@ -452,12 +450,10 @@
         });
         document.getElementById('scheduleGrid').innerHTML = scheduleGridHTML;
 
-        // بناء جدول الحسابات والمتابعة المالية
         renderAccountingTable();
     }
 
     function renderAccountingTable() {
-        // بناء أعمدة الجدول البسيطة أو الممتدة (كمثال مبسط لأيام الشهر أو الحصص)
         let headerHTML = `<th class="sticky-name">Student</th>`;
         let totalHeaderHTML = `<th class="sticky-name">Total</th>`;
         for(let i = 1; i <= 4; i++) {
