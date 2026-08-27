@@ -10,57 +10,38 @@
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
             --name-w: 120px; --box-s: 24px; --primary: #6366f1;
         }
-        
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
         .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
         .container { padding: 10px; }
-
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
         .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px solid #444; font-size: 16px; width: 100%; font-weight: 900; outline: none; }
-
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-        
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
-        
         .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease; }
         .slot:active { cursor: grabbing; }
         .slot.wide-slot { min-width: 62px; }
         .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
-        
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
         .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
-        
-        .sticky-name { 
-            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
-            font-weight: 900; border-right: 2px solid #ddd !important; 
-            text-align: left !important; padding: 4px 6px !important; 
-            color: white !important; box-sizing: border-box; 
-            cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-
+        .sticky-name { position: sticky; left: 0; z-index: 100; width: var(--name-w); font-weight: 900; border-right: 2px solid #ddd !important; text-align: left !important; padding: 4px 6px !important; color: white !important; box-sizing: border-box; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
-
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .sidebar.active, .modal.active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
-        
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; display: inline-block; margin: 2px; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
-
         #studentPrintContainer { display: none; }
-        
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
@@ -73,12 +54,10 @@
 </head>
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
-
 <div class="modal" id="editModal">
     <h2 style="margin-top:0">Student Details & Report 📋</h2>
     <div id="editFields"></div>
 </div>
-
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
 
@@ -90,7 +69,6 @@
         <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
         <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
     </div>
-
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
@@ -101,7 +79,6 @@
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
-    
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Slot (Session)</h3>
     <select id="sSelect"></select>
@@ -127,7 +104,6 @@
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
         <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
     </div>
-
     <div id="scheduleGrid"></div>
     <div class="acc-table-wrapper">
         <table class="acc-table">
@@ -144,7 +120,8 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v395')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        // محاولة جلب البيانات من المفتاح القديم العام أو أي مفتاح سابق
+        db = JSON.parse(localStorage.getItem('smart_tutor_db') || localStorage.getItem('tutor_v395') || localStorage.getItem('tutor_v3')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
         db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
@@ -211,7 +188,10 @@
     }
 
     function save() { 
-        try { localStorage.setItem('tutor_v395', JSON.stringify(db)); } catch(e) {}
+        try { 
+            localStorage.setItem('smart_tutor_db', JSON.stringify(db)); 
+            localStorage.setItem('tutor_v395', JSON.stringify(db)); 
+        } catch(e) {}
         render(); 
     }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
