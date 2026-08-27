@@ -173,9 +173,9 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
-        db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
 
     let historyStack = [];
@@ -235,15 +235,15 @@
         window.print();
     }
 
-    // توليد تقرير الطالب مع ترتيب الأيام من السبت للخميس، وإضافة رقم التليفون تحت اسم الطالب
+    // توليد تقرير الطالب مع ترتيب الأيام من السبت للخميس، وإضافة رقم تليفون المعلم تحت اسم المعلم
     function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
+        let teacherPhone = db.teacherPhone ? `<p style="margin: 3px 0 0; font-size: 11px; color: #64748b; direction: ltr; text-align: right;">Phone: ${db.teacherPhone}</p>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
             schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
         } else {
-            // ترتيب الأيام تصاعدياً حسب DAY_ORDER (السبت إلى الخميس) ثم بالوقت
             let sortedSchedules = [...student.schedules].sort((a, b) => {
                 let dayDiff = (DAY_ORDER[a.day] || 99) - (DAY_ORDER[b.day] || 99);
                 if (dayDiff !== 0) return dayDiff;
@@ -263,7 +263,6 @@
         let lastPeriod = student.periods && student.periods.length > 0 ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
         let price = lastPeriod.price || 0;
         let cycle = lastPeriod.cycle || 4;
-        let phone = student.phone ? `<p style="margin: 5px 0 0; font-size: 13px; color: #475569; direction: ltr; text-align: left;">Phone: ${student.phone}</p>` : '';
 
         let accountSectionHTML = '';
         if (showAccount) {
@@ -284,15 +283,26 @@
                     </div>
                     <div style="text-align: right;">
                         <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
+                        ${teacherPhone}
                     </div>
                 </div>
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
-                    ${phone}
-                    <div style="margin-top: 10px;">${accountSectionHTML}</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    ${accountSectionHTML}
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>${schedulesHTML}</tbody>
+                </table>
+            </div>
+        `;
+    }
+</script>
+</body>
+</html>
