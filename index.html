@@ -170,6 +170,17 @@
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     
+    // قاموس ترجمة الأيام فقط إلى العربية
+    const DAYS_TRANS = {
+        'Sat': 'السبت',
+        'Sun': 'الأحد',
+        'Mon': 'الإثنين',
+        'Tue': 'الثلاثاء',
+        'Wed': 'الأربعاء',
+        'Thu': 'الخميس',
+        'Fri': 'الجمعة'
+    };
+
     let db;
     try {
         db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
@@ -235,22 +246,22 @@
     }
 
     function generateStudentReportHTML(student) {
-        let teacherName = db.teacherName || 'Teacher / المعلم';
+        let teacherName = db.teacherName || '';
         let schedulesHTML = '';
 
-        // جلب تفاصيل الفترة الأخيرة الخاصة بحساب الطالب وتكلفته ودورة الأسابيع
         let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
         let studentPrice = lastPeriod.price || 0;
         let cycleWeeks = lastPeriod.cycle || 4;
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found / لا توجد مواعيد مسجلة</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">لا توجد مواعيد مسجلة</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
             sortedSchedules.forEach(sc => {
+                let translatedDay = DAYS_TRANS[sc.day] || sc.day;
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${translatedDay}</td>
                         <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
@@ -261,37 +272,37 @@
             <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: rtl;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / جدول الدروس الذكي</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Weekly Schedule / الجدول الأسبوعي الرسمي</p>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">جدول الدروس الذكي</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">الجدول الأسبوعي الرسمي</p>
                     </div>
                     <div style="text-align: left;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher / المعلم: ${teacherName}</span>
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">المعلم: ${teacherName}</span>
                     </div>
                 </div>
 
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student Name / اسم الطالب: ${student.name}</h3>
-                        <p style="margin: 0; font-size: 11px; color: #64748b;">Assigned weekly session times and financial details:</p>
+                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">${student.name}</h3>
+                        <p style="margin: 0; font-size: 11px; color: #64748b;">مواعيد الحصص والرسوم المالية:</p>
                     </div>
                     <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
-                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Account / Fee (حساب الطالب):</div>
-                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / لكل ${cycleWeeks} أسابيع (Every ${cycleWeeks} Weeks)</div>
+                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">الحساب / الرسوم:</div>
+                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / كل ${cycleWeeks} أسابيع (Every ${cycleWeeks} Weeks)</div>
                     </div>
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">Day / اليوم</th>
-                            <th style="padding: 10px 15px; text-align: left; font-size: 12px; direction: ltr;">Time / الوقت</th>
+                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">اليوم</th>
+                            <th style="padding: 10px 15px; text-align: left; font-size: 12px; direction: ltr;">الوقت</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
 
                 <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; color: #94a3b8; font-size: 10px;">
-                    Thank you for trusting us with your education. / شكراً لتثقتكم بنا.
+                    شكراً لتثقتكم بنا.
                 </div>
             </div>
         `;
@@ -455,9 +466,10 @@
         
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { 
+            let translatedDay = DAYS_TRANS[d] || d;
             grid.innerHTML += `
                 <div class="day-row">
-                    <div class="day-label">${d}</div>
+                    <div class="day-label">${translatedDay}</div>
                     <div class="slots" id="slot-${d}" 
                          ondragover="handleDragOver(event)" 
                          ondragleave="handleDragLeave(event)" 
@@ -577,32 +589,32 @@
         let currentStatus = slot?.status || 0;
 
         let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
+        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${DAYS_TRANS[d] || d}</option>`).join('');
 
         document.getElementById('editFields').innerHTML = `
-            <h3>Edit Session Slot ⏰</h3>
-            <label>Student Name</label>
+            <h3>تعديل موعد الحصة ⏰</h3>
+            <label>اسم الطالب</label>
             <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
             
-            <label>Day</label>
+            <label>اليوم</label>
             <select id="editSlotDay">${daysOptions}</select>
 
-            <label>Time</label>
+            <label>الوقت</label>
             <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
 
-            <label>Attendance Status</label>
+            <label>الحالة</label>
             <select id="editSlotStatus">
-                <option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
-                <option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
-                <option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
-                <option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
+                <option value="0" ${currentStatus === 0 ? 'selected' : ''}>عادي</option>
+                <option value="1" ${currentStatus === 1 ? 'selected' : ''}>حاضر (✓)</option>
+                <option value="2" ${currentStatus === 2 ? 'selected' : ''}>غائب (✕)</option>
+                <option value="3" ${currentStatus === 3 ? 'selected' : ''}>ملغي (⟳)</option>
             </select>
 
-            <label>Horizontal Offset (px)</label>
+            <label>إزاحة أفقية (px)</label>
             <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
 
-            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
-            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">حفظ التغييرات 💾</button>
+            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">حذف الموعد 🗑️</button>
         `;
 
         document.getElementById('editModal').classList.add('active');
@@ -705,28 +717,28 @@
         if(!s) return;
         let phtml = (s.periods || []).map((p, idx) => `
             <div class="period-card">
-                <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
-                <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
+                <label>تاريخ البدء</label><input type="date" class="p-date" value="${p.startDate}">
+                <label>السعر</label><input type="number" class="p-price" value="${p.price}">
+                <label>دورة الأسابيع (مثلاً كل 4 أسابيع)</label><input type="number" class="p-cycle" value="${p.cycle}">
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
         document.getElementById('editFields').innerHTML = `
-            <h3>Edit Student</h3>
-            <label>Name</label><input id="en" value="${s.name}">
+            <h3>تعديل الطالب</h3>
+            <label>الاسم</label><input id="en" value="${s.name}">
             <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
             <hr>
-            <h4>Billing Periods</h4>
+            <h4>فترات وحسابات الرسوم</h4>
             <div id="editPeriods">${phtml}</div>
-            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ إضافة فترة رسوم جديدة</button>
             
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF (عربي/En)</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
+                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ طباعة تقرير الطالب</button>
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 حفظ كصورة</button>
             </div>
 
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+            <button class="action-btn" style="width:100%" onclick="up(${id})">حفظ كافة التغييرات</button>
+            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">حذف الطالب</button>
         `;
         initColors('ecg', 'eColor', s.color);
         document.getElementById('editModal').classList.add('active');
@@ -737,7 +749,7 @@
         const div = document.createElement('div');
         div.className = 'period-card';
         let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label>تاريخ البدء</label><input type="date" class="p-date" value="${defaultDate}"><label>السعر</label><input type="number" class="p-price" value="0"><label>دورة الأسابيع</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
@@ -762,7 +774,7 @@
     }
 
     function del(id) { 
-        if(confirm('Delete student and all their records?')) { 
+        if(confirm('حذف الطالب وجميع سجلاته؟')) { 
             commitChange(); 
             db.students = db.students.filter(x => x.id !== id); 
             save(); 
