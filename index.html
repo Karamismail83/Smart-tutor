@@ -23,7 +23,7 @@
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 10px; line-height: 1.2; text-align: center; }
+        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 11px; text-align: center; }
         
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
@@ -85,7 +85,7 @@
             .teacher-box { background: #1E293B !important; border: 2px solid #FACC15 !important; border-radius: 8px !important; padding: 8px 14px !important; margin-bottom: 10px !important; box-shadow: none !important; }
             #teacherName { color: #FACC15 !important; border-bottom: 1px solid #444 !important; font-size: 16px !important; font-weight: bold !important; background: transparent !important; }
             .day-row { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.15) !important; margin-bottom: 4px !important; min-height: 40px !important; align-items: center !important; page-break-inside: avoid; }
-            .day-label { background: #FACC15 !important; color: #000000 !important; font-size: 9px !important; width: 75px !important; font-weight: bold; }
+            .day-label { background: #FACC15 !important; color: #000000 !important; font-size: 10px !important; width: 75px !important; font-weight: bold; }
             .slots { padding: 3px 5px !important; gap: 4px !important; min-height: 38px !important; align-items: center !important; }
             .slot { border: 1px solid rgba(255,255,255,0.2) !important; background: #1E293B !important; color: #ffffff !important; font-size: 9px !important; padding: 3px 3px !important; min-width: 48px !important; box-shadow: none !important; }
             .slot.wide-slot { min-width: 62px !important; }
@@ -146,13 +146,13 @@
     <h3>Add Slot (Session)</h3>
     <select id="sSelect"></select>
     <select id="cDay">
-        <option value="Sat">Sat / السبت</option>
-        <option value="Sun">Sun / الأحد</option>
-        <option value="Mon">Mon / الاثنين</option>
-        <option value="Tue">Tue / الثلاثاء</option>
-        <option value="Wed">Wed / الأربعاء</option>
-        <option value="Thu">Thu / الخميس</option>
-        <option value="Fri">Fri / الجمعة</option>
+        <option value="Sat">Sat</option>
+        <option value="Sun">Sun</option>
+        <option value="Mon">Mon</option>
+        <option value="Tue">Tue</option>
+        <option value="Wed">Wed</option>
+        <option value="Thu">Thu</option>
+        <option value="Fri">Fri</option>
     </select>
     <select id="cTime"></select>
     <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
@@ -191,13 +191,13 @@
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
     
     const dayNamesMap = {
-        "Sat": "Sat / السبت",
-        "Sun": "Sun / الأحد",
-        "Mon": "Mon / الاثنين",
-        "Tue": "Tue / الثلاثاء",
-        "Wed": "Wed / الأربعاء",
-        "Thu": "Thu / الخميس",
-        "Fri": "Fri / الجمعة"
+        "Sat": "Sat",
+        "Sun": "Sun",
+        "Mon": "Mon",
+        "Tue": "Tue",
+        "Wed": "Wed",
+        "Thu": "Thu",
+        "Fri": "Fri"
     };
 
     let db;
@@ -293,14 +293,14 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #1e293b; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: rtl;">
-                    <div>
-                        <span style="font-size: 12px; color: #94a3b8; display: block;">رسوم التدريس والمدة:</span>
-                        <strong style="font-size: 14px; color: #ffffff; direction: ltr; unicode-bidi: embed; display: inline-block;">Every ${lastPeriod.cycle || 4} Weeks</strong> <span style="font-size: 13px; color: #ffffff;">كل ٤ أسابيع</span>
-                    </div>
+                <div style="background: #1e293b; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
                     <div style="text-align: right;">
                         <span style="font-size: 12px; color: #94a3b8; display: block;">المبلغ المستحق:</span>
                         <strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 12px; color: #94a3b8; display: block; text-align: left;">Every ${lastPeriod.cycle || 4} Weeks:</span>
+                        <strong style="font-size: 14px; color: #ffffff; direction: ltr; unicode-bidi: embed; display: inline-block;">كل ٤ أسابيع</strong>
                     </div>
                 </div>
             `;
@@ -325,8 +325,8 @@
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Day / اليوم</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Time / الوقت</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
@@ -586,28 +586,61 @@
             }, 0);
         }
 
-        body.innerHTML = (db.students || []).map(s => {
-            if(!s.financialMap) s.financialMap = {};
-            let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
-            dates.forEach((d, i) => {
-                let isHol = (db.holidays || []).includes(i), isPay = false;
-                let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
-                if (activeP && !isHol) {
-                    let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
-                    let hCount = 0;
-                    for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
-                    let eff = totalWeeks - hCount;
-                    if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+        let studentRowsHTML = '';
+        let periodsHeaderAdded = false;
+
+        if (db.students && Array.isArray(db.students)) {
+            db.students.forEach((s, sIndex) => {
+                if(!s.financialMap) s.financialMap = {};
+                let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
+                dates.forEach((d, i) => {
+                    let isHol = (db.holidays || []).includes(i), isPay = false;
+                    let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+                    if (activeP && !isHol) {
+                        let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
+                        let hCount = 0;
+                        for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
+                        let eff = totalWeeks - hCount;
+                        if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+                    }
+                    let st_val = s.financialMap[i] || 0;
+                    let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : '');
+                    row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
+                });
+                row += '</tr>';
+                studentRowsHTML += row;
+
+                // Check if this student is at or past a block of 4 students, or if it's the last student, insert the periodic total row
+                let currentStudentNumber = sIndex + 1;
+                if (currentStudentNumber % 4 === 0 || currentStudentNumber === db.students.length) {
+                    let blockIncome = Array(dates.length).fill(0);
+                    let startIdx = Math.floor(sIndex / 4) * 4;
+                    let endIdx = sIndex;
+                    
+                    for (let idx = startIdx; idx <= endIdx; idx++) {
+                        let targetStudent = db.students[idx];
+                        dates.forEach((d, i) => {
+                            let isHol = (db.holidays || []).includes(i);
+                            let activeP = targetStudent.periods && targetStudent.periods.length ? [...targetStudent.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+                            if (activeP && !isHol) {
+                                let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
+                                let hCount = 0;
+                                for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
+                                let eff = totalWeeks - hCount;
+                                if (eff >= 0 && eff % activeP.cycle === 0) { blockIncome[i] += Number(activeP.price || 0); }
+                            }
+                        });
+                    }
+
+                    studentRowsHTML += `<tr class="total-row"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">4 WEEKS ACC</td>` + blockIncome.map(v => `<td style="background:var(--gold); color:#000;">${v||'-'}</td>`).join('') + `</tr>`;
                 }
-                let st_val = s.financialMap[i] || 0;
-                let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : '');
-                row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
             });
-            return row + '</tr>';
-        }).join('');
+        }
+
+        body.innerHTML = studentRowsHTML;
         
         document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
-        totalH.innerHTML = `<tr class="total-row"><td class="sticky-name">WEEKLY</td>` + income.map(v => `<td>${v||'-'}</td>`).join('') + `</tr>`;
+        totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` + income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') + `</tr>`;
         initColors('colorGridAdd', 'sColor');
     }
 
@@ -627,7 +660,7 @@
             <label>Student Name</label>
             <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
             
-            <label>Day / اليوم</label>
+            <label>Day</label>
             <select id="editSlotDay">${daysOptions}</select>
 
             <label>Time</label>
