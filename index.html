@@ -110,6 +110,12 @@
     <h2 style="margin-top:0">Settings ⚙️</h2>
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Teacher Phone 📱</h3>
+        <label style="font-size:11px; color:#64748b;">Phone number to display under teacher name in student reports:</label>
+        <input id="teacherPhoneInput" type="text" placeholder="e.g. +966 5XXXXXXXX" oninput="db.teacherPhone=this.value; save();">
+    </div>
+
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
         <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
         <input id="courseBaseDate" type="date">
@@ -169,12 +175,13 @@
 
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
+    const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
-        db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
 
     let historyStack = [];
@@ -234,14 +241,20 @@
         window.print();
     }
 
-    function generateStudentReportHTML(student) {
+    function generateStudentReportHTML(student, includeFinancials = false) {
         let teacherName = db.teacherName || 'Teacher';
+        let teacherPhone = db.teacherPhone ? `<br><span style="font-size:11px; color:#64748b; font-weight:normal;">📞 ${db.teacherPhone}</span>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
             schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
         } else {
-            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+            let sortedSchedules = [...student.schedules].sort((a, b) => {
+                let dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+                if (dayDiff !== 0) return dayDiff;
+                return timeToMinutes(a.time) - timeToMinutes(b.time);
+            });
+            
             sortedSchedules.forEach(sc => {
                 schedulesHTML += `
                     <tr>
@@ -252,6 +265,23 @@
             });
         }
 
+        let financialsHTML = '';
+        if (includeFinancials) {
+            let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+            financialsHTML = `
+                <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 12px; color: #64748b; display: block;">Billing Cycle & Rate:</span>
+                        <strong style="font-size: 14px; color: #0f172a;">Every ${lastPeriod.cycle || 4} Weeks</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 12px; color: #64748b; display: block;">Amount Due:</span>
+                        <strong style="font-size: 16px; color: #047857;">${lastPeriod.price || 0}</strong>
+                    </div>
+                </div>
+            `;
+        }
+
         return `
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
@@ -260,13 +290,14 @@
                         <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule</p>
                     </div>
                     <div style="text-align: right;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a; display: inline-block;">Teacher: ${teacherName} ${teacherPhone}</span>
                     </div>
                 </div>
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'};">
                     <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
+                ${financialsHTML}
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
@@ -283,20 +314,20 @@
         `;
     }
 
-    function printSingleStudent(studentId) {
+    function printSingleStudent(studentId, includeFinancials = false) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials);
         document.body.classList.add('print-single-student');
         window.print();
     }
 
-    function downloadStudentImage(studentId) {
+    function downloadStudentImage(studentId, includeFinancials = false) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
         let tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-        tempDiv.innerHTML = generateStudentReportHTML(student);
+        tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials);
         document.body.appendChild(tempDiv);
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
             let link = document.createElement('a');
@@ -436,6 +467,7 @@
         sSelect.innerHTML = '<option value="">Select Student</option>';
         
         document.getElementById('teacherName').value = db.teacherName || '';
+        document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
         document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         
@@ -706,9 +738,15 @@
             <div id="editPeriods">${phtml}</div>
             <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             
+            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
+                    <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
+                </label>
+            </div>
+
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
+                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">🖨️ PDF</button>
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">📸 Save Image</button>
             </div>
 
             <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
