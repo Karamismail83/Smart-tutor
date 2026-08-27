@@ -589,7 +589,7 @@
         let studentRowsHTML = '';
 
         if (db.students && Array.isArray(db.students)) {
-            db.students.forEach((s, sIndex) => {
+            db.students.forEach((s) => {
                 if(!s.financialMap) s.financialMap = {};
                 let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
                 dates.forEach((d, i) => {
@@ -608,30 +608,6 @@
                 });
                 row += '</tr>';
                 studentRowsHTML += row;
-
-                let currentStudentNumber = sIndex + 1;
-                if (currentStudentNumber % 4 === 0 || currentStudentNumber === db.students.length) {
-                    let blockIncome = Array(dates.length).fill(0);
-                    let startIdx = Math.floor(sIndex / 4) * 4;
-                    let endIdx = sIndex;
-                    
-                    for (let idx = startIdx; idx <= endIdx; idx++) {
-                        let targetStudent = db.students[idx];
-                        dates.forEach((d, i) => {
-                            let isHol = (db.holidays || []).includes(i);
-                            let activeP = targetStudent.periods && targetStudent.periods.length ? [...targetStudent.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
-                            if (activeP && !isHol) {
-                                let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
-                                let hCount = 0;
-                                for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
-                                let eff = totalWeeks - hCount;
-                                if (eff >= 0 && eff % activeP.cycle === 0) { blockIncome[i] += Number(activeP.price || 0); }
-                            }
-                        });
-                    }
-
-                    studentRowsHTML += `<tr class="total-row"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">4 WEEKS ACC</td>` + blockIncome.map(v => `<td style="background:var(--gold); color:#000;">${v||'-'}</td>`).join('') + `</tr>`;
-                }
             });
         }
 
