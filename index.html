@@ -234,9 +234,11 @@
         window.print();
     }
 
-    function generateStudentReportHTML(student) {
+    function generateStudentReportHTML(student, showAccount = false, showEvery4Weeks = false) {
         let teacherName = db.teacherName || 'Teacher';
         let schedulesHTML = '';
+
+        let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length-1] : { price: 0, cycle: 4 };
 
         if(!student.schedules || student.schedules.length === 0) {
             schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
@@ -250,6 +252,18 @@
                     </tr>
                 `;
             });
+        }
+
+        let extraInfoHTML = '';
+        if (showAccount || showEvery4Weeks) {
+            extraInfoHTML += `<div style="margin-top: 15px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">`;
+            if (showAccount) {
+                extraInfoHTML += `<div style="font-size: 14px; font-weight: bold; color: #ef4444; margin-bottom: 5px;">الحساب: ${lastPeriod.price || 0}</div>`;
+            }
+            if (showEvery4Weeks) {
+                extraInfoHTML += `<div style="font-size: 14px; font-weight: bold; color: #10b981;">كل ٤ اسابيع</div>`;
+            }
+            extraInfoHTML += `</div>`;
         }
 
         return `
@@ -267,7 +281,7 @@
                     <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
                 </div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
                             <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
@@ -276,7 +290,8 @@
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
-                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
+                ${extraInfoHTML}
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px; margin-top: 20px;">
                     Thank you for trusting us with your education.
                 </div>
             </div>
@@ -284,19 +299,25 @@
     }
 
     function printSingleStudent(studentId) {
+        let showAccount = document.getElementById('optAccount') ? document.getElementById('optAccount').checked : false;
+        let showEvery4Weeks = document.getElementById('optEvery4Weeks') ? document.getElementById('optEvery4Weeks').checked : false;
+
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, showAccount, showEvery4Weeks);
         document.body.classList.add('print-single-student');
         window.print();
     }
 
     function downloadStudentImage(studentId) {
+        let showAccount = document.getElementById('optAccount') ? document.getElementById('optAccount').checked : false;
+        let showEvery4Weeks = document.getElementById('optEvery4Weeks') ? document.getElementById('optEvery4Weeks').checked : false;
+
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
         let tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-        tempDiv.innerHTML = generateStudentReportHTML(student);
+        tempDiv.innerHTML = generateStudentReportHTML(student, showAccount, showEvery4Weeks);
         document.body.appendChild(tempDiv);
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
             let link = document.createElement('a');
@@ -706,6 +727,15 @@
             <div id="editPeriods">${phtml}</div>
             <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             
+            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; margin-bottom:5px;">
+                    <input type="checkbox" id="optAccount" style="width:auto; margin:0;"> إظهار الحساب (باللون الأحمر)
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; margin:0;">
+                    <input type="checkbox" id="optEvery4Weeks" style="width:auto; margin:0;"> إظهار جملة "كل ٤ اسابيع" (باللون الأخضر)
+                </label>
+            </div>
+
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
                 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
                 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
