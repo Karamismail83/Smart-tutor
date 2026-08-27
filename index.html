@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,70 +7,84 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
-            --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 120px; --box-s: 24px; --primary: #6366f1;
+            --bg-dark: #090D16; --gold: #FACC15; --slate: #151C2E; --slate-light: #1E293B;
+            --name-w: 130px; --box-s: 24px; --primary: #6366f1;
             --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
         }
         
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
-        .container { padding: 10px; }
+        body { margin: 0; background: var(--bg-dark); color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--slate); border-bottom: 1px solid rgba(250,204,21,0.2); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(8px); }
+        .action-btn { background: var(--gold); color: #090D16; border: none; padding: 8px 14px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-left: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .action-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        
+        .container { padding: 15px; max-width: 1400px; margin: 0 auto; }
 
-        .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
-        .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
+        .teacher-box { display: flex; align-items: center; gap: 14px; background: var(--slate); padding: 14px 18px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid rgba(250,204,21,0.15); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+        .profile-img-container { width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .profile-img-container:hover { transform: scale(1.05); }
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
-        #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
+        #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px dashed rgba(250,204,21,0.4); font-size: 18px; width: 100%; font-weight: 800; outline: none; padding-bottom: 4px; }
 
-        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        .day-row { display: flex; background: var(--slate); margin-bottom: 6px; border-radius: var(--radius-sm); min-height: 52px; align-items: stretch; border: 1px solid rgba(255,255,255,0.04); overflow: hidden; }
+        .day-label { width: 48px; background: var(--gold); color: #090D16; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; letter-spacing: 0.5px; }
         
-        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
-        .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
+        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 6px 10px; align-items: center; transition: background 0.2s; min-height: 52px; box-sizing: border-box; position: relative; }
+        .slots::-webkit-scrollbar { height: 4px; }
+        .slots::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .slots.drag-over { background: rgba(250, 204, 21, 0.15); border-radius: var(--radius-sm); }
         
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
+        .slot { flex: 0 0 auto; min-width: 52px; background: var(--slate-light); padding: 5px 6px; border-radius: var(--radius-sm); text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.15s ease, box-shadow 0.2s; }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.4; transform: scale(0.95); }
-        .slot.wide-slot { min-width: 62px; }
+        .slot.wide-slot { min-width: 70px; }
 
-        .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
+        .slot-status-indicator { font-size: 9px; margin-top: 2px; font-weight: bold; }
         
-        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
+        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #FFFFFF; border-radius: var(--radius-md); margin-top: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .acc-table-wrapper::-webkit-scrollbar { height: 8px; }
+        .acc-table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
-        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
-        .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
-        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 6px 4px; min-width: 36px; }
+        .acc-table th { background: #090D16; color: white; font-size: 9px; cursor: pointer; letter-spacing: 0.3px; }
+        .total-row { background: var(--gold) !important; color: #090D16 !important; font-weight: 900 !important; }
+        .grand-total-cell { background: #090D16 !important; color: var(--gold) !important; font-size: 12px !important; }
         
         .sticky-name { 
             position: sticky; left: 0; z-index: 100; width: var(--name-w); 
-            font-weight: 900; border-right: 2px solid #ddd !important; 
-            text-align: left !important; padding: 4px 6px !important; 
+            font-weight: 800; border-right: 2px solid #cbd5e1 !important; 
+            text-align: left !important; padding: 6px 10px !important; 
             color: white !important; box-sizing: border-box; 
             cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
-        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; color: #047857; }
-        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 6px; border: 1px solid #cbd5e1; background: #F8FAFC; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #090D16; cursor: pointer; transition: transform 0.1s; }
+        .box:hover { transform: scale(1.08); }
+        .is-pay-week { border: 2px solid #D97706 !important; background: #FEF3C7 !important; }
+        .status-paid { background: #D1FAE5 !important; color: #047857; border-color: #34D399 !important; }
+        .status-notpaid { background: #FEE2E2 !important; color: #B91C1C; border-color: #F87171 !important; }
         
         .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
         .is-holiday-cell { background: var(--holiday-bg) !important; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 340px; height: 100%; background: #FFFFFF; z-index: 3000; transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1); color: #1E293B; padding: 24px; box-sizing: border-box; overflow-y: auto; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         .active { left: 0 !important; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
+        .overlay { position: fixed; inset: 0; background: rgba(5, 8, 15, 0.8); display: none; z-index: 2500; backdrop-filter: blur(4px); }
         .overlay.active { display: block; }
         
-        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
-        .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
-        .color-circle.selected { border-color: #000; transform: scale(1.1); }
+        input, select { width: 100%; padding: 10px 12px; margin: 6px 0 14px; border: 1px solid #CBD5E1; border-radius: var(--radius-sm); font-weight: 600; font-size: 12px; box-sizing: border-box; background: #F8FAFC; color: #1E293B; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); background: #FFFFFF; }
+        
+        .period-card { background: #F8FAFC; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid #E2E8F0; position: relative; }
+        .color-circle { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+        .color-circle:hover { transform: scale(1.1); }
+        .color-circle.selected { border-color: #090D16; transform: scale(1.15); box-shadow: 0 0 8px rgba(0,0,0,0.2); }
 
         #studentPrintContainer { display: none; }
         
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        #toast { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) translateY(120px); background: #090D16; color: var(--gold); padding: 12px 24px; border-radius: var(--radius-md); font-weight: 700; z-index: 4000; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(250,204,21,0.3); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
         @media print {
@@ -78,7 +92,7 @@
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
             
-            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
+            body.print-single-student #studentPrintContainer { display: block !important; padding: 10px; }
             body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
             body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
 
@@ -107,41 +121,45 @@
 <div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="margin-top:0">Settings ⚙️</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin:0; font-size: 18px; color: #090D16;">Settings ⚙️</h2>
+        <button onclick="closeAll()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+    </div>
     
-    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+    <div style="background:#F8FAFC; padding:14px; border-radius:var(--radius-sm); border:1px solid #E2E8F0; margin-bottom:15px;">
+        <h3 style="margin:0 0 8px 0; font-size: 13px; color:#090D16;">Reset Course Start Date 📅</h3>
         <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
         <input id="courseBaseDate" type="date">
-        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+        <button class="action-btn" style="width:100%; background:#EF4444; color:white; margin-top:8px; justify-content:center;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
     </div>
 
-    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Backup & Restore 💾</h3>
-        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
-        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
+    <div style="background:#F8FAFC; padding:14px; border-radius:var(--radius-sm); border:1px solid #E2E8F0; margin-bottom:15px;">
+        <h3 style="margin:0 0 8px 0; font-size: 13px; color:#090D16;">Backup & Restore 💾</h3>
+        <button class="action-btn" style="width:100%; background:#10B981; color:white; margin-bottom:8px; justify-content:center;" onclick="exportBackup()">Export Backup 📤</button>
+        <button class="action-btn" style="width:100%; background:#3B82F6; color:white; justify-content:center;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
         <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
     </div>
 
     <hr style="margin:15px 0; opacity:0.1">
-    <h3>Add Student</h3>
+    <h3 style="font-size: 13px; color:#090D16;">Add Student</h3>
     <input id="sName" placeholder="Student Name">
-    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
-    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
+    <button class="action-btn" style="width:100%; background:#090D16; color:var(--gold); justify-content:center; margin-top:5px;" onclick="addStudent()">Save Student</button>
+    
     <hr style="margin:20px 0; opacity:0.1">
-    <h3>Add Slot (Session)</h3>
+    <h3 style="font-size: 13px; color:#090D16;">Add Slot (Session)</h3>
     <select id="sSelect"></select>
     <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
     <select id="cTime"></select>
-    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
+    <button class="action-btn" style="width:100%; background:var(--primary); color:white; justify-content:center;" onclick="addSchedule()">Save Slot</button>
 </div>
 
 <header>
-    <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-    <div style="display: flex; gap: 5px;">
+    <div style="font-weight:900; font-size:15px; letter-spacing: 0.5px;">SMART<span style="color:var(--gold)">TUTOR</span></div>
+    <div style="display: flex; gap: 6px;">
         <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
@@ -338,7 +356,7 @@
                 if(student.periods && student.periods.length > 0) student.periods[0].startDate = newDate;
             });
             save();
-            alert('Course start date reset for all students successfully!');
+            showToast('Course start date reset successfully!');
             closeAll();
         }
     }
@@ -363,7 +381,7 @@
                         commitChange();
                         db = importedData;
                         save();
-                        alert('Data restored successfully!');
+                        showToast('Data restored successfully!');
                         closeAll();
                     }
                 } catch (err) { alert('Invalid backup file!'); }
@@ -587,17 +605,21 @@
         let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
 
         document.getElementById('editFields').innerHTML = `
-            <h3>Edit Session Slot ⏰</h3>
-            <label>Student Name</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; font-size:16px; color:#090D16;">Edit Session Slot ⏰</h3>
+                <button onclick="closeAll()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Student Name</label>
             <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
             
-            <label>Day</label>
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Day</label>
             <select id="editSlotDay">${daysOptions}</select>
 
-            <label>Time</label>
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Time</label>
             <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
 
-            <label>Attendance Status</label>
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Attendance Status</label>
             <select id="editSlotStatus">
                 <option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
                 <option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
@@ -605,11 +627,11 @@
                 <option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
             </select>
 
-            <label>Horizontal Offset (px)</label>
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Horizontal Offset (px)</label>
             <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
 
-            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
-            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+            <button class="action-btn" style="width:100%; margin-top:8px; background:var(--primary); color:white; justify-content:center;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
+            <button class="action-btn" style="width:100%; margin-top:6px; background:#EF4444; color:white; justify-content:center;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
         `;
 
         document.getElementById('editModal').classList.add('active');
@@ -635,6 +657,7 @@
             }
         }
         closeAll();
+        showToast('Slot updated successfully!');
     }
 
     function deleteSlot(studentId, day, time) {
@@ -645,6 +668,7 @@
             save();
         }
         closeAll();
+        showToast('Slot deleted successfully!');
     }
 
     function th(i) { 
@@ -690,6 +714,7 @@
             periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }] 
         }); 
         save(); closeAll();
+        showToast('Student added successfully!');
     }
     
     function addSchedule() { 
@@ -705,6 +730,7 @@
             save(); 
         }
         closeAll(); 
+        showToast('Slot added successfully!');
     }
 
     function openEdit(id) {
@@ -712,37 +738,45 @@
         if(!s) return;
         let phtml = (s.periods || []).map((p, idx) => `
             <div class="period-card">
-                <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
-                <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
-                ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
+                <label style="font-size:10px; color:#64748b;">Start Date</label><input type="date" class="p-date" value="${p.startDate}">
+                <label style="font-size:10px; color:#64748b;">Price</label><input type="number" class="p-price" value="${p.price}">
+                <label style="font-size:10px; color:#64748b;">Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
+                ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:6px; right:6px; font-weight:bold; cursor:pointer;">✕</button>` : ''}
             </div>`).join('');
 
         document.getElementById('editFields').innerHTML = `
-            <h3>Edit Student</h3>
-            <label>Name</label><input id="en" value="${s.name}">
-            <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
-            <hr>
-            <h4>Billing Periods</h4>
-            <div id="editPeriods">${phtml}</div>
-            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; font-size:16px; color:#090D16;">Edit Student</h3>
+                <button onclick="closeAll()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
             
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; margin-bottom:5px;">
-                    <input type="checkbox" id="optAccount" style="width:auto; margin:0;"> إظهار الحساب (باللون الأحمر)
+            <label style="font-size:11px; color:#64748b; font-weight:600;">Name</label>
+            <input id="en" value="${s.name}">
+            
+            <div id="ecg" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px"></div>
+            
+            <hr style="opacity: 0.1; margin: 15px 0;">
+            <h4 style="margin:0 0 8px 0; font-size:13px; color:#090D16;">Billing Periods</h4>
+            <div id="editPeriods">${phtml}</div>
+            
+            <button class="action-btn" style="width:100%; margin-bottom:14px; background:#F1F5F9; border:1px solid #CBD5E1; color:#090D16; justify-content:center;" onclick="addNewPeriod()">+ Add Price Period</button>
+            
+            <div style="background:#F1F5F9; padding:12px; border-radius:var(--radius-sm); margin-bottom:14px; border:1px solid #E2E8F0;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; font-size:11px; margin-bottom:8px; color:#EF4444;">
+                    <input type="checkbox" id="optAccount" style="width:auto; margin:0; accent-color: #EF4444;"> إظهار الحساب (باللون الأحمر)
                 </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; margin:0;">
-                    <input type="checkbox" id="optEvery4Weeks" style="width:auto; margin:0;"> إظهار جملة "كل ٤ اسابيع" (باللون الأخضر)
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; font-size:11px; margin:0; color:#10B981;">
+                    <input type="checkbox" id="optEvery4Weeks" style="width:auto; margin:0; accent-color: #10B981;"> إظهار جملة "كل ٤ اسابيع" (باللون الأخضر)
                 </label>
             </div>
 
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <button class="action-btn" style="flex:1; background:#090D16; color:white; justify-content:center;" onclick="printSingleStudent(${s.id})">🖨️ PDF</button>
+                <button class="action-btn" style="flex:1; background:#10B981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id})">📸 Save Image</button>
             </div>
 
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+            <button class="action-btn" style="width:100%; background:var(--primary); color:white; justify-content:center;" onclick="up(${s.id})">Save All Changes</button>
+            <button class="action-btn" style="background:#EF4444; color:white; width:100%; margin-top:6px; justify-content:center;" onclick="del(${s.id})">Delete Student</button>
         `;
         initColors('ecg', 'eColor', s.color);
         document.getElementById('editModal').classList.add('active');
@@ -753,7 +787,7 @@
         const div = document.createElement('div');
         div.className = 'period-card';
         let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label style="font-size:10px; color:#64748b;">Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label style="font-size:10px; color:#64748b;">Price</label><input type="number" class="p-price" value="0"><label style="font-size:10px; color:#64748b;">Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:6px; right:6px; font-weight:bold; cursor:pointer;">✕</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
@@ -775,6 +809,7 @@
             save(); 
         }
         closeAll();
+        showToast('Changes saved successfully!');
     }
 
     function del(id) { 
@@ -783,6 +818,7 @@
             db.students = db.students.filter(x => x.id !== id); 
             save(); 
             closeAll(); 
+            showToast('Student deleted.');
         } 
     }
 
