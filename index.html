@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Mr. Karam Ismail</title>
+    <title>Smart Tutor - Mr.Karam Ismail</title>
     <style>
         :root {
             --bg-dark: #0F172A; 
             --gold: #FACC15; 
             --slate: #1E293B;
-            --name-w: 100px; 
-            --box-s: 24px;
+            --name-w: 95px; 
+            --box-s: 22px;
         }
         
         * { box-sizing: border-box; }
@@ -128,7 +128,7 @@
         .slot-time { font-size: 9px; opacity: 0.9; margin-top: 2px; font-weight: normal; }
         .no-sessions { color: #64748b; padding-left: 8px; font-style: italic; }
 
-        /* Accounting Table */
+        /* Accounting Table - Fixed Alignment */
         .acc-table-wrapper { 
             width: 100%; 
             overflow-x: auto; 
@@ -137,21 +137,28 @@
             margin-top: 15px; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
         }
-        .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
+        .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; table-layout: fixed; }
         .acc-table th, .acc-table td { 
             border: 1px solid #cbd5e1; 
             text-align: center; 
             padding: 6px 2px; 
-            min-width: 38px; 
             font-size: 10px; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .acc-table th { background: #1E293B; color: white; font-size: 10px; font-weight: 800; }
         
+        /* Column Widths to prevent shifting */
+        .acc-table th:not(.sticky-name), .acc-table td:not(.sticky-name) { width: 38px; }
+        .acc-table th:last-child, .acc-table td:last-child { width: 45px; }
+
         .sticky-name { 
             position: sticky; 
             left: 0; 
-            z-index: 100; 
-            width: var(--name-w); 
+            z-index: 10; 
+            width: var(--name-w) !important; 
+            min-width: var(--name-w) !important;
             font-weight: 900; 
             border-right: 2px solid #94a3b8 !important; 
             text-align: center !important; 
@@ -255,7 +262,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_smart_tutor_db';
+    const STORAGE_KEY = 'karam_smart_tutor_db_v2';
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     let initialData = {
@@ -406,7 +413,7 @@
             bodyHTML += rowHTML;
             grandSum += studentTotal;
         });
-        document.getElementById('accBody').innerHTML = bodyHTML;
+        document.getElementById('accBody').innerHTML, document.getElementById('accBody').innerHTML = bodyHTML;
 
         // Render Total Footer Row
         let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
