@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Smart Schedule</title>
+    <title>Smart Tutor - Schedule Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -23,7 +23,7 @@
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 10px; }
+        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 11px; }
         
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
@@ -111,7 +111,7 @@
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Course Start Date 📅</h3>
-        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
+        <label style="font-size:11px; color:#64748b;">Billing base date for all students:</label>
         <input id="courseBaseDate" type="date">
         <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All 🔄</button>
     </div>
@@ -124,13 +124,13 @@
     </div>
 
     <hr style="margin:15px 0; opacity:0.1">
-    <h3>Add Student</h3>
+    <h3>Add New Student</h3>
     <input id="sName" placeholder="Student Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Subscription Price">
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
-    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
+    <button class="action-btn" style="width:100%; margin:0;" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Schedule Slot</h3>
     <select id="sSelect"></select>
@@ -144,13 +144,13 @@
         <option value="Friday">Friday</option>
     </select>
     <select id="cTime"></select>
-    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
+    <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin:0;" onclick="addSchedule()">Save Slot</button>
 </div>
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
-        <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
+        <button class="action-btn" onclick="printFullSchedule()">🖨️ Print PDF</button>
         <button class="action-btn" onclick="undo()">↩️ Undo</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ Add</button>
     </div>
@@ -180,7 +180,7 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v391')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v391_en')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
         db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
@@ -231,7 +231,7 @@
     }
 
     function save() { 
-        try { localStorage.setItem('tutor_v391', JSON.stringify(db)); } catch(e) {}
+        try { localStorage.setItem('tutor_v391_en', JSON.stringify(db)); } catch(e) {}
         render(); 
     }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
@@ -251,7 +251,7 @@
         let cycleWeeks = lastPeriod.cycle || 4;
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled classes</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
             sortedSchedules.forEach(sc => {
@@ -268,8 +268,8 @@
             <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: ltr;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / Weekly Schedule</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Schedule Report</p>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / Schedule Report</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Weekly Timetable Report</p>
                     </div>
                     <div style="text-align: right;">
                         <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher: ${teacherName}</span>
@@ -279,10 +279,10 @@
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student: ${student.name}</h3>
-                        <p style="margin: 0; font-size: 11px; color: #64748b;">Weekly schedule & financial details:</p>
+                        <p style="margin: 0; font-size: 11px; color: #64748b;">Weekly schedule and financial details:</p>
                     </div>
                     <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
-                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Subscription Price:</div>
+                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Subscription:</div>
                         <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / ${cycleWeeks} wks</div>
                     </div>
                 </div>
@@ -428,7 +428,7 @@
         st.schedules.push({ id: 'sch_' + Date.now(), day: day, time: time });
         commitChange();
         toggleSidebar();
-        showToast("Slot added successfully ⏰");
+        showToast("Schedule slot added successfully ⏰");
     }
 
     function openStudentEdit(studentId) {
@@ -458,7 +458,7 @@
                 `;
             });
         } else {
-            schedulesListHtml = `<p style="color:#64748b; font-size:11px;">No scheduled slots for this student.</p>`;
+            schedulesListHtml = `<p style="color:#64748b; font-size:11px;">No slots for this student.</p>`;
         }
 
         let html = `
@@ -481,9 +481,9 @@
             <label style="margin-top:10px; display:block; font-weight:bold;">Current Slots:</label>
             <div style="max-height:150px; overflow-y:auto; margin-bottom:12px;">${schedulesListHtml}</div>
 
-            <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin-bottom:8px;" onclick="saveStudentEdit('${st.id}')">Save Changes 💾</button>
-            <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="closeAll(); printSingleStudent('${st.id}')">Print Student Schedule 🖨️</button>
-            <button class="action-btn" style="width:100%; background:#ef4444; color:white;" onclick="deleteStudent('${st.id}')">Delete Student 🗑️</button>
+            <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin-bottom:8px; margin-right:0;" onclick="saveStudentEdit('${st.id}')">Save Changes 💾</button>
+            <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px; margin-right:0;" onclick="closeAll(); printSingleStudent('${st.id}')">Print Report 🖨️</button>
+            <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-right:0;" onclick="deleteStudent('${st.id}')">Delete Student 🗑️</button>
         `;
 
         document.getElementById('editFields').innerHTML = html;
@@ -585,7 +585,7 @@
 
         sch.day = targetDay;
         commitChange();
-        showToast("Class moved to " + targetDay + " 🚚");
+        showToast("Slot moved to " + targetDay + " 🚚");
         draggedData = null;
     }
 
@@ -668,8 +668,8 @@
         let baseDate = new Date(db.courseStartDate || new Date());
         if(isNaN(baseDate.getTime())) baseDate = new Date();
 
-        let weeksHeaderHtml = `<th class="sticky-name" style="background:#1E293B;">Student Name</th>`;
-        let totalHeaderHtml = `<th class="sticky-name total-row" style="background:var(--gold); color:#000;">Total Collected</th>`;
+        let weeksHeaderHtml = `<th class="sticky-name" style="background:#1E293B;">Student</th>`;
+        let totalHeaderHtml = `<th class="sticky-name total-row" style="background:var(--gold); color:#000;">Total</th>`;
         
         let weekDates = [];
         for(let w = 1; w <= 12; w++) {
@@ -680,10 +680,10 @@
             
             let isHolidayCol = db.holidays && db.holidays.includes(w);
             let hClass = isHolidayCol ? 'is-holiday-col' : '';
-            weeksHeaderHtml += `<th class="${hClass}" onclick="toggleHoliday(${w})" title="Click to toggle week holiday">${w}<br><span style="font-size:6px">${dStr}</span></th>`;
+            weeksHeaderHtml += `<th class="${hClass}" onclick="toggleHoliday(${w})" title="Click to toggle week holiday">W${w}<br><span style="font-size:6px">${dStr}</span></th>`;
             totalHeaderHtml += `<th class="${hClass}" style="font-size:7px;">W${w}</th>`;
         }
-        weeksHeaderHtml += `<th>Total</th>`;
+        weeksHeaderHtml += `<th>Sum</th>`;
         totalHeaderHtml += `<th>Sum</th>`;
 
         document.getElementById('accHeader').innerHTML = weeksHeaderHtml;
@@ -694,7 +694,7 @@
         let grandTotalPaid = 0;
 
         if(db.students.length === 0) {
-            accBodyHtml = `<tr><td colspan="14" style="padding:15px; text-align:center; color:#64748b;">No students registered</td></tr>`;
+            accBodyHtml = `<tr><td colspan="14" style="padding:15px; text-align:center; color:#64748b;">No registered students</td></tr>`;
         } else {
             db.students.forEach(st => {
                 if(!st.attendance) st.attendance = {};
@@ -774,7 +774,7 @@
         if(idx > -1) db.holidays.splice(idx, 1);
         else db.holidays.push(weekNum);
         commitChange();
-        showToast("Holiday updated for week " + weekNum + " 🌴");
+        showToast("Week " + weekNum + " holiday status updated 🌴");
     }
 
     render();
