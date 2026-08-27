@@ -169,6 +169,7 @@
 
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
+    const DAY_ORDER = { "Sat": 1, "Sun": 2, "Mon": 3, "Tue": 4, "Wed": 5, "Thu": 6, "Fri": 7 };
     
     let db;
     try {
@@ -234,7 +235,7 @@
         window.print();
     }
 
-    // توليد تقرير الطالب مع دعم خيار إظهار/إخفاء الحساب وجملة الأسابيع بدون أقواس
+    // توليد تقرير الطالب مع ترتيب الأيام من السبت للخميس
     function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
         let schedulesHTML = '';
@@ -242,7 +243,13 @@
         if(!student.schedules || student.schedules.length === 0) {
             schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
         } else {
-            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+            // ترتيب الأيام تصاعدياً حسب DAY_ORDER (السبت إلى الخميس) ثم بالوقت
+            let sortedSchedules = [...student.schedules].sort((a, b) => {
+                let dayDiff = (DAY_ORDER[a.day] || 99) - (DAY_ORDER[b.day] || 99);
+                if (dayDiff !== 0) return dayDiff;
+                return timeToMinutes(a.time) - timeToMinutes(b.time);
+            });
+
             sortedSchedules.forEach(sc => {
                 schedulesHTML += `
                     <tr>
