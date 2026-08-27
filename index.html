@@ -22,7 +22,6 @@
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         .teacher-inputs { display: flex; flex-direction: column; flex-grow: 1; gap: 4px; }
         #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px solid #444; font-size: 15px; width: 100%; font-weight: 900; outline: none; padding-bottom: 2px; }
-        #teacherPhone { background: transparent; color: #94a3b8; border: none; border-bottom: 1px solid #334155; font-size: 12px; width: 100%; outline: none; direction: ltr; text-align: right; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
@@ -53,20 +52,13 @@
         }
 
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
-        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; color: #047857; }
-        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
         
-        .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
-        .is-holiday-cell { background: var(--holiday-bg) !important; }
-
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
@@ -97,8 +89,6 @@
             .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
             .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 90px !important; }
             .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
-            .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
-            .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
         }
     </style>
 </head>
@@ -158,7 +148,6 @@
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
         <div class="teacher-inputs">
             <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
-            <input id="teacherPhone" oninput="db.teacherPhone=this.value; commitChange();" placeholder="Teacher Phone Number">
         </div>
     </div>
 
@@ -243,7 +232,6 @@
 
     function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
-        let teacherPhone = db.teacherPhone ? `<p style="margin: 3px 0 0; font-size: 11px; color: #64748b; direction: ltr; text-align: right;">Phone: ${db.teacherPhone}</p>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
@@ -288,7 +276,6 @@
                     </div>
                     <div style="text-align: right;">
                         <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
-                        ${teacherPhone}
                     </div>
                 </div>
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
@@ -406,9 +393,7 @@
 
     function render() {
         const nameInput = document.getElementById('teacherName');
-        const phoneInput = document.getElementById('teacherPhone');
         if (nameInput && nameInput.value !== db.teacherName) nameInput.value = db.teacherName || '';
-        if (phoneInput && phoneInput.value !== db.teacherPhone) phoneInput.value = db.teacherPhone || '';
         
         if (db.teacherImg) {
             const imgEl = document.getElementById('teacherImg');
