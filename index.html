@@ -20,7 +20,9 @@
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
         .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
-        #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
+        .teacher-inputs { display: flex; flex-direction: column; flex-grow: 1; gap: 4px; }
+        #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px solid #444; font-size: 15px; width: 100%; font-weight: 900; outline: none; padding-bottom: 2px; }
+        #teacherPhone { background: transparent; color: #94a3b8; border: none; border-bottom: 1px solid #334155; font-size: 12px; width: 100%; outline: none; direction: ltr; text-align: right; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
@@ -154,7 +156,10 @@
             <img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
         </div>
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
-        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
+        <div class="teacher-inputs">
+            <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
+            <input id="teacherPhone" oninput="db.teacherPhone=this.value; commitChange();" placeholder="Teacher Phone Number">
+        </div>
     </div>
 
     <div id="scheduleGrid"></div>
@@ -235,7 +240,7 @@
         window.print();
     }
 
-    // توليد تقرير الطالب مع ترتيب الأيام من السبت للخميس، وإضافة رقم تليفون المعلم تحت اسم المعلم
+    // دالة تقرير الطالب مع وضع رقم تليفون المعلم تحت اسم المعلم مباشرة في ترويسة التقرير
     function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
         let teacherPhone = db.teacherPhone ? `<p style="margin: 3px 0 0; font-size: 11px; color: #64748b; direction: ltr; text-align: right;">Phone: ${db.teacherPhone}</p>` : '';
@@ -303,6 +308,46 @@
             </div>
         `;
     }
+
+    // دوال العرض الأساسية للتطبيق
+    function render() {
+        const nameInput = document.getElementById('teacherName');
+        const phoneInput = document.getElementById('teacherPhone');
+        if (nameInput && nameInput.value !== db.teacherName) nameInput.value = db.teacherName || '';
+        if (phoneInput && phoneInput.value !== db.teacherPhone) phoneInput.value = db.teacherPhone || '';
+        
+        if (db.teacherImg) {
+            const imgEl = document.getElementById('teacherImg');
+            if(imgEl) imgEl.src = db.teacherImg;
+        }
+    }
+
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                db.teacherImg = e.target.result;
+                commitChange();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function closeAll() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('editModal').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    window.onload = function() {
+        initLessonTimes();
+        render();
+    };
 </script>
 </body>
 </html>
