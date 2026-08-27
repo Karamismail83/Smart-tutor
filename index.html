@@ -23,7 +23,7 @@
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 10px; line-height: 1.2; text-align: center; }
         
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
@@ -75,28 +75,33 @@
 
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
-            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            html, body { background: #0F172A !important; color: #FFFFFF !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
             
-            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
+            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; background: #0F172A !important; color: #FFFFFF !important; }
             body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
             body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
 
-            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
-            #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
-            .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
-            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
-            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
-            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; box-shadow: none !important; }
-            .slot.wide-slot { min-width: 58px !important; }
-            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
-            .acc-table { width: 100% !important; table-layout: fixed !important; }
-            .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
-            .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
-            .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 90px !important; }
-            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
-            .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
-            .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
+            .teacher-box { background: #1E293B !important; border: 2px solid #FACC15 !important; border-radius: 8px !important; padding: 8px 14px !important; margin-bottom: 10px !important; box-shadow: none !important; }
+            #teacherName { color: #FACC15 !important; border-bottom: 1px solid #444 !important; font-size: 16px !important; font-weight: bold !important; background: transparent !important; }
+            .day-row { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.15) !important; margin-bottom: 4px !important; min-height: 40px !important; align-items: center !important; page-break-inside: avoid; }
+            .day-label { background: #FACC15 !important; color: #000000 !important; font-size: 9px !important; width: 75px !important; font-weight: bold; }
+            .slots { padding: 3px 5px !important; gap: 4px !important; min-height: 38px !important; align-items: center !important; }
+            .slot { border: 1px solid rgba(255,255,255,0.2) !important; background: #1E293B !important; color: #ffffff !important; font-size: 9px !important; padding: 3px 3px !important; min-width: 48px !important; box-shadow: none !important; }
+            .slot.wide-slot { min-width: 62px !important; }
+            
+            .acc-table-wrapper { background: #1E293B !important; box-shadow: none !important; border: 1px solid #FACC15 !important; margin-top: 10px !important; overflow: visible !important; page-break-inside: avoid; border-radius: 10px; }
+            .acc-table { width: 100% !important; table-layout: fixed !important; color: #ffffff !important; }
+            .acc-table th { background: #1E293B !important; color: #ffffff !important; font-size: 7.5px !important; padding: 3px 2px !important; border: 1px solid #334155 !important; }
+            .acc-table td { border: 1px solid #334155 !important; padding: 2px !important; background: #1E293B !important; color: #ffffff !important; }
+            .sticky-name { color: #ffffff !important; border-right: 2px solid #FACC15 !important; font-size: 8.5px !important; padding-left: 6px !important; width: 90px !important; }
+            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #cbd5e1 !important; background: #ffffff !important; color: #000000 !important; }
+            .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+            .status-paid { background: #d1fae5 !important; color: #047857 !important; }
+            .status-notpaid { background: #fee2e2 !important; color: #b91c1c !important; }
+            .total-row { background: #FACC15 !important; color: #000000 !important; font-size: 8px !important; }
+            .total-row td { color: #000000 !important; background: #FACC15 !important; font-weight: 900 !important; }
+            .grand-total-cell { background: #000000 !important; color: #FACC15 !important; font-size: 9px !important; }
         }
     </style>
 </head>
@@ -261,11 +266,11 @@
 
     function generateStudentReportHTML(student, includeFinancials = false) {
         let teacherName = db.teacherName || 'Teacher';
-        let teacherPhone = db.teacherPhone ? `<br><span style="font-size:11px; color:#64748b; font-weight:normal;">📞 ${db.teacherPhone}</span>` : '';
+        let teacherPhone = db.teacherPhone ? `<br><span style="font-size:11px; color:#94a3b8; font-weight:normal;">📞 ${db.teacherPhone}</span>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => {
                 let dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
@@ -277,8 +282,8 @@
                 let bilingualDay = dayNamesMap[sc.day] || sc.day;
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${bilingualDay}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">${bilingualDay}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
             });
@@ -288,45 +293,45 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; direction: rtl;">
+                <div style="background: #1e293b; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: rtl;">
                     <div>
-                        <span style="font-size: 12px; color: #64748b; display: block;">رسوم التدريس والمدة:</span>
-                        <strong style="font-size: 14px; color: #0f172a; direction: ltr; unicode-bidi: embed; display: inline-block;">Every ${lastPeriod.cycle || 4} Weeks</strong> <span style="font-size: 13px; color: #0f172a;">كل ٤ أسابيع</span>
+                        <span style="font-size: 12px; color: #94a3b8; display: block;">رسوم التدريس والمدة:</span>
+                        <strong style="font-size: 14px; color: #ffffff; direction: ltr; unicode-bidi: embed; display: inline-block;">Every ${lastPeriod.cycle || 4} Weeks</strong> <span style="font-size: 13px; color: #ffffff;">كل ٤ أسابيع</span>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size: 12px; color: #64748b; display: block;">المبلغ المستحق:</span>
-                        <strong style="font-size: 16px; color: #047857;">${lastPeriod.price || 0}</strong>
+                        <span style="font-size: 12px; color: #94a3b8; display: block;">المبلغ المستحق:</span>
+                        <strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
                     </div>
                 </div>
             `;
         }
 
         return `
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 30px; border-radius: 12px; border: 2px solid #facc15; font-family: Arial, sans-serif;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 22px;">SMART TUTOR</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule</p>
+                        <h2 style="margin: 0; color: #ffffff; font-size: 22px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
+                        <p style="margin: 3px 0 0; color: #94a3b8; font-size: 12px;">Official Weekly Schedule</p>
                     </div>
                     <div style="text-align: right;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a; display: inline-block;">Teacher: ${teacherName} ${teacherPhone}</span>
+                        <span style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #ffffff; border: 1px solid #334155; display: inline-block;">Teacher: ${teacherName} ${teacherPhone}</span>
                     </div>
                 </div>
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
+                <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; border: 1px solid #334155;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #ffffff;">Student Name: ${student.name}</h3>
+                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Here are the assigned weekly session times:</p>
                 </div>
                 ${financialsHTML}
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
                     <thead>
-                        <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day / اليوم</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time / الوقت</th>
+                        <tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Day / اليوم</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Time / الوقت</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
-                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; color: #94a3b8; font-size: 11px;">
+                <div style="text-align: center; border-top: 1px dashed #334155; padding-top: 15px; color: #64748b; font-size: 11px;">
                     Thank you for trusting us with your education.
                 </div>
             </div>
@@ -492,9 +497,10 @@
         
         const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
         days.forEach(d => { 
+            let bilingualDayLabel = dayNamesMap[d] || d;
             grid.innerHTML += `
                 <div class="day-row">
-                    <div class="day-label">${d}</div>
+                    <div class="day-label">${bilingualDayLabel}</div>
                     <div class="slots" id="slot-${d}" 
                          ondragover="handleDragOver(event)" 
                          ondragleave="handleDragLeave(event)" 
@@ -744,7 +750,7 @@
             <div class="period-card">
                 <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
                 <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks Cycle (كل ٤ أسابيع)</label><input type="number" class="p-cycle" value="${p.cycle}">
+                <label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="${p.cycle}">
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
@@ -780,7 +786,7 @@
         const div = document.createElement('div');
         div.className = 'period-card';
         let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle (كل ٤ أسابيع)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
