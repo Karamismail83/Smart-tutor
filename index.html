@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - Professional Print Schedule</title>
+    <title>Smart Tutor - Complete Schedule & Financials</title>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -15,17 +15,13 @@
         .container { padding: 10px; }
 
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
-        .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
-        .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px solid #444; font-size: 16px; width: 100%; font-weight: 900; outline: none; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-        
-        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; min-height: 48px; box-sizing: border-box; position: relative; }
+        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; min-height: 48px; box-sizing: border-box; }
         .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; }
-        
-        /* تنسيق جدول الماليات */
+
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #cbd5e1; text-align: center; padding: 6px 4px; min-width: 36px; font-size: 11px; }
@@ -87,7 +83,6 @@
 
     <div id="scheduleGrid"></div>
 
-    <!-- جدول الماليات المتكامل -->
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
@@ -96,14 +91,16 @@
         </table>
     </div>
 </div>
-
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'];
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     
     let db = JSON.parse(localStorage.getItem('tutor_financials_db')) || {
         teacherName: 'Teacher Name',
-        courseStartDate: '2026-01-01',
+        schedule: {
+            'Sat': [{time: '04:00 PM', studentId: 's_1'}],
+            'Sun': [{time: '05:00 PM', studentId: 's_2'}]
+        },
         students: [
             { id: 's_1', name: 'Ahmed', color: '#3B82F6', periods: [{price: 200, cycle: 4}], payments: {3: true, 7: false} },
             { id: 's_2', name: 'Sara', color: '#10B981', periods: [{price: 250, cycle: 4}], payments: {3: false} }
@@ -160,7 +157,7 @@
         document.getElementById('sPrice').value = '';
         toggleSidebar();
         save();
-        showToast('Student added');
+        showToast('Student added successfully');
     }
 
     function togglePayment(studentId, weekIdx) {
@@ -175,11 +172,34 @@
     function render() {
         document.getElementById('teacherName').value = db.teacherName || '';
 
-        // رسم جدول الماليات بشكل كامل ودقيق
+        // رسم جدول الحصص الأسبوعي
+        let schedHTML = '';
+        days.forEach(day => {
+            let daySlots = db.schedule?.[day] || [];
+            schedHTML += `
+                <div class="day-row">
+                    <div class="day-label">${day}</div>
+                    <div class="slots">
+            `;
+            if(daySlots.length === 0) {
+                schedHTML += `<span style="color:#64748b; font-size:10px; padding:0 5px;">No sessions</span>`;
+            } else {
+                daySlots.forEach(slot => {
+                    let st = db.students.find(s => s.id === slot.studentId);
+                    let stName = st ? st.name : 'Free';
+                    let stColor = st ? st.color : '#334155';
+                    schedHTML += `<div class="slot" style="background:${stColor}">${slot.time}<br><b>${stName}</b></div>`;
+                });
+            }
+            schedHTML += `</div></div>`;
+        });
+        document.getElementById('scheduleGrid').innerHTML = schedHTML;
+
+        // رسم جدول الماليات
         let totalWeeks = 12;
         let headerHTML = `<th class="sticky-name">Student</th>`;
         for(let i = 0; i < totalWeeks; i++) {
-            let isPayWeek = (i % 4 === 3); // أسبوع الدفع كل 4 أسابيع
+            let isPayWeek = (i % 4 === 3);
             headerHTML += `<th class="${isPayWeek ? 'is-pay-week' : ''}">W${i+1}</th>`;
         }
         headerHTML += `<th>Total</th>`;
@@ -192,16 +212,15 @@
         db.students.forEach(student => {
             let studentTotal = 0;
             let rowHTML = `<tr><td class="sticky-name" style="background:${student.color}">${student.name}</td>`;
-            
-            let pricePerSessionOrWeek = Number(student.periods?.[0]?.price || 0);
+            let pricePerCycle = Number(student.periods?.[0]?.price || 0);
 
             for(let i = 0; i < totalWeeks; i++) {
                 let isPayWeek = (i % 4 === 3);
                 let isPaid = student.payments?.[i] || false;
                 
                 if(isPaid) {
-                    studentTotal += pricePerSessionOrWeek;
-                    grandTotals[i] += pricePerSessionOrWeek;
+                    studentTotal += pricePerCycle;
+                    grandTotals[i] += pricePerCycle;
                 }
 
                 rowHTML += `
@@ -219,7 +238,6 @@
         });
         document.getElementById('accBody').innerHTML = bodyHTML;
 
-        // صف المجاميع في الأسفل
         let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
         let columnSumTotal = 0;
         for(let i = 0; i < totalWeeks; i++) {
