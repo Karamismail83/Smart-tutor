@@ -6,111 +6,248 @@
     <title>Smart Tutor - Mr. Karam Ismail</title>
     <style>
         :root {
-            --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 110px; --box-s: 22px; --primary: #6366f1;
+            --bg-dark: #0F172A; 
+            --gold: #FACC15; 
+            --slate: #1E293B;
+            --name-w: 100px; 
+            --box-s: 24px;
         }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 3px; display: inline-flex; align-items: center; gap: 3px; font-size: 10px; }
-        .container { padding: 10px; }
-
-        .teacher-box { display: flex; align-items: center; gap: 12px; background: var(--slate); padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
-        .profile-img-container { width: 45px; height: 45px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         
-        .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 11px; }
-        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; min-height: 48px; box-sizing: border-box; }
-        .slot { flex: 0 0 auto; min-width: 55px; padding: 4px 6px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; font-weight: bold; position: relative; cursor: pointer; }
-        .slot .delete-slot { position: absolute; top: -5px; right: -5px; background: #EF4444; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: none; align-items: center; justify-content: center; }
-        .slot:hover .delete-slot { display: flex; }
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            background: var(--bg-dark); 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 11px; 
+            overflow-x: hidden; 
+        }
 
-        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* Header */
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 15px; 
+            background: var(--slate); 
+            border-bottom: 2px solid var(--gold); 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+        }
+        .logo { font-size: 16px; font-weight: 900; letter-spacing: 0.5px; }
+        .logo span { color: var(--gold); }
+        .action-btn { 
+            background: var(--gold); 
+            color: #000; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            margin-left: 5px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 4px; 
+            font-size: 11px; 
+        }
+
+        .container { padding: 12px; }
+
+        /* Teacher Info Box */
+        .teacher-box { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            background: var(--slate); 
+            padding: 12px 15px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            border: 1px solid rgba(250,204,21,0.25); 
+        }
+        .profile-img-container { 
+            width: 42px; 
+            height: 42px; 
+            flex-shrink: 0; 
+            border-radius: 50%; 
+            border: 2px solid var(--gold); 
+            background: #334155; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px; 
+        }
+        .teacher-details { display: flex; flex-direction: column; justify-content: center; }
+        .teacher-name { color: var(--gold); font-size: 15px; font-weight: 900; margin-bottom: 2px; }
+        .teacher-phone { color: #94a3b8; font-size: 11px; }
+
+        /* Schedule Grid */
+        .day-row { 
+            display: flex; 
+            background: rgba(255,255,255,0.04); 
+            margin-bottom: 6px; 
+            border-radius: 8px; 
+            min-height: 46px; 
+            align-items: stretch; 
+            overflow: hidden;
+        }
+        .day-label { 
+            width: 42px; 
+            background: var(--gold); 
+            color: #000; 
+            font-weight: 900; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-shrink: 0; 
+            font-size: 11px; 
+        }
+        .slots { 
+            flex: 1; 
+            display: flex; 
+            flex-wrap: nowrap; 
+            overflow-x: auto; 
+            gap: 6px; 
+            padding: 6px; 
+            align-items: center; 
+            scrollbar-width: none;
+        }
+        .slots::-webkit-scrollbar { display: none; }
+        
+        .slot { 
+            flex: 0 0 auto; 
+            min-width: 65px; 
+            padding: 6px 8px; 
+            border-radius: 6px; 
+            text-align: center; 
+            color: white; 
+            font-size: 10px; 
+            font-weight: bold; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .slot-time { font-size: 9px; opacity: 0.9; margin-top: 2px; font-weight: normal; }
+        .no-sessions { color: #64748b; padding-left: 8px; font-style: italic; }
+
+        /* Accounting Table */
+        .acc-table-wrapper { 
+            width: 100%; 
+            overflow-x: auto; 
+            background: #fff; 
+            border-radius: 10px; 
+            margin-top: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
-        .acc-table th, .acc-table td { border: 1px solid #cbd5e1; text-align: center; padding: 6px 3px; min-width: 35px; font-size: 10px; }
-        .acc-table th { background: #1E293B; color: white; font-size: 9px; }
-        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        .acc-table th, .acc-table td { 
+            border: 1px solid #cbd5e1; 
+            text-align: center; 
+            padding: 6px 2px; 
+            min-width: 38px; 
+            font-size: 10px; 
+        }
+        .acc-table th { background: #1E293B; color: white; font-size: 10px; font-weight: 800; }
         
         .sticky-name { 
-            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
-            font-weight: 900; border-right: 2px solid #94a3b8 !important; 
-            text-align: left !important; padding: 5px 6px !important; 
-            color: white !important; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; 
+            left: 0; 
+            z-index: 100; 
+            width: var(--name-w); 
+            font-weight: 900; 
+            border-right: 2px solid #94a3b8 !important; 
+            text-align: center !important; 
+            color: white !important; 
+            font-size: 11px;
+            padding: 6px 4px !important;
         }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .is-pay-week { border-right: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; color: #047857; }
+        .box { 
+            width: var(--box-s); 
+            height: var(--box-s); 
+            border-radius: 4px; 
+            border: 1px solid #cbd5e1; 
+            background: #fee2e2; 
+            margin: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        
+        /* Pay Week Highlight (W4 Column) */
+        .is-pay-week { 
+            background: #fef3c7 !important; 
+            border-right: 2px solid #b45309 !important; 
+            border-left: 2px solid #b45309 !important; 
+        }
+        
+        .status-paid { background: #d1fae5 !important; color: #047857; border-color: #10b981; }
         .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
 
-        .sidebar { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
+        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; font-weight: 900 !important; }
+
+        /* Sidebar Modal */
+        .sidebar { position: fixed; top: 0; left: -110%; width: 300px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .sidebar.active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
-        
-        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        .section-title { font-size: 13px; font-weight: bold; color: #334155; margin-top: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
+        input { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 6px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; }
         #toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 <div id="toast"></div>
 
+<!-- Add Student Sidebar -->
 <div class="sidebar" id="sidebar">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="margin:0; color:#0f172a">Control Panel ⚙️</h2>
-        <button onclick="closeAll()" style="background:none; border:none; font-size:18px; font-weight:bold; cursor:pointer;">✕</button>
-    </div>
-    
-    <div class="section-title">Add New Student</div>
+    <h2 style="margin-top:0">Add Student ➕</h2>
     <input id="sName" placeholder="Student Name">
     <label style="font-size:10px; color:#64748b">Student Color:</label>
     <input id="sColor" type="color" value="#3B82F6" style="height:35px; padding:0; cursor:pointer;">
-    <input id="sPrice" type="number" placeholder="Price per Cycle (e.g. 200)" value="200">
-    <button class="action-btn" style="width:100%; justify-content:center; background:var(--primary); color:white; padding:10px; margin-bottom:10px;" onclick="addStudent()">Save Student</button>
-
-    <div class="section-title">Add Session to Schedule</div>
-    <select id="schedStudent"></select>
-    <select id="schedDay">
-        <option value="Sat">Saturday</option>
-        <option value="Sun">Sunday</option>
-        <option value="Mon">Monday</option>
-        <option value="Tue">Tuesday</option>
-        <option value="Wed">Wednesday</option>
-        <option value="Thu">Thursday</option>
-        <option value="Fri">Friday</option>
-    </select>
-    <input id="schedTime" placeholder="Time (e.g., 3:15 PM)">
-    <button class="action-btn" style="width:100%; justify-content:center; background:#10B981; color:white; padding:10px;" onclick="addSession()">Add Session</button>
+    <input id="sPrice" type="number" placeholder="Price (default 200)" value="200">
+    <button class="action-btn" style="width:100%; justify-content:center; background:var(--gold); color:black; margin-top:10px;" onclick="addStudent()">Save Student</button>
 </div>
 
 <header>
-    <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
+    <div class="logo">SMART<span>TUTOR</span></div>
     <div>
-        <button class="action-btn" onclick="forceReset()" style="background:#EF4444; color:white;">🔄 Reset</button>
         <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
-        <button class="action-btn" onclick="toggleSidebar()">➕ Menu</button>
+        <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
 </header>
 
 <div class="container">
+    <!-- Teacher Header Box -->
     <div class="teacher-box">
         <div class="profile-img-container">👤</div>
-        <div style="flex:1; overflow:hidden;">
-            <input id="teacherNameInput" oninput="db.teacherName=this.value; save();" style="background:transparent; border:none; color:var(--gold); font-size:15px; font-weight:900; width:100%; outline:none; padding:0;" placeholder="Teacher Name">
-            <input id="teacherPhoneInput" oninput="db.teacherPhone=this.value; save();" style="background:transparent; border:none; color:#94a3b8; font-size:11px; width:100%; outline:none; padding:0; margin-top:2px;" placeholder="Teacher Phone Number">
+        <div class="teacher-details">
+            <div class="teacher-name">Mr.Karam Ismail</div>
+            <div class="teacher-phone">Teacher Phone Number</div>
         </div>
     </div>
 
+    <!-- Weekly Schedule -->
     <div id="scheduleGrid"></div>
 
+    <!-- Financial Accounting Table -->
     <div class="acc-table-wrapper">
         <table class="acc-table">
-            <thead><tr id="accHeader"></tr></thead>
+            <thead>
+                <tr>
+                    <th class="sticky-name" style="background:#1E293B;">Student</th>
+                    <th>W1</th>
+                    <th>W2</th>
+                    <th>W3</th>
+                    <th class="is-pay-week">W4</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
             <tbody id="accBody"></tbody>
             <tfoot id="accFooter"></tfoot>
         </table>
@@ -118,12 +255,10 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_tutor_db_v10';
+    const STORAGE_KEY = 'karam_smart_tutor_db';
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     let initialData = {
-        teacherName: 'Mr. Karam Ismail',
-        teacherPhone: 'Teacher Phone Number',
         students: [
             { id: 's1', name: 'آدم', color: '#EF4444', price: 200, payments: {} },
             { id: 's2', name: 'الفريدة', color: '#10B981', price: 200, payments: {} },
@@ -135,37 +270,37 @@
         ],
         schedule: {
             'Sat': [
-                { id: 'sc1', time: '11:30 AM', studentId: 's1' },
-                { id: 'sc2', time: '3:15 PM', studentId: 's2' },
-                { id: 'sc3', time: '1:00 PM', studentId: 's3' },
-                { id: 'sc4', time: '5:15 PM', studentId: 's4' },
-                { id: 'sc5', time: '6:30 PM', studentId: 's5' }
+                { time: '11:30 AM', studentId: 's1' },
+                { time: '3:15 PM', studentId: 's2' },
+                { time: '1:00 PM', studentId: 's3' },
+                { time: '5:15 PM', studentId: 's4' },
+                { time: '6:30 PM', studentId: 's5' }
             ],
             'Sun': [
-                { id: 'sc6', time: '3:45 PM', studentId: 's1' },
-                { id: 'sc7', time: '5:00 PM', studentId: 's2' },
-                { id: 'sc8', time: '2:00 PM', studentId: 's6' },
-                { id: 'sc9', time: '7:15 PM', studentId: 's7' }
+                { time: '3:45 PM', studentId: 's1' },
+                { time: '5:00 PM', studentId: 's2' },
+                { time: '2:00 PM', studentId: 's6' },
+                { time: '7:15 PM', studentId: 's7' }
             ],
             'Mon': [
-                { id: 'sc10', time: '3:45 PM', studentId: 's1' },
-                { id: 'sc11', time: '2:00 PM', studentId: 's6' },
-                { id: 'sc12', time: '5:00 PM', studentId: 's4' },
-                { id: 'sc13', time: '6:15 PM', studentId: 's7' }
+                { time: '3:45 PM', studentId: 's1' },
+                { time: '2:00 PM', studentId: 's6' },
+                { time: '5:00 PM', studentId: 's4' },
+                { time: '6:15 PM', studentId: 's7' }
             ],
             'Tue': [
-                { id: 'sc14', time: '4:15 PM', studentId: 's2' },
-                { id: 'sc15', time: '2:00 PM', studentId: 's3' },
-                { id: 'sc16', time: '6:15 PM', studentId: 's5' }
+                { time: '4:15 PM', studentId: 's2' },
+                { time: '2:00 PM', studentId: 's3' },
+                { time: '6:15 PM', studentId: 's5' }
             ],
             'Wed': [
-                { id: 'sc17', time: '2:00 PM', studentId: 's1' },
-                { id: 'sc18', time: '3:15 PM', studentId: 's2' },
-                { id: 'sc19', time: '5:15 PM', studentId: 's7' },
-                { id: 'sc20', time: '6:30 PM', studentId: 's5' }
+                { time: '2:00 PM', studentId: 's1' },
+                { time: '3:15 PM', studentId: 's2' },
+                { time: '5:15 PM', studentId: 's7' },
+                { time: '6:30 PM', studentId: 's5' }
             ],
             'Thu': [
-                { id: 'sc21', time: '2:00 PM', studentId: 's3' }
+                { time: '2:00 PM', studentId: 's3' }
             ],
             'Fri': []
         }
@@ -185,29 +320,14 @@
         render();
     }
 
-    function forceReset() {
-        if(confirm('Are you sure you want to reset all data to default?')) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-            db = JSON.parse(JSON.stringify(initialData));
-            render();
-            showToast('Data reset successfully!');
-        }
-    }
-
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
-        updateStudentSelect();
     }
 
-    function closeAll() {
+    function closeSidebar() {
         document.getElementById('sidebar').classList.remove('active');
         document.getElementById('overlay').classList.remove('active');
-    }
-
-    function updateStudentSelect() {
-        let select = document.getElementById('schedStudent');
-        select.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
     }
 
     function addStudent() {
@@ -216,42 +336,11 @@
         let price = Number(document.getElementById('sPrice').value) || 200;
         if(!name) { showToast('Please enter student name'); return; }
 
-        let newId = 's_' + Date.now();
-        db.students.push({ id: newId, name, color, price, payments: {} });
+        db.students.push({ id: 's_' + Date.now(), name, color, price, payments: {} });
         document.getElementById('sName').value = '';
+        closeSidebar();
         save();
-        updateStudentSelect();
-        showToast('Student added successfully');
-    }
-
-    function deleteStudent(studentId) {
-        if(confirm('Delete this student and all related records?')) {
-            db.students = db.students.filter(s => s.id !== studentId);
-            for(let day in db.schedule) {
-                db.schedule[day] = db.schedule[day].filter(sc => sc.studentId !== studentId);
-            }
-            save();
-            showToast('Student deleted');
-        }
-    }
-
-    function addSession() {
-        let studentId = document.getElementById('schedStudent').value;
-        let day = document.getElementById('schedDay').value;
-        let time = document.getElementById('schedTime').value.trim();
-        if(!time) { showToast('Please enter session time'); return; }
-
-        if(!db.schedule[day]) db.schedule[day] = [];
-        db.schedule[day].push({ id: 'sc_' + Date.now(), time, studentId });
-        document.getElementById('schedTime').value = '';
-        save();
-        showToast('Session added to schedule');
-    }
-
-    function deleteSession(day, sessionId) {
-        db.schedule[day] = db.schedule[day].filter(sc => sc.id !== sessionId);
-        save();
-        showToast('Session removed');
+        showToast('Student added');
     }
 
     function togglePayment(studentId, weekIdx) {
@@ -264,15 +353,13 @@
     }
 
     function render() {
-        document.getElementById('teacherNameInput').value = db.teacherName || '';
-        document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
-
+        // Render Schedule Grid
         let schedHTML = '';
         days.forEach(day => {
             let slots = db.schedule[day] || [];
             schedHTML += `<div class="day-row"><div class="day-label">${day}</div><div class="slots">`;
             if(slots.length === 0) {
-                schedHTML += `<span style="color:#64748b; padding-left:5px;">No sessions</span>`;
+                schedHTML += `<span class="no-sessions">No sessions</span>`;
             } else {
                 slots.forEach(slot => {
                     let st = db.students.find(s => s.id === slot.studentId);
@@ -281,8 +368,7 @@
                     schedHTML += `
                         <div class="slot" style="background:${color}">
                             <div>${name}</div>
-                            <div style="font-size:9px; opacity:0.9;">${slot.time}</div>
-                            <div class="delete-slot" onclick="deleteSession('${day}', '${slot.id}')">×</div>
+                            <div class="slot-time">${slot.time}</div>
                         </div>
                     `;
                 });
@@ -291,29 +377,18 @@
         });
         document.getElementById('scheduleGrid').innerHTML = schedHTML;
 
+        // Render Accounting Table Body & Footer
         let totalWeeks = 4;
-        let headerHTML = `<th class="sticky-name" style="left:0; z-index:101; background:#1E293B;">Student</th>`;
-        for(let i = 0; i < totalWeeks; i++) {
-            let isPay = (i % 4 === 3);
-            headerHTML += `<th class="${isPay ? 'is-pay-week' : ''}">W${i+1}</th>`;
-        }
-        headerHTML += `<th>Total</th>`;
-        document.getElementById('accHeader').innerHTML = headerHTML;
-
         let bodyHTML = '';
         let grandTotals = new Array(totalWeeks).fill(0);
         let grandSum = 0;
 
         db.students.forEach(st => {
             let studentTotal = 0;
-            let rowHTML = `<tr>
-                <td class="sticky-name" style="background:${st.color}">
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${st.name}</span>
-                    <span style="font-size:10px; cursor:pointer; background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px; flex-shrink:0;" onclick="deleteStudent('${st.id}')" title="Delete">🗑️</span>
-                </td>`;
+            let rowHTML = `<tr><td class="sticky-name" style="background:${st.color}">${st.name}</td>`;
             
             for(let i = 0; i < totalWeeks; i++) {
-                let isPay = (i % 4 === 3);
+                let isPay = (i === 3);
                 let isPaid = st.payments?.[i] || false;
                 if(isPaid) {
                     studentTotal += st.price;
@@ -327,19 +402,18 @@
                     </td>
                 `;
             }
-            rowHTML += `<td style="font-weight:bold; background:#f1f5f9; color:#000;">${studentTotal}</td></tr>`;
+            rowHTML += `<td style="font-weight:bold; background:#f8fafc; color:#000;">${studentTotal}</td></tr>`;
             bodyHTML += rowHTML;
             grandSum += studentTotal;
         });
         document.getElementById('accBody').innerHTML = bodyHTML;
 
-        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important; left:0; z-index:101;">Total</th>`;
-        let colSum = 0;
+        // Render Total Footer Row
+        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
         for(let i = 0; i < totalWeeks; i++) {
             footerHTML += `<th>${grandTotals[i]}</th>`;
-            colSum += grandTotals[i];
         }
-        footerHTML += `<th class="grand-total-cell">${colSum}</th></tr>`;
+        footerHTML += `<th class="grand-total-cell">${grandSum}</th></tr>`;
         document.getElementById('accFooter').innerHTML = footerHTML;
     }
 
