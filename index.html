@@ -167,7 +167,7 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v392')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
         db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
@@ -219,7 +219,7 @@
     }
 
     function save() { 
-        try { localStorage.setItem('tutor_v390', JSON.stringify(db)); } catch(e) {}
+        try { localStorage.setItem('tutor_v392', JSON.stringify(db)); } catch(e) {}
         render(); 
     }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
