@@ -11,18 +11,18 @@
         }
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 3px; display: inline-flex; align-items: center; gap: 3px; font-size: 10px; }
         .container { padding: 10px; }
 
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
         .profile-img-container { width: 45px; height: 45px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        #teacherName { background: transparent; color: var(--gold); border: none; font-size: 16px; width: 100%; font-weight: 900; outline: none; }
-        .teacher-phone { color: #94a3b8; font-size: 11px; margin-top: 2px; }
-
+        
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 11px; }
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; min-height: 48px; box-sizing: border-box; }
-        .slot { flex: 0 0 auto; min-width: 55px; padding: 4px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; font-weight: bold; }
+        .slot { flex: 0 0 auto; min-width: 55px; padding: 4px 6px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; font-weight: bold; position: relative; cursor: pointer; }
+        .slot .delete-slot { position: absolute; top: -5px; right: -5px; background: #EF4444; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: none; align-items: center; justify-content: center; }
+        .slot:hover .delete-slot { display: flex; }
 
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
@@ -36,18 +36,22 @@
             font-weight: 900; border-right: 2px solid #94a3b8 !important; 
             text-align: left !important; padding: 5px 6px !important; 
             color: white !important; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; }
         .is-pay-week { border-right: 2px solid #b45309 !important; background: #fef3c7 !important; }
         .status-paid { background: #d1fae5 !important; color: #047857; }
         .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
 
-        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .active { left: 0 !important; }
+        .sidebar { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .sidebar.active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
-        input { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
+        
+        input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
+        .section-title { font-size: 13px; font-weight: bold; color: #334155; margin-top: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
+        
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; }
         #toast.show { transform: translateX(-50%) translateY(0); }
     </style>
@@ -57,19 +61,39 @@
 <div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="margin-top:0">Settings ⚙️</h2>
-    <h3>Add Student</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0; color:#0f172a">Control Panel ⚙️</h2>
+        <button onclick="closeAll()" style="background:none; border:none; font-size:18px; font-weight:bold; cursor:pointer;">✕</button>
+    </div>
+    
+    <div class="section-title">Add New Student</div>
     <input id="sName" placeholder="Student Name">
-    <input id="sColor" type="color" value="#3B82F6" style="height:40px; padding:0; cursor:pointer;">
-    <input id="sPrice" type="number" placeholder="Price">
-    <button class="action-btn" style="width:100%; justify-content:center; background:var(--primary); color:white;" onclick="addStudent()">Save Student</button>
+    <label style="font-size:10px; color:#64748b">Student Color:</label>
+    <input id="sColor" type="color" value="#3B82F6" style="height:35px; padding:0; cursor:pointer;">
+    <input id="sPrice" type="number" placeholder="Price per Cycle (e.g. 200)" value="200">
+    <button class="action-btn" style="width:100%; justify-content:center; background:var(--primary); color:white; padding:10px; margin-bottom:10px;" onclick="addStudent()">Save Student</button>
+
+    <div class="section-title">Add Session to Schedule</div>
+    <select id="schedStudent"></select>
+    <select id="schedDay">
+        <option value="Sat">Saturday</option>
+        <option value="Sun">Sunday</option>
+        <option value="Mon">Monday</option>
+        <option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option>
+        <option value="Thu">Thursday</option>
+        <option value="Fri">Friday</option>
+    </select>
+    <input id="schedTime" placeholder="Time (e.g., 3:15 PM)">
+    <button class="action-btn" style="width:100%; justify-content:center; background:#10B981; color:white; padding:10px;" onclick="addSession()">Add Session</button>
 </div>
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div>
+        <button class="action-btn" onclick="forceReset()" style="background:#EF4444; color:white;">🔄 Reset</button>
         <button class="action-btn" onclick="window.print()">🖨️ PDF</button>
-        <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
+        <button class="action-btn" onclick="toggleSidebar()">➕ Menu</button>
     </div>
 </header>
 
@@ -77,8 +101,8 @@
     <div class="teacher-box">
         <div class="profile-img-container">👤</div>
         <div style="flex:1;">
-            <div id="teacherName">Mr.Karam Ismail</div>
-            <div class="teacher-phone">Teacher Phone Number</div>
+            <input id="teacherNameInput" oninput="db.teacherName=this.value; save();" style="background:transparent; border:none; color:var(--gold); font-size:15px; font-weight:900; width:100%; outline:none;" placeholder="Teacher Name">
+            <input id="teacherPhoneInput" oninput="db.teacherPhone=this.value; save();" style="background:transparent; border:none; color:#94a3b8; font-size:11px; width:100%; outline:none;" placeholder="Teacher Phone Number">
         </div>
     </div>
 
@@ -94,10 +118,12 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_tutor_db_v5';
+    const STORAGE_KEY = 'karam_tutor_db_v9';
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     let initialData = {
+        teacherName: 'Mr. Karam Ismail',
+        teacherPhone: 'Teacher Phone Number',
         students: [
             { id: 's1', name: 'آدم', color: '#EF4444', price: 200, payments: {} },
             { id: 's2', name: 'الفريدة', color: '#10B981', price: 200, payments: {} },
@@ -109,37 +135,37 @@
         ],
         schedule: {
             'Sat': [
-                { time: '11:30 AM', studentId: 's1' },
-                { time: '3:15 PM', studentId: 's2' },
-                { time: '1:00 PM', studentId: 's3' },
-                { time: '5:15 PM', studentId: 's4' },
-                { time: '6:30 PM', studentId: 's5' }
+                { id: 'sc1', time: '11:30 AM', studentId: 's1' },
+                { id: 'sc2', time: '3:15 PM', studentId: 's2' },
+                { id: 'sc3', time: '1:00 PM', studentId: 's3' },
+                { id: 'sc4', time: '5:15 PM', studentId: 's4' },
+                { id: 'sc5', time: '6:30 PM', studentId: 's5' }
             ],
             'Sun': [
-                { time: '3:45 PM', studentId: 's1' },
-                { time: '5:00 PM', studentId: 's2' },
-                { time: '2:00 PM', studentId: 's6' },
-                { time: '7:15 PM', studentId: 's7' }
+                { id: 'sc6', time: '3:45 PM', studentId: 's1' },
+                { id: 'sc7', time: '5:00 PM', studentId: 's2' },
+                { id: 'sc8', time: '2:00 PM', studentId: 's6' },
+                { id: 'sc9', time: '7:15 PM', studentId: 's7' }
             ],
             'Mon': [
-                { time: '3:45 PM', studentId: 's1' },
-                { time: '2:00 PM', studentId: 's6' },
-                { time: '5:00 PM', studentId: 's4' },
-                { time: '6:15 PM', studentId: 's7' }
+                { id: 'sc10', time: '3:45 PM', studentId: 's1' },
+                { id: 'sc11', time: '2:00 PM', studentId: 's6' },
+                { id: 'sc12', time: '5:00 PM', studentId: 's4' },
+                { id: 'sc13', time: '6:15 PM', studentId: 's7' }
             ],
             'Tue': [
-                { time: '4:15 PM', studentId: 's2' },
-                { time: '2:00 PM', studentId: 's3' },
-                { time: '6:15 PM', studentId: 's5' }
+                { id: 'sc14', time: '4:15 PM', studentId: 's2' },
+                { id: 'sc15', time: '2:00 PM', studentId: 's3' },
+                { id: 'sc16', time: '6:15 PM', studentId: 's5' }
             ],
             'Wed': [
-                { time: '2:00 PM', studentId: 's1' },
-                { time: '3:15 PM', studentId: 's2' },
-                { time: '5:15 PM', studentId: 's7' },
-                { time: '6:30 PM', studentId: 's5' }
+                { id: 'sc17', time: '2:00 PM', studentId: 's1' },
+                { id: 'sc18', time: '3:15 PM', studentId: 's2' },
+                { id: 'sc19', time: '5:15 PM', studentId: 's7' },
+                { id: 'sc20', time: '6:30 PM', studentId: 's5' }
             ],
             'Thu': [
-                { time: '2:00 PM', studentId: 's3' }
+                { id: 'sc21', time: '2:00 PM', studentId: 's3' }
             ],
             'Fri': []
         }
@@ -159,9 +185,19 @@
         render();
     }
 
+    function forceReset() {
+        if(confirm('Are you sure you want to reset all data to default?')) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+            db = JSON.parse(JSON.stringify(initialData));
+            render();
+            showToast('Data reset successfully!');
+        }
+    }
+
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
+        updateStudentSelect();
     }
 
     function closeAll() {
@@ -169,17 +205,53 @@
         document.getElementById('overlay').classList.remove('active');
     }
 
+    function updateStudentSelect() {
+        let select = document.getElementById('schedStudent');
+        select.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    }
+
     function addStudent() {
         let name = document.getElementById('sName').value.trim();
         let color = document.getElementById('sColor').value;
         let price = Number(document.getElementById('sPrice').value) || 200;
-        if(!name) { showToast('Enter student name'); return; }
+        if(!name) { showToast('Please enter student name'); return; }
 
-        db.students.push({ id: 's_' + Date.now(), name, color, price, payments: {} });
+        let newId = 's_' + Date.now();
+        db.students.push({ id: newId, name, color, price, payments: {} });
         document.getElementById('sName').value = '';
-        toggleSidebar();
         save();
-        showToast('Student added');
+        updateStudentSelect();
+        showToast('Student added successfully');
+    }
+
+    function deleteStudent(studentId) {
+        if(confirm('Delete this student and all related records?')) {
+            db.students = db.students.filter(s => s.id !== studentId);
+            for(let day in db.schedule) {
+                db.schedule[day] = db.schedule[day].filter(sc => sc.studentId !== studentId);
+            }
+            save();
+            showToast('Student deleted');
+        }
+    }
+
+    function addSession() {
+        let studentId = document.getElementById('schedStudent').value;
+        let day = document.getElementById('schedDay').value;
+        let time = document.getElementById('schedTime').value.trim();
+        if(!time) { showToast('Please enter session time'); return; }
+
+        if(!db.schedule[day]) db.schedule[day] = [];
+        db.schedule[day].push({ id: 'sc_' + Date.now(), time, studentId });
+        document.getElementById('schedTime').value = '';
+        save();
+        showToast('Session added to schedule');
+    }
+
+    function deleteSession(day, sessionId) {
+        db.schedule[day] = db.schedule[day].filter(sc => sc.id !== sessionId);
+        save();
+        showToast('Session removed');
     }
 
     function togglePayment(studentId, weekIdx) {
@@ -192,7 +264,9 @@
     }
 
     function render() {
-        // Schedule Grid
+        document.getElementById('teacherNameInput').value = db.teacherName || '';
+        document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
+
         let schedHTML = '';
         days.forEach(day => {
             let slots = db.schedule[day] || [];
@@ -204,16 +278,21 @@
                     let st = db.students.find(s => s.id === slot.studentId);
                     let name = st ? st.name : 'Unknown';
                     let color = st ? st.color : '#334155';
-                    schedHTML += `<div class="slot" style="background:${color}"><div>${name}</div><div style="font-size:9px; opacity:0.9;">${slot.time}</div></div>`;
+                    schedHTML += `
+                        <div class="slot" style="background:${color}">
+                            <div>${name}</div>
+                            <div style="font-size:9px; opacity:0.9;">${slot.time}</div>
+                            <div class="delete-slot" onclick="deleteSession('${day}', '${slot.id}')">×</div>
+                        </div>
+                    `;
                 });
             }
             schedHTML += `</div></div>`;
         });
         document.getElementById('scheduleGrid').innerHTML = schedHTML;
 
-        // Accounting Table
         let totalWeeks = 4;
-        let headerHTML = `<th class="sticky-name">Student</th>`;
+        let headerHTML = `<th class="sticky-name" style="left:0; z-index:101; background:#1E293B;">Student</th>`;
         for(let i = 0; i < totalWeeks; i++) {
             let isPay = (i % 4 === 3);
             headerHTML += `<th class="${isPay ? 'is-pay-week' : ''}">W${i+1}</th>`;
@@ -227,7 +306,11 @@
 
         db.students.forEach(st => {
             let studentTotal = 0;
-            let rowHTML = `<tr><td class="sticky-name" style="background:${st.color}">${st.name}</td>`;
+            let rowHTML = `<tr>
+                <td class="sticky-name" style="background:${st.color}">
+                    <span>${st.name}</span>
+                    <span style="font-size:10px; cursor:pointer; background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px;" onclick="deleteStudent('${st.id}')" title="Delete">🗑️</span>
+                </td>`;
             
             for(let i = 0; i < totalWeeks; i++) {
                 let isPay = (i % 4 === 3);
@@ -250,7 +333,7 @@
         });
         document.getElementById('accBody').innerHTML = bodyHTML;
 
-        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
+        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important; left:0; z-index:101;">Total</th>`;
         let colSum = 0;
         for(let i = 0; i < totalWeeks; i++) {
             footerHTML += `<th>${grandTotals[i]}</th>`;
