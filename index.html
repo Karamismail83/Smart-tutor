@@ -9,39 +9,66 @@
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
             --name-w: 120px; --box-s: 24px; --primary: #6366f1;
+            --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
         }
+        
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
         .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
         .container { padding: 10px; }
+
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
         .profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
         .profile-img { width: 100%; height: 100%; object-fit: cover; }
         #teacherName { background: transparent; color: var(--gold); border: none; border-bottom: 1px solid #444; font-size: 16px; width: 100%; font-weight: 900; outline: none; }
+
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease; }
+        
+        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
         .slot:active { cursor: grabbing; }
+        .slot.dragging { opacity: 0.4; transform: scale(0.95); }
         .slot.wide-slot { min-width: 62px; }
+
         .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
+        
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
         .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
-        .sticky-name { position: sticky; left: 0; z-index: 100; width: var(--name-w); font-weight: 900; border-right: 2px solid #ddd !important; text-align: left !important; padding: 4px 6px !important; color: white !important; box-sizing: border-box; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
+        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        
+        .sticky-name { 
+            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
+            font-weight: 900; border-right: 2px solid #ddd !important; 
+            text-align: left !important; padding: 4px 6px !important; 
+            color: white !important; box-sizing: border-box; 
+            cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
+        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+        .status-paid { background: #d1fae5 !important; color: #047857; }
+        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
-        .sidebar.active, .modal.active { left: 0 !important; }
+        .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
+        
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; display: inline-block; margin: 2px; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
+
         #studentPrintContainer { display: none; }
+        
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         #toast.show { transform: translateX(-50%) translateY(0); }
+
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
@@ -54,26 +81,30 @@
 </head>
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
-<div class="modal" id="editModal">
-    <h2 style="margin-top:0">Student Details & Report 📋</h2>
-    <div id="editFields"></div>
-</div>
+<div class="modal" id="editModal"><div id="editFields"></div></div>
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
+    
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
+        <input id="courseBaseDate" type="date">
+        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+    </div>
+
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Backup & Restore 💾</h3>
         <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
         <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
         <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
     </div>
+
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
-    <input id="sPhone" type="tel" placeholder="Phone Number (e.g. 05xxxxxxxx)">
-    <input id="sLocation" placeholder="Google Maps Link or Address">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
@@ -104,6 +135,7 @@
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
         <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
     </div>
+
     <div id="scheduleGrid"></div>
     <div class="acc-table-wrapper">
         <table class="acc-table">
@@ -120,8 +152,7 @@
     
     let db;
     try {
-        // محاولة جلب البيانات من المفتاح القديم العام أو أي مفتاح سابق
-        db = JSON.parse(localStorage.getItem('smart_tutor_db') || localStorage.getItem('tutor_v395') || localStorage.getItem('tutor_v3')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('smart_tutor_db') || localStorage.getItem('tutor_v395')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
         db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
@@ -171,6 +202,8 @@
         if (sel) sel.innerHTML = getTimeOptionsHTML();
         const dateInput = document.getElementById('sDate');
         if (dateInput) dateInput.value = new Date().toISOString().slice(0,10);
+        const baseDate = document.getElementById('courseBaseDate');
+        if (baseDate) baseDate.value = db.courseStartDate || new Date().toISOString().slice(0,10);
     }
 
     function timeToMinutes(t) {
@@ -189,7 +222,7 @@
 
     function save() { 
         try { 
-            localStorage.setItem('smart_tutor_db', JSON.stringify(db)); 
+            localStorage.setItem('smart_tutor_db', JSON.stringify(db));
             localStorage.setItem('tutor_v395', JSON.stringify(db)); 
         } catch(e) {}
         render(); 
@@ -204,8 +237,6 @@
 
     function addStudent() {
         let name = document.getElementById('sName').value.trim();
-        let phone = document.getElementById('sPhone').value.trim();
-        let location = document.getElementById('sLocation').value.trim();
         let price = Number(document.getElementById('sPrice').value) || 0;
         let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
         let cycle = Number(document.getElementById('sCycle').value) || 4;
@@ -215,8 +246,6 @@
         let newStudent = {
             id: 's_' + Date.now(),
             name: name,
-            phone: phone,
-            location: location,
             color: selectedColor,
             schedules: [],
             periods: [{ price: price, startDate: date, cycle: cycle }]
@@ -225,8 +254,6 @@
         db.students.push(newStudent);
         commitChange();
         document.getElementById('sName').value = '';
-        document.getElementById('sPhone').value = '';
-        document.getElementById('sLocation').value = '';
         document.getElementById('sPrice').value = '';
         toggleSidebar();
         showToast('Student added successfully');
@@ -251,36 +278,35 @@
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
 
-        let mapsUrl = student.location ? (student.location.startsWith('http') ? student.location : 'https://maps.google.com/?q=' + encodeURIComponent(student.location)) : '#';
+        let lastPeriod = student.periods && student.periods.length > 0 ? student.periods[student.periods.length - 1] : { price: 0, startDate: new Date().toISOString().slice(0,10), cycle: 4 };
 
         let fieldsHTML = `
+            <h2 style="margin-top:0">Student Details 📋</h2>
             <label>Student Name:</label>
             <input type="text" id="editName" value="${student.name}">
             
-            <label>Phone Number:</label>
-            <input type="tel" id="editPhone" value="${student.phone || ''}">
+            <label>Price:</label>
+            <input type="number" id="editPrice" value="${lastPeriod.price}">
             
-            <label>Google Maps Location / Address:</label>
-            <input type="text" id="editLocation" value="${student.location || ''}">
+            <label>Start Date:</label>
+            <input type="date" id="editDate" value="${lastPeriod.startDate}">
             
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                ${student.phone ? `<a href="tel:${student.phone}" class="action-btn" style="background:#10b981; color:white; flex:1; text-align:center; justify-content:center; text-decoration:none;">📞 Call</a>` : ''}
-                ${student.location ? `<a href="${mapsUrl}" target="_blank" class="action-btn" style="background:#3b82f6; color:white; flex:1; text-align:center; justify-content:center; text-decoration:none;">📍 Open Map</a>` : ''}
-            </div>
+            <label>Cycle (Weeks):</label>
+            <input type="number" id="editCycle" value="${lastPeriod.cycle}">
 
-            <h3 style="margin-top:20px;">Assigned Sessions</h3>
-            <div style="max-height:120px; overflow-y:auto; margin-bottom:10px; border:1px solid #ddd; padding:5px; border-radius:6px;">
+            <h3 style="margin-top:15px;">Assigned Sessions</h3>
+            <div style="max-height:100px; overflow-y:auto; margin-bottom:10px; border:1px solid #ddd; padding:5px; border-radius:6px;">
                 ${student.schedules && student.schedules.length > 0 ? student.schedules.map((sc, idx) => `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:4px; border-bottom:1px solid #eee;">
                         <span>${sc.day} - ${sc.time}</span>
                         <button class="action-btn" style="background:#ef4444; color:white; padding:2px 6px; font-size:9px;" onclick="removeSchedule('${student.id}', ${idx})">Delete</button>
                     </div>
-                `).join('') : '<p style="color:#666; font-size:10px; text-align:center;">No sessions assigned</p>'}
+                `).join('') : '<p style="color:#666; font-size:10px; text-align:center;">No sessions</p>'}
             </div>
 
             <div style="display:flex; gap:5px; margin-top:15px;">
-                <button class="action-btn" style="background:#10b981; color:white; flex:1;" onclick="saveStudentEdits('${student.id}')">Save Changes 💾</button>
-                <button class="action-btn" style="background:#ef4444; color:white;" onclick="deleteStudent('${student.id}')">Delete Student 🗑️</button>
+                <button class="action-btn" style="background:#10b981; color:white; flex:1;" onclick="saveStudentEdits('${student.id}')">Save 💾</button>
+                <button class="action-btn" style="background:#ef4444; color:white;" onclick="deleteStudent('${student.id}')">Delete 🗑️</button>
             </div>
         `;
 
@@ -294,8 +320,16 @@
         if(!student) return;
 
         student.name = document.getElementById('editName').value.trim() || student.name;
-        student.phone = document.getElementById('editPhone').value.trim();
-        student.location = document.getElementById('editLocation').value.trim();
+        let price = Number(document.getElementById('editPrice').value) || 0;
+        let startDate = document.getElementById('editDate').value || new Date().toISOString().slice(0,10);
+        let cycle = Number(document.getElementById('editCycle').value) || 4;
+
+        if(!student.periods) student.periods = [];
+        if(student.periods.length > 0) {
+            student.periods[student.periods.length - 1] = { price, startDate, cycle };
+        } else {
+            student.periods.push({ price, startDate, cycle });
+        }
 
         commitChange();
         closeAll();
@@ -319,6 +353,22 @@
             closeAll();
             showToast('Student deleted');
         }
+    }
+
+    function resetAllStudentsStartDate() {
+        let baseDate = document.getElementById('courseBaseDate').value;
+        if(!baseDate) return;
+        db.courseStartDate = baseDate;
+        db.students.forEach(s => {
+            if(!s.periods) s.periods = [];
+            if(s.periods.length > 0) {
+                s.periods[0].startDate = baseDate;
+            } else {
+                s.periods.push({ price: 0, startDate: baseDate, cycle: 4 });
+            }
+        });
+        commitChange();
+        showToast('All start dates reset successfully');
     }
 
     function render() {
