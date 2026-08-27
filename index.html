@@ -128,7 +128,7 @@
         .slot-time { font-size: 9px; opacity: 0.9; margin-top: 2px; font-weight: normal; }
         .no-sessions { color: #64748b; padding-left: 8px; font-style: italic; }
 
-        /* Accounting Table - Fixed Alignment */
+        /* Accounting Table - Stable Alignment */
         .acc-table-wrapper { 
             width: 100%; 
             overflow-x: auto; 
@@ -149,7 +149,6 @@
         }
         .acc-table th { background: #1E293B; color: white; font-size: 10px; font-weight: 800; }
         
-        /* Column Widths to prevent shifting */
         .acc-table th:not(.sticky-name), .acc-table td:not(.sticky-name) { width: 38px; }
         .acc-table th:last-child, .acc-table td:last-child { width: 45px; }
 
@@ -182,7 +181,6 @@
             cursor: pointer; 
         }
         
-        /* Pay Week Highlight (W4 Column) */
         .is-pay-week { 
             background: #fef3c7 !important; 
             border-right: 2px solid #b45309 !important; 
@@ -211,7 +209,6 @@
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 <div id="toast"></div>
 
-<!-- Add Student Sidebar -->
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Add Student ➕</h2>
     <input id="sName" placeholder="Student Name">
@@ -230,7 +227,6 @@
 </header>
 
 <div class="container">
-    <!-- Teacher Header Box -->
     <div class="teacher-box">
         <div class="profile-img-container">👤</div>
         <div class="teacher-details">
@@ -239,10 +235,8 @@
         </div>
     </div>
 
-    <!-- Weekly Schedule -->
     <div id="scheduleGrid"></div>
 
-    <!-- Financial Accounting Table -->
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead>
@@ -262,7 +256,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_smart_tutor_db_v2';
+    const STORAGE_KEY = 'karam_smart_tutor_db_v3';
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     let initialData = {
@@ -360,7 +354,6 @@
     }
 
     function render() {
-        // Render Schedule Grid
         let schedHTML = '';
         days.forEach(day => {
             let slots = db.schedule[day] || [];
@@ -384,7 +377,6 @@
         });
         document.getElementById('scheduleGrid').innerHTML = schedHTML;
 
-        // Render Accounting Table Body & Footer
         let totalWeeks = 4;
         let bodyHTML = '';
         let grandTotals = new Array(totalWeeks).fill(0);
@@ -413,9 +405,8 @@
             bodyHTML += rowHTML;
             grandSum += studentTotal;
         });
-        document.getElementById('accBody').innerHTML, document.getElementById('accBody').innerHTML = bodyHTML;
+        document.getElementById('accBody').innerHTML = bodyHTML;
 
-        // Render Total Footer Row
         let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
         for(let i = 0; i < totalWeeks; i++) {
             footerHTML += `<th>${grandTotals[i]}</th>`;
