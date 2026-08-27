@@ -140,7 +140,15 @@
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Slot (Session)</h3>
     <select id="sSelect"></select>
-    <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
+    <select id="cDay">
+        <option value="Sat">Sat / السبت</option>
+        <option value="Sun">Sun / الأحد</option>
+        <option value="Mon">Mon / الاثنين</option>
+        <option value="Tue">Tue / الثلاثاء</option>
+        <option value="Wed">Wed / الأربعاء</option>
+        <option value="Thu">Thu / الخميس</option>
+        <option value="Fri">Fri / الجمعة</option>
+    </select>
     <select id="cTime"></select>
     <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
 </div>
@@ -177,6 +185,16 @@
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
     
+    const dayNamesMap = {
+        "Sat": "Sat / السبت",
+        "Sun": "Sun / الأحد",
+        "Mon": "Mon / الاثنين",
+        "Tue": "Tue / الثلاثاء",
+        "Wed": "Wed / الأربعاء",
+        "Thu": "Thu / الخميس",
+        "Fri": "Fri / الجمعة"
+    };
+
     let db;
     try {
         db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
@@ -256,9 +274,10 @@
             });
             
             sortedSchedules.forEach(sc => {
+                let bilingualDay = dayNamesMap[sc.day] || sc.day;
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${bilingualDay}</td>
                         <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
@@ -271,7 +290,7 @@
             financialsHTML = `
                 <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; direction: rtl;">
                     <div>
-                        <span style="font-size: 12px; color: #64748b; display: block;">دورة الفوترة والرسوم:</span>
+                        <span style="font-size: 12px; color: #64748b; display: block;">رسوم التدريس والمدة:</span>
                         <strong style="font-size: 14px; color: #0f172a; direction: ltr; unicode-bidi: embed; display: inline-block;">Every ${lastPeriod.cycle || 4} Weeks</strong> <span style="font-size: 13px; color: #0f172a;">كل ٤ أسابيع</span>
                     </div>
                     <div style="text-align: right;">
@@ -301,8 +320,8 @@
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day / اليوم</th>
+                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time / الوقت</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
@@ -595,14 +614,14 @@
         let currentStatus = slot?.status || 0;
 
         let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${d}</option>`).join('');
+        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${dayNamesMap[d]}</option>`).join('');
 
         document.getElementById('editFields').innerHTML = `
             <h3>Edit Session Slot ⏰</h3>
             <label>Student Name</label>
             <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
             
-            <label>Day</label>
+            <label>Day / اليوم</label>
             <select id="editSlotDay">${daysOptions}</select>
 
             <label>Time</label>
@@ -725,7 +744,7 @@
             <div class="period-card">
                 <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
                 <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Weeks Cycle</label><input type="number" class="p-cycle" value="${p.cycle}">
+                <label>Weeks Cycle (كل ٤ أسابيع)</label><input type="number" class="p-cycle" value="${p.cycle}">
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
@@ -761,7 +780,7 @@
         const div = document.createElement('div');
         div.className = 'period-card';
         let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Weeks Cycle (كل ٤ أسابيع)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
