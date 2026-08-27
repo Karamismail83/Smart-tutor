@@ -21,7 +21,7 @@
             padding: 10px;
         }
         .container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 0 auto;
             background: var(--card-bg);
             padding: 15px;
@@ -33,14 +33,22 @@
             color: var(--primary-color);
             margin-bottom: 20px;
         }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
         .form-group {
             margin-bottom: 12px;
+        }
+        .form-group.full {
+            grid-column: span 2;
         }
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
         }
         input, select {
             width: 100%;
@@ -72,12 +80,14 @@
             border-radius: 8px;
             margin-top: 20px;
             font-size: 15px;
+            font-weight: bold;
+            text-align: center;
         }
         table {
             width: 100%;
             margin-top: 20px;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
         th, td {
             border: 1px solid var(--border-color);
@@ -88,8 +98,8 @@
             background-color: #f1f5f9;
         }
         .actions-cell button {
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 4px 8px;
+            font-size: 11px;
             margin: 2px;
             width: auto;
         }
@@ -100,55 +110,73 @@
 <div class="container">
     <h2>Smart Tutor Pro</h2>
     
-    <!-- نموذج المدخلات -->
-    <div class="form-group">
-        <label for="studentName">اسم الطالب:</label>
-        <input type="text" id="studentName" placeholder="أدخل اسم الطالب">
+    <!-- لوحة المدخلات الكاملة -->
+    <div class="form-grid">
+        <div class="form-group full">
+            <label for="studentName">اسم الطالب:</label>
+            <input type="text" id="studentName" placeholder="أدخل اسم الطالب الثلاثي أو المستعار">
+        </div>
+
+        <div class="form-group">
+            <label for="sessionTime">وقت الحصة:</label>
+            <input type="time" id="sessionTime" value="16:00">
+        </div>
+
+        <div class="form-group">
+            <label for="sessionDay">اليوم:</label>
+            <select id="sessionDay">
+                <option value="السبت">السبت</option>
+                <option value="الأحد">الأحد</option>
+                <option value="الإثنين">الإثنين</option>
+                <option value="الثلاثاء">الثلاثاء</option>
+                <option value="الأربعاء">الأربعاء</option>
+                <option value="الخميس">الخميس</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="coursePrice">قيمة الحصة / الدورة:</label>
+            <input type="number" id="coursePrice" placeholder="المبلغ">
+        </div>
+
+        <div class="form-group">
+            <label for="weeksCount">عدد الحصص / الأسابيع:</label>
+            <input type="number" id="weeksCount" value="4">
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="sessionTime">وقت الحصة:</label>
-        <input type="time" id="sessionTime">
-    </div>
-
-    <div class="form-group">
-        <label for="coursePrice">سعر الدورة / الحصة:</label>
-        <input type="number" id="coursePrice" placeholder="القيمة المالية">
-    </div>
-
-    <div class="form-group">
-        <label for="weeksCount">عدد الأسابيع / الحصص:</label>
-        <input type="number" id="weeksCount" value="4" placeholder="عدد الأسابيع">
-    </div>
-
-    <button onclick="addStudentData()">إضافة وحفظ البيانات</button>
+    <button onclick="addStudentData()">إضافة الطالب والمدخلات المالية</button>
 
     <!-- ملخص الدخل -->
     <div class="summary-box" id="incomeSummary">
-        إجمالي الدخل المتوقع: 0.00
+        إجمالي الدخل المتوقع: 0.00 ريال
     </div>
 
-    <!-- جدول عرض البيانات المدخلة -->
+    <!-- جدول عرض المدخلات والبيانات المسجلة -->
     <div style="overflow-x: auto;">
         <table id="dataTable">
             <thead>
                 <tr>
                     <th>الطالب</th>
-                    <th>الوقت</th>
-                    <th>المبلغ</th>
-                    <th>الحالة</th>
+                    <th>اليوم/الوقت</th>
+                    <th>الإجمالي</th>
+                    <th>المراحل المالية</th>
                     <th>إدارة</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- يتم تعبئة البيانات برمجياً -->
+                <!-- يتم تعبئة المدخلات برمجياً هنا -->
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    let records = JSON.parse(localStorage.getItem('tutor_records')) || [];
+    // بيانات أولية تجريبية تظهر مباشرة عند الفتح
+    let records = JSON.parse(localStorage.getItem('tutor_records')) || [
+        { id: 1, name: 'حمدان', time: 'الأحد - 16:00', price: 400, status: 'مرحلة 1: مسجل' },
+        { id: 2, name: 'سلطان', time: 'الإثنين - 17:30', price: 500, status: 'مرحلة 2: قيد الدفع' }
+    ];
 
     function saveData() {
         localStorage.setItem('tutor_records', JSON.stringify(records));
@@ -157,11 +185,12 @@
     function addStudentData() {
         const name = document.getElementById('studentName').value.trim();
         const time = document.getElementById('sessionTime').value;
+        const day = document.getElementById('sessionDay').value;
         const price = parseFloat(document.getElementById('coursePrice').value) || 0;
         const weeks = parseInt(document.getElementById('weeksCount').value) || 1;
 
         if (!name) {
-            alert('الرجاء إدخال اسم الطالب على الأقل.');
+            alert('الرجاء كتابة اسم الطالب.');
             return;
         }
 
@@ -170,7 +199,7 @@
         const newRecord = {
             id: Date.now(),
             name: name,
-            time: time || 'غير محدد',
+            time: `${day} - ${time}`,
             price: totalDue,
             status: 'مرحلة 1: مسجل'
         };
@@ -179,7 +208,7 @@
         saveData();
         renderTable();
         
-        // تفريغ الحقول
+        // تفريغ الحقول بعد الإضافة
         document.getElementById('studentName').value = '';
         document.getElementById('coursePrice').value = '';
     }
@@ -189,7 +218,7 @@
         if (record) {
             if (record.status.includes('1')) record.status = 'مرحلة 2: قيد الدفع';
             else if (record.status.includes('2')) record.status = 'مرحلة 3: تم الاستلام';
-            else if (record.status.includes('3')) record.status = 'مرحلة 4: مكتمل ومؤرشف';
+            else if (record.status.includes('3')) record.status = 'مرحلة 4: مكتمل';
             else record.status = 'مرحلة 1: مسجل';
             
             saveData();
@@ -212,22 +241,22 @@
             totalIncome += rec.price;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${rec.name}</td>
+                <td><b>${rec.name}</b></td>
                 <td>${rec.time}</td>
-                <td>${rec.price}</td>
+                <td>${rec.price} ر.س</td>
                 <td>${rec.status}</td>
                 <td class="actions-cell">
-                    <button onclick="updateStatus(${rec.id})" style="background-color: var(--success-color);">الحالة</button>
+                    <button onclick="updateStatus(${rec.id})" style="background-color: var(--success-color);">المرحلة</button>
                     <button onclick="deleteRecord(${rec.id})" style="background-color: #dc2626;">حذف</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        document.getElementById('incomeSummary').innerText = `إجمالي الدخل المتوقع والمحصل: ${totalIncome.toFixed(2)} ريال`;
+        document.getElementById('incomeSummary').innerText = `إجمالي الدخل الكلي: ${totalIncome.toFixed(2)} ريال`;
     }
 
-    // التشغيل عند التحميل
+    // تشغيل الدالة عند تحميل الصفحة لعرض المدخلات
     renderTable();
 </script>
 
