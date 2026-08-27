@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Tutor - Professional Print Schedule</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
             --name-w: 120px; --box-s: 24px; --primary: #6366f1;
-            --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
         }
-        
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
         .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
@@ -25,31 +22,27 @@
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
         .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
         
-        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
-        .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
+        .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; min-height: 48px; box-sizing: border-box; position: relative; }
+        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: pointer; user-select: none; }
         
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
-        .slot:active { cursor: grabbing; }
-        .slot.dragging { opacity: 0.4; transform: scale(0.95); }
-        .slot.wide-slot { min-width: 62px; }
-        
-        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
-        .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
-        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
-        .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
+        /* تنسيق جدول الماليات */
+        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
+        .acc-table th, .acc-table td { border: 1px solid #cbd5e1; text-align: center; padding: 6px 4px; min-width: 36px; font-size: 11px; }
+        .acc-table th { background: #1E293B; color: white; font-size: 10px; }
         .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 12px !important; }
         
         .sticky-name { 
             position: sticky; left: 0; z-index: 100; width: var(--name-w); 
-            font-weight: 900; border-right: 2px solid #ddd !important; 
-            text-align: left !important; padding: 4px 6px !important; 
+            font-weight: 900; border-right: 2px solid #94a3b8 !important; 
+            text-align: left !important; padding: 6px 8px !important; 
             color: white !important; box-sizing: border-box; 
             cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
-        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .is-pay-week { border-right: 3px solid #b45309 !important; background: #fef3c7 !important; }
         .status-paid { background: #d1fae5 !important; color: #047857; }
         .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
 
@@ -61,428 +54,113 @@
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; display: inline-block; margin: 2px; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
-
-        #studentPrintContainer { display: none; }
-        
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
-        @media print {
-            @page { size: A4 landscape; margin: 5mm; }
-            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
-            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
-            body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
-        }
     </style>
 </head>
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
-<div id="studentPrintContainer"></div>
 <div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
-    
-    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
-        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
-        <input id="courseBaseDate" type="date">
-        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
-    </div>
-
-    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Backup & Restore 💾</h3>
-        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
-        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
-        <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
-    </div>
-
-    <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
-    <input id="sPrice" type="number" placeholder="Price">
-    <input id="sDate" type="date">
-    <input id="sCycle" type="number" value="4">
-    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
-    <hr style="margin:20px 0; opacity:0.1">
-    <h3>Add Slot (Session)</h3>
-    <select id="sSelect"></select>
-    <select id="cDay"><option value="Sat">Sat</option><option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option></select>
-    <select id="cTime"></select>
-    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
+    <input id="sPrice" type="number" placeholder="Price per Cycle">
+    <input id="sCycle" type="number" value="4" placeholder="Cycle Weeks">
+    <button class="action-btn" style="width:100%; justify-content:center;" onclick="addStudent()">Save Student</button>
 </div>
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-    <div style="display: flex; gap: 5px;">
-        <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
-        <button class="action-btn" onclick="undo()">↩️ UNDO</button>
+    <div>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
 </header>
 
 <div class="container">
     <div class="teacher-box">
-        <div class="profile-img-container" onclick="document.getElementById('tFile').click()">
-            <img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
-        </div>
-        <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
-        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
+        <input id="teacherName" oninput="db.teacherName=this.value; save();" placeholder="Teacher Name">
     </div>
 
     <div id="scheduleGrid"></div>
+
+    <!-- جدول الماليات المتكامل -->
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
-            <thead id="accTotalHeader"></thead> 
             <tbody id="accBody"></tbody>
+            <tfoot id="accFooter"></tfoot>
         </table>
     </div>
 </div>
 
 <script>
-    const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
-    const DAY_ORDER = { "Sat": 1, "Sun": 2, "Mon": 3, "Tue": 4, "Wed": 5, "Thu": 6, "Fri": 7 };
+    const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'];
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     
-    let db;
-    try {
-        db = JSON.parse(localStorage.getItem('tutor_v395')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
-    } catch(e) {
-        db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
-    }
+    let db = JSON.parse(localStorage.getItem('tutor_financials_db')) || {
+        teacherName: 'Teacher Name',
+        courseStartDate: '2026-01-01',
+        students: [
+            { id: 's_1', name: 'Ahmed', color: '#3B82F6', periods: [{price: 200, cycle: 4}], payments: {3: true, 7: false} },
+            { id: 's_2', name: 'Sara', color: '#10B981', periods: [{price: 250, cycle: 4}], payments: {3: false} }
+        ]
+    };
 
-    let historyStack = [];
-    let draggedData = null;
     let selectedColor = PALETTE[0];
 
-    function showToast(message) {
-        let toast = document.getElementById('toast');
-        toast.innerText = message;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    function showToast(msg) {
+        let t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
 
     function initColorPicker() {
-        const grid = document.getElementById('colorGridAdd');
+        let grid = document.getElementById('colorGridAdd');
         if(!grid) return;
         grid.innerHTML = PALETTE.map(c => `
-            <div class="color-circle ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="selectColor('${c}')"></div>
+            <div class="color-circle ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="selectedColor='${c}'; initColorPicker();"></div>
         `).join('');
     }
 
-    function selectColor(c) {
-        selectedColor = c;
+    function save() {
+        localStorage.setItem('tutor_financials_db', JSON.stringify(db));
+        render();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
         initColorPicker();
     }
 
-    function getTimeOptionsHTML(selectedTime = '') {
-        let html = '';
-        for(let h = 10; h <= 22; h++){
-            for(let m of [0, 15, 30, 45]){
-                if(h === 22 && m > 0) continue;
-                let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-                let mm = m.toString().padStart(2, '0');
-                let ampm = h < 12 ? 'AM' : 'PM';
-                let t = `${hh}:${mm} ${ampm}`;
-                let isSel = (t === selectedTime) ? 'selected' : '';
-                html += `<option value="${t}" ${isSel}>${t}</option>`;
-            }
-        }
-        return html;
-    }
-
-    function initLessonTimes() {
-        const sel = document.getElementById('cTime');
-        if (sel) sel.innerHTML = getTimeOptionsHTML();
-        const dateInput = document.getElementById('sDate');
-        if (dateInput) dateInput.value = new Date().toISOString().slice(0,10);
-        const baseDateInput = document.getElementById('courseBaseDate');
-        if (baseDateInput) baseDateInput.value = db.courseStartDate || new Date().toISOString().slice(0,10);
-    }
-
-    function timeToMinutes(t) {
-        if (!t) return 0;
-        let parts = t.split(' ');
-        if(parts.length < 2) return 0;
-        let [time, ampm] = parts;
-        let timeParts = time.split(':');
-        if(timeParts.length < 2) return 0;
-        let hrs = Number(timeParts[0]);
-        let mins = Number(timeParts[1]);
-        if (ampm === 'PM' && hrs !== 12) hrs += 12;
-        if (ampm === 'AM' && hrs === 12) hrs = 0;
-        return hrs * 60 + mins;
-    }
-
-    function save() { 
-        try { localStorage.setItem('tutor_v395', JSON.stringify(db)); } catch(e) {}
-        render(); 
-    }
-    function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
-    function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); showToast('Reverted successfully'); } }
-
-    function printFullSchedule() {
-        document.body.classList.remove('print-single-student');
-        window.print();
+    function closeAll() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
     }
 
     function addStudent() {
         let name = document.getElementById('sName').value.trim();
         let price = Number(document.getElementById('sPrice').value) || 0;
-        let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
         let cycle = Number(document.getElementById('sCycle').value) || 4;
+        if(!name) { showToast('Enter student name'); return; }
 
-        if(!name) { showToast('Please enter student name'); return; }
-
-        let newStudent = {
+        db.students.push({
             id: 's_' + Date.now(),
             name: name,
             color: selectedColor,
-            schedules: [],
-            periods: [{ price: price, startDate: date, cycle: cycle }],
+            periods: [{ price, cycle }],
             payments: {}
-        };
-
-        db.students.push(newStudent);
-        commitChange();
+        });
         document.getElementById('sName').value = '';
         document.getElementById('sPrice').value = '';
         toggleSidebar();
-        showToast('Student added successfully');
-    }
-
-    function addSchedule() {
-        let studentId = document.getElementById('sSelect').value;
-        let day = document.getElementById('cDay').value;
-        let time = document.getElementById('cTime').value;
-
-        let student = db.students.find(s => s.id === studentId);
-        if(!student) { showToast('Please select a student'); return; }
-
-        if(!student.schedules) student.schedules = [];
-        student.schedules.push({ day, time });
-        commitChange();
-        toggleSidebar();
-        showToast('Slot added successfully');
-    }
-
-    function getCourseWeeks() {
-        let baseDate = new Date(db.courseStartDate || '2026-01-01');
-        let weeks = [];
-        let totalWeeksCount = 12;
-        
-        for(let i = 0; i < totalWeeksCount; i++) {
-            let startWeek = new Date(baseDate);
-            startWeek.setDate(baseDate.getDate() + (i * 7));
-            let endWeek = new Date(startWeek);
-            endWeek.setDate(startWeek.getDate() + 6);
-            weeks.push({
-                index: i + 1,
-                startDate: startWeek,
-                endDate: endWeek,
-                label: `W${i+1}`
-            });
-        }
-        return weeks;
-    }
-
-    function generateStudentReportHTML(student, showAccount = true) {
-        let teacherName = db.teacherName || 'Teacher';
-        let schedulesHTML = '';
-
-        if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found for this student.</td></tr>`;
-        } else {
-            let sortedSchedules = [...student.schedules].sort((a, b) => {
-                let dayDiff = (DAY_ORDER[a.day] || 99) - (DAY_ORDER[b.day] || 99);
-                if (dayDiff !== 0) return dayDiff;
-                return timeToMinutes(a.time) - timeToMinutes(b.time);
-            });
-
-            sortedSchedules.forEach(sc => {
-                schedulesHTML += `
-                    <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #0f172a;">${sc.day}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 14px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        let lastPeriod = student.periods && student.periods.length > 0 ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
-        let price = lastPeriod.price || 0;
-        let cycle = lastPeriod.cycle || 4;
-
-        let accountSectionHTML = '';
-        if (showAccount) {
-            accountSectionHTML = `
-                <div style="background: #e2e8f0; padding: 6px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px;">
-                    <span style="font-weight: bold; color: #0f172a; font-size: 14px;">Price: ${price}</span>
-                    <span style="font-weight: bold; color: #b45309; font-size: 13px; margin-left: 6px;">Every ${cycle} weeks</span>
-                </div>
-            `;
-        }
-
-        return `
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 30px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
-                    <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 22px;">SMART TUTOR</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 12px;">Official Weekly Schedule</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #0f172a;">Teacher: ${teacherName}</span>
-                    </div>
-                </div>
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
-                    ${accountSectionHTML}
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                    <thead>
-                        <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Day</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px;">Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>${schedulesHTML}</tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    function render() {
-        const nameInput = document.getElementById('teacherName');
-        if (nameInput && nameInput.value !== db.teacherName) nameInput.value = db.teacherName || '';
-        
-        if (db.teacherImg) {
-            const imgEl = document.getElementById('teacherImg');
-            if(imgEl) imgEl.src = db.teacherImg;
-        }
-
-        const sSelect = document.getElementById('sSelect');
-        if(sSelect) {
-            sSelect.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        }
-
-        let gridHTML = '';
-        days.forEach(day => {
-            let dayStudentsHTML = '';
-            db.students.forEach(student => {
-                if(student.schedules) {
-                    student.schedules.forEach((sch, sIdx) => {
-                        if(sch.day === day) {
-                            let isWide = sch.time && sch.time.length > 7;
-                            dayStudentsHTML += `
-                                <div class="slot ${isWide ? 'wide-slot' : ''}" 
-                                     draggable="true" 
-                                     ondragstart="drag(event, '${student.id}', ${sIdx})" 
-                                     onclick="openSlotMenu('${student.id}', ${sIdx})"
-                                     style="background: ${student.color || '#3b82f6'}">
-                                    <div style="font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${student.name}</div>
-                                    <div style="font-size:9px; opacity:0.9;">${sch.time}</div>
-                                </div>
-                            `;
-                        }
-                    });
-                }
-            });
-
-            gridHTML += `
-                <div class="day-row">
-                    <div class="day-label">${day}</div>
-                    <div class="slots" ondragover="allowDrop(event)" ondragleave="removeDragOver(event)" ondrop="dropToDay(event, '${day}')">
-                        ${dayStudentsHTML || '<span style="color:rgba(255,255,255,0.3); font-size:10px; padding-left:5px;">No sessions</span>'}
-                    </div>
-                </div>
-            `;
-        });
-        
-        const scheduleGrid = document.getElementById('scheduleGrid');
-        if(scheduleGrid) scheduleGrid.innerHTML = gridHTML;
-
-        renderAccountingTable();
-        initColorPicker();
-    }
-
-    function renderAccountingTable() {
-        let weeks = getCourseWeeks();
-        
-        let headerHTML = `<th class="sticky-name">Student</th>`;
-        weeks.forEach((w, idx) => {
-            let isPay = (idx % 4 === 3);
-            headerHTML += `<th class="${isPay ? 'is-pay-week' : ''}">${w.label}</th>`;
-        });
-        headerHTML += `<th>Total</th>`;
-        
-        let accHeader = document.getElementById('accHeader');
-        if(accHeader) accHeader.innerHTML = headerHTML;
-
-        let bodyHTML = '';
-        let grandTotals = new Array(weeks.length).fill(0);
-
-        db.students.forEach(student => {
-            let studentTotal = 0;
-            let rowHTML = `<tr><td class="sticky-name" style="background:${student.color || '#1e293b'}" onclick="openStudentReport('${student.id}')" title="Click to view Report">${student.name}</td>`;
-            
-            weeks.forEach((w, wIdx) => {
-                let isPay = (wIdx % 4 === 3);
-                if(!student.payments) student.payments = {};
-                let paidStatus = student.payments[wIdx] || false;
-                
-                let price = Number(student.periods?.[0]?.price || 0);
-                if(paidStatus) {
-                    studentTotal += price;
-                    grandTotals[wIdx] += price;
-                }
-
-                rowHTML += `
-                    <td class="${isPay ? 'is-pay-week' : ''}">
-                        <div class="box ${paidStatus ? 'status-paid' : 'status-notpaid'}" onclick="togglePayment('${student.id}', ${wIdx})">
-                            ${paidStatus ? '✓' : ''}
-                        </div>
-                    </td>
-                `;
-            });
-
-            rowHTML += `<td style="font-weight:bold; background:#f1f5f9; color:#000;">${studentTotal}</td></tr>`;
-            bodyHTML += rowHTML;
-        });
-
-        let accBody = document.getElementById('accBody');
-        if(accBody) accBody.innerHTML = bodyHTML;
-
-        let totalHeaderHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
-        let grandSum = 0;
-        weeks.forEach((w, idx) => {
-            totalHeaderHTML += `<th>${grandTotals[idx]}</th>`;
-            grandSum += grandTotals[idx];
-        });
-        totalHeaderHTML += `<th class="grand-total-cell">${grandSum}</th></tr>`;
-
-        let accTotalHeader = document.getElementById('accTotalHeader');
-        if(accTotalHeader) accTotalHeader.innerHTML = totalHeaderHTML;
-    }
-
-    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
-    function removeDragOver(ev) { ev.currentTarget.classList.remove('drag-over'); }
-    function drag(ev, studentId, scheduleIndex) { draggedData = { studentId, scheduleIndex }; }
-    function dropToDay(ev, newDay) {
-        ev.preventDefault();
-        ev.currentTarget.classList.remove('drag-over');
-        if(!draggedData) return;
-        let student = db.students.find(s => s.id === draggedData.studentId);
-        if(student && student.schedules[draggedData.scheduleIndex]) {
-            student.schedules[draggedData.scheduleIndex].day = newDay;
-            commitChange();
-            showToast('Slot moved successfully');
-        }
-        draggedData = null;
+        save();
+        showToast('Student added');
     }
 
     function togglePayment(studentId, weekIdx) {
@@ -490,157 +168,69 @@
         if(student) {
             if(!student.payments) student.payments = {};
             student.payments[weekIdx] = !student.payments[weekIdx];
-            commitChange();
+            save();
         }
     }
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-        initLessonTimes();
-    }
+    function render() {
+        document.getElementById('teacherName').value = db.teacherName || '';
 
-    function closeAll() {
-        document.getElementById('sidebar').classList.remove('active');
-        document.getElementById('editModal').classList.remove('active');
-        document.getElementById('overlay').classList.remove('active');
-    }
+        // رسم جدول الماليات بشكل كامل ودقيق
+        let totalWeeks = 12;
+        let headerHTML = `<th class="sticky-name">Student</th>`;
+        for(let i = 0; i < totalWeeks; i++) {
+            let isPayWeek = (i % 4 === 3); // أسبوع الدفع كل 4 أسابيع
+            headerHTML += `<th class="${isPayWeek ? 'is-pay-week' : ''}">W${i+1}</th>`;
+        }
+        headerHTML += `<th>Total</th>`;
+        document.getElementById('accHeader').innerHTML = headerHTML;
 
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                db.teacherImg = e.target.result;
-                commitChange();
-                showToast('Teacher image updated');
+        let bodyHTML = '';
+        let grandTotals = new Array(totalWeeks).fill(0);
+        let grandSumTotal = 0;
+
+        db.students.forEach(student => {
+            let studentTotal = 0;
+            let rowHTML = `<tr><td class="sticky-name" style="background:${student.color}">${student.name}</td>`;
+            
+            let pricePerSessionOrWeek = Number(student.periods?.[0]?.price || 0);
+
+            for(let i = 0; i < totalWeeks; i++) {
+                let isPayWeek = (i % 4 === 3);
+                let isPaid = student.payments?.[i] || false;
+                
+                if(isPaid) {
+                    studentTotal += pricePerSessionOrWeek;
+                    grandTotals[i] += pricePerSessionOrWeek;
+                }
+
+                rowHTML += `
+                    <td class="${isPayWeek ? 'is-pay-week' : ''}">
+                        <div class="box ${isPaid ? 'status-paid' : 'status-notpaid'}" onclick="togglePayment('${student.id}', ${i})">
+                            ${isPaid ? '✓' : ''}
+                        </div>
+                    </td>
+                `;
             }
-            reader.readAsDataURL(input.files[0]);
+
+            rowHTML += `<td style="font-weight:bold; background:#f1f5f9; color:#000;">${studentTotal}</td></tr>`;
+            bodyHTML += rowHTML;
+            grandSumTotal += studentTotal;
+        });
+        document.getElementById('accBody').innerHTML = bodyHTML;
+
+        // صف المجاميع في الأسفل
+        let footerHTML = `<tr class="total-row"><th class="sticky-name" style="background:var(--gold)!important; color:#000!important;">Total</th>`;
+        let columnSumTotal = 0;
+        for(let i = 0; i < totalWeeks; i++) {
+            footerHTML += `<th>${grandTotals[i]}</th>`;
+            columnSumTotal += grandTotals[i];
         }
+        footerHTML += `<th class="grand-total-cell">${columnSumTotal}</th></tr>`;
+        document.getElementById('accFooter').innerHTML = footerHTML;
     }
 
-    function openStudentReport(studentId) {
-        let student = db.students.find(s => s.id === studentId);
-        if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student);
-        document.body.classList.add('print-single-student');
-        window.print();
-        setTimeout(() => { document.body.classList.remove('print-single-student'); }, 1000);
-    }
-
-    function openSlotMenu(studentId, sIdx) {
-        let student = db.students.find(s => s.id === studentId);
-        if(!student) return;
-        let sch = student.schedules[sIdx];
-        let lastPeriod = student.periods?.[0] || { price: 0, cycle: 4 };
-        let modal = document.getElementById('editModal');
-        let fields = document.getElementById('editFields');
-        
-        fields.innerHTML = `
-            <div style="margin-top:0;">
-                <p style="margin:0 0 8px 0;"><b>Student:</b> ${student.name}</p>
-                <label>Change Day:</label>
-                <select id="editDay">${days.map(d => `<option value="${d}" ${d === sch.day ? 'selected' : ''}>${d}</option>`).join('')}</select>
-                <label>Change Time:</label>
-                <select id="editTime">${getTimeOptionsHTML(sch.time)}</select>
-                <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin-top:8px; justify-content:center;" onclick="updateSlot('${studentId}', ${sIdx})">Update Slot Time 🔄</button>
-            </div>
-            <div style="margin-top:15px;">
-                <label>Edit Price:</label>
-                <input id="editStudentPrice" type="number" value="${lastPeriod.price}">
-                <label>Edit Cycle Weeks:</label>
-                <input id="editStudentCycle" type="number" value="${lastPeriod.cycle}">
-                <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px; justify-content:center;" onclick="updateStudentFinancials('${studentId}')">Update Financials 💰</button>
-            </div>
-            <div style="display:flex; gap:5px; margin-top:15px;">
-                <button class="action-btn" style="flex:1; background:#ef4444; color:white; justify-content:center;" onclick="deleteSlot('${studentId}', ${sIdx})">Delete Slot 🗑️</button>
-                <button class="action-btn" style="flex:1; background:#b91c1c; color:white; justify-content:center;" onclick="deleteStudent('${studentId}')">Delete Student ❌</button>
-            </div>
-        `;
-        modal.classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    function updateSlot(studentId, sIdx) {
-        let student = db.students.find(s => s.id === studentId);
-        if(student && student.schedules[sIdx]) {
-            student.schedules[sIdx].day = document.getElementById('editDay').value;
-            student.schedules[sIdx].time = document.getElementById('editTime').value;
-            commitChange();
-            closeAll();
-            showToast('Slot updated successfully');
-        }
-    }
-
-    function updateStudentFinancials(studentId) {
-        let student = db.students.find(s => s.id === studentId);
-        if(student) {
-            let newPrice = Number(document.getElementById('editStudentPrice').value) || 0;
-            let newCycle = Number(document.getElementById('editStudentCycle').value) || 4;
-            if(!student.periods) student.periods = [{}];
-            student.periods[0].price = newPrice;
-            student.periods[0].cycle = newCycle;
-            commitChange();
-            closeAll();
-            showToast('Financials updated successfully');
-        }
-    }
-
-    function deleteSlot(studentId, sIdx) {
-        let student = db.students.find(s => s.id === studentId);
-        if(student) {
-            student.schedules.splice(sIdx, 1);
-            commitChange();
-            closeAll();
-            showToast('Slot deleted');
-        }
-    }
-
-    function deleteStudent(studentId) {
-        if(confirm('Are you sure you want to delete this student and all associated data?')) {
-            db.students = db.students.filter(s => s.id !== studentId);
-            commitChange();
-            closeAll();
-            showToast('Student deleted');
-        }
-    }
-
-    function exportBackup() {
-        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-        let dlAnchorElem = document.createElement('a');
-        dlAnchorElem.setAttribute("href", dataStr);
-        dlAnchorElem.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
-        dlAnchorElem.click();
-        showToast('Backup exported successfully');
-    }
-
-    function importBackup(element) {
-        let file = element.files[0];
-        if(!file) return;
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                db = JSON.parse(e.target.result);
-                commitChange();
-                showToast('Backup restored successfully');
-            } catch(err) {
-                showToast('Invalid backup file format');
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    function resetAllStudentsStartDate() {
-        let newDate = document.getElementById('courseBaseDate').value;
-        if(!newDate) return;
-        db.courseStartDate = newDate;
-        commitChange();
-        showToast('Course start date updated');
-    }
-
-    window.onload = function() {
-        initLessonTimes();
-        render();
-    };
+    window.onload = render;
 </script>
 </body>
 </html>
