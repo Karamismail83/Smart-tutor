@@ -14,7 +14,7 @@
         .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 3px; display: inline-flex; align-items: center; gap: 3px; font-size: 10px; }
         .container { padding: 10px; }
 
-        .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
+        .teacher-box { display: flex; align-items: center; gap: 12px; background: var(--slate); padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
         .profile-img-container { width: 45px; height: 45px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
@@ -26,7 +26,7 @@
 
         .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; }
-        .acc-table th, .acc-table td { border: 1px solid #cbd5e1; text-align: center; padding: 5px 3px; min-width: 32px; font-size: 10px; }
+        .acc-table th, .acc-table td { border: 1px solid #cbd5e1; text-align: center; padding: 6px 3px; min-width: 35px; font-size: 10px; }
         .acc-table th { background: #1E293B; color: white; font-size: 9px; }
         .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
         .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
@@ -100,9 +100,9 @@
 <div class="container">
     <div class="teacher-box">
         <div class="profile-img-container">👤</div>
-        <div style="flex:1;">
-            <input id="teacherNameInput" oninput="db.teacherName=this.value; save();" style="background:transparent; border:none; color:var(--gold); font-size:15px; font-weight:900; width:100%; outline:none;" placeholder="Teacher Name">
-            <input id="teacherPhoneInput" oninput="db.teacherPhone=this.value; save();" style="background:transparent; border:none; color:#94a3b8; font-size:11px; width:100%; outline:none;" placeholder="Teacher Phone Number">
+        <div style="flex:1; overflow:hidden;">
+            <input id="teacherNameInput" oninput="db.teacherName=this.value; save();" style="background:transparent; border:none; color:var(--gold); font-size:15px; font-weight:900; width:100%; outline:none; padding:0;" placeholder="Teacher Name">
+            <input id="teacherPhoneInput" oninput="db.teacherPhone=this.value; save();" style="background:transparent; border:none; color:#94a3b8; font-size:11px; width:100%; outline:none; padding:0; margin-top:2px;" placeholder="Teacher Phone Number">
         </div>
     </div>
 
@@ -118,7 +118,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'karam_tutor_db_v9';
+    const STORAGE_KEY = 'karam_tutor_db_v10';
     const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     let initialData = {
@@ -308,8 +308,8 @@
             let studentTotal = 0;
             let rowHTML = `<tr>
                 <td class="sticky-name" style="background:${st.color}">
-                    <span>${st.name}</span>
-                    <span style="font-size:10px; cursor:pointer; background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px;" onclick="deleteStudent('${st.id}')" title="Delete">🗑️</span>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${st.name}</span>
+                    <span style="font-size:10px; cursor:pointer; background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px; flex-shrink:0;" onclick="deleteStudent('${st.id}')" title="Delete">🗑️</span>
                 </td>`;
             
             for(let i = 0; i < totalWeeks; i++) {
