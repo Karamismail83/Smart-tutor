@@ -587,7 +587,6 @@
         }
 
         let studentRowsHTML = '';
-        let periodsHeaderAdded = false;
 
         if (db.students && Array.isArray(db.students)) {
             db.students.forEach((s, sIndex) => {
@@ -610,7 +609,6 @@
                 row += '</tr>';
                 studentRowsHTML += row;
 
-                // Check if this student is at or past a block of 4 students, or if it's the last student, insert the periodic total row
                 let currentStudentNumber = sIndex + 1;
                 if (currentStudentNumber % 4 === 0 || currentStudentNumber === db.students.length) {
                     let blockIncome = Array(dates.length).fill(0);
