@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Tutor - جدول المعلم الذكي</title>
+    <title>Smart Tutor - Smart Schedule</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -14,7 +14,7 @@
         
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+        .action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-right: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
         .container { padding: 10px; }
 
         .teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
@@ -23,7 +23,7 @@
         #teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
 
         .day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
-        .day-label { width: 40px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+        .day-label { width: 75px; background: var(--gold); color: #000; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 10px; }
         
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
@@ -43,9 +43,9 @@
         .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
         
         .sticky-name { 
-            position: sticky; right: 0; z-index: 100; width: var(--name-w); 
-            font-weight: 900; border-left: 2px solid #ddd !important; 
-            text-align: right !important; padding: 4px 6px !important; 
+            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
+            font-weight: 900; border-right: 2px solid #ddd !important; 
+            text-align: left !important; padding: 4px 6px !important; 
             color: white !important; box-sizing: border-box; 
             cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
@@ -58,13 +58,13 @@
         .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
         .is-holiday-cell { background: var(--holiday-bg) !important; }
 
-        .sidebar, .modal { position: fixed; top: 0; right: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
-        .active { right: 0 !important; }
+        .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .active { left: 0 !important; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
         .overlay.active { display: block; }
         
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; display: inline-block; margin-left: 4px; }
+        .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; display: inline-block; margin-right: 4px; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
         #studentPrintContainer { display: none; }
@@ -74,7 +74,7 @@
 
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
-            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; direction: rtl !important; }
+            html, body { background: #ffffff !important; color: #000000 !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; direction: ltr !important; }
             header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
             
             body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
@@ -84,7 +84,7 @@
             .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
             #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
             .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
-            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
+            .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 65px !important; }
             .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
             .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; box-shadow: none !important; }
             .slot.wide-slot { min-width: 58px !important; }
@@ -93,7 +93,7 @@
             .acc-table { width: 100% !important; table-layout: fixed !important; }
             .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
             .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
-            .sticky-name { color: #ffffff !important; border-left: 2px solid #0f172a !important; font-size: 8.5px !important; padding-right: 4px !important; width: 90px !important; }
+            .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 90px !important; }
             .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
             .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
             .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
@@ -107,44 +107,52 @@
 <div id="toast"></div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="margin-top:0">الإعدادات ⚙️</h2>
+    <h2 style="margin-top:0">Settings ⚙️</h2>
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">تعديل تاريخ بداية الكورس 📅</h3>
-        <label style="font-size:11px; color:#64748b;">تاريخ بداية الكورس لجميع الطلاب:</label>
+        <h3 style="margin-top:0;">Course Start Date 📅</h3>
+        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
         <input id="courseBaseDate" type="date">
-        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">إعادة ضبط الكل 🔄</button>
+        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All 🔄</button>
     </div>
 
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">النسخ الاحتياطي 💾</h3>
-        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">تصدير نسخة احتياطية 📤</button>
-        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">استيراد نسخة 📥</button>
+        <h3 style="margin-top:0;">Backup 💾</h3>
+        <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
+        <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
         <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
     </div>
 
     <hr style="margin:15px 0; opacity:0.1">
-    <h3>إضافة طالب</h3>
-    <input id="sName" placeholder="اسم الطالب">
+    <h3>Add Student</h3>
+    <input id="sName" placeholder="Student Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
-    <input id="sPrice" type="number" placeholder="قيمة الاشتراك">
+    <input id="sPrice" type="number" placeholder="Subscription Price">
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
-    <button class="action-btn" style="width:100%" onclick="addStudent()">حفظ الطالب</button>
+    <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
-    <h3>إضافة حصة (ميعاد)</h3>
+    <h3>Add Schedule Slot</h3>
     <select id="sSelect"></select>
-    <select id="cDay"><option>السبت</option><option>الأحد</option><option>الإثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option></select>
+    <select id="cDay">
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+    </select>
     <select id="cTime"></select>
-    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">حفظ الميعاد</button>
+    <button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
 </div>
 
 <header>
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
-        <button class="action-btn" onclick="undo()">↩️ تراجع</button>
-        <button class="action-btn" onclick="toggleSidebar()">➕ إضافة</button>
+        <button class="action-btn" onclick="undo()">↩️ Undo</button>
+        <button class="action-btn" onclick="toggleSidebar()">➕ Add</button>
     </div>
 </header>
 
@@ -154,7 +162,7 @@
             <img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
         </div>
         <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
-        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="اسم المعلم">
+        <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
     </div>
 
     <div id="scheduleGrid"></div>
@@ -194,7 +202,7 @@
                 if(h === 22 && m > 0) continue;
                 let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
                 let mm = m.toString().padStart(2, '0');
-                let ampm = h < 12 ? 'ص' : 'م';
+                let ampm = h < 12 ? 'AM' : 'PM';
                 let t = `${hh}:${mm} ${ampm}`;
                 let isSel = (t === selectedTime) ? 'selected' : '';
                 html += `<option value="${t}" ${isSel}>${t}</option>`;
@@ -217,8 +225,8 @@
         if(timeParts.length < 2) return 0;
         let hrs = Number(timeParts[0]);
         let mins = Number(timeParts[1]);
-        if (ampm === 'م' && hrs !== 12) hrs += 12;
-        if (ampm === 'ص' && hrs === 12) hrs = 0;
+        if (ampm === 'PM' && hrs !== 12) hrs += 12;
+        if (ampm === 'AM' && hrs === 12) hrs = 0;
         return hrs * 60 + mins;
     }
 
@@ -235,7 +243,7 @@
     }
 
     function generateStudentReportHTML(student) {
-        let teacherName = db.teacherName || 'المعلم';
+        let teacherName = db.teacherName || 'Teacher';
         let schedulesHTML = '';
 
         let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
@@ -243,54 +251,54 @@
         let cycleWeeks = lastPeriod.cycle || 4;
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">لا توجد مواعيد مسجلة</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled classes</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
             sortedSchedules.forEach(sc => {
                 schedulesHTML += `
                     <tr>
                         <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${sc.day}</td>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: right; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
             });
         }
 
         return `
-            <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: rtl;">
+            <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: ltr;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / جدول الحصص الأسبوعي</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">تقرير المواعيد الرسمي</p>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR / Weekly Schedule</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Schedule Report</p>
                     </div>
-                    <div style="text-align: left;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">المعلم: ${teacherName}</span>
+                    <div style="text-align: right;">
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher: ${teacherName}</span>
                     </div>
                 </div>
 
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">الطالب: ${student.name}</h3>
-                        <p style="margin: 0; font-size: 11px; color: #64748b;">مواعيد الحصص الأسبوعية والتفاصيل المالية:</p>
+                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student: ${student.name}</h3>
+                        <p style="margin: 0; font-size: 11px; color: #64748b;">Weekly schedule & financial details:</p>
                     </div>
                     <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
-                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">قيمة الاشتراك:</div>
-                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / كل ${cycleWeeks} أسابيع</div>
+                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Subscription Price:</div>
+                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / ${cycleWeeks} wks</div>
                     </div>
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">اليوم</th>
-                            <th style="padding: 10px 15px; text-align: left; font-size: 12px;">الوقت</th>
+                            <th style="padding: 10px 15px; text-align: left; font-size: 12px;">Day</th>
+                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">Time</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
 
                 <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; color: #94a3b8; font-size: 10px;">
-                    نظام إدارة المواعيد والدروس الخصوصية © 2026
+                    Smart Tutor Management System © 2026
                 </div>
             </div>
         `;
@@ -334,7 +342,7 @@
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
-        showToast("تم تصدير النسخة الاحتياطية بنجاح 📤");
+        showToast("Backup exported successfully 📤");
     }
 
     function importBackup(input) {
@@ -347,12 +355,12 @@
                 if (parsed && parsed.students) {
                     db = parsed;
                     commitChange();
-                    showToast("تم استيراد النسخة الاحتياطية بنجاح 📥");
+                    showToast("Backup imported successfully 📥");
                 } else {
-                    alert("ملف النسخ الاحتياطي غير صالح.");
+                    alert("Invalid backup file.");
                 }
             } catch(err) {
-                alert("حدث خطأ أثناء قراءة الملف.");
+                alert("Error reading file.");
             }
         };
         reader.readAsText(file);
@@ -361,7 +369,7 @@
     function resetAllStudentsStartDate() {
         let baseDateInput = document.getElementById('courseBaseDate').value;
         if (!baseDateInput) {
-            alert("يرجى اختيار التاريخ أولاً.");
+            alert("Please select a date first.");
             return;
         }
         db.courseStartDate = baseDateInput;
@@ -371,7 +379,7 @@
             }
         });
         commitChange();
-        showToast("تم إعادة ضبط تواريخ البداية بنجاح 📅");
+        showToast("Start dates reset successfully 📅");
     }
 
     let selectedColorAdd = PALETTE[0];
@@ -390,7 +398,7 @@
         let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
         let cycle = Number(document.getElementById('sCycle').value) || 4;
 
-        if(!name) { alert("يرجى إدخال اسم الطالب"); return; }
+        if(!name) { alert("Please enter student name"); return; }
 
         let newStudent = {
             id: 'st_' + Date.now(),
@@ -405,7 +413,7 @@
         document.getElementById('sName').value = '';
         document.getElementById('sPrice').value = '';
         toggleSidebar();
-        showToast("تم إضافة الطالب بنجاح ✅");
+        showToast("Student added successfully ✅");
     }
 
     function addSchedule() {
@@ -414,13 +422,13 @@
         let time = document.getElementById('cTime').value;
 
         let st = db.students.find(s => s.id === studentId);
-        if(!st) { alert("يرجى اختيار طالب أولاً"); return; }
+        if(!st) { alert("Please select a student first"); return; }
 
         if(!st.schedules) st.schedules = [];
         st.schedules.push({ id: 'sch_' + Date.now(), day: day, time: time });
         commitChange();
         toggleSidebar();
-        showToast("تم إضافة الميعاد بنجاح ⏰");
+        showToast("Slot added successfully ⏰");
     }
 
     function openStudentEdit(studentId) {
@@ -435,14 +443,14 @@
                 let timeOpts = getTimeOptionsHTML(sch.time);
                 schedulesListHtml += `
                     <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-bottom:6px; display:flex; gap:5px; align-items:center;">
-                        <select id="schDay_${sch.id}" style="margin:0; width:35%;">
-                            <option ${sch.day === 'السبت' ? 'selected' : ''}>السبت</option>
-                            <option ${sch.day === 'الأحد' ? 'selected' : ''}>الأحد</option>
-                            <option ${sch.day === 'الإثنين' ? 'selected' : ''}>الإثنين</option>
-                            <option ${sch.day === 'الثلاثاء' ? 'selected' : ''}>الثلاثاء</option>
-                            <option ${sch.day === 'الأربعاء' ? 'selected' : ''}>الأربعاء</option>
-                            <option ${sch.day === 'الخميس' ? 'selected' : ''}>الخميس</option>
-                            <option ${sch.day === 'الجمعة' ? 'selected' : ''}>الجمعة</option>
+                        <select id="schDay_${sch.id}" style="margin:0; width:40%;">
+                            <option ${sch.day === 'Saturday' ? 'selected' : ''}>Saturday</option>
+                            <option ${sch.day === 'Sunday' ? 'selected' : ''}>Sunday</option>
+                            <option ${sch.day === 'Monday' ? 'selected' : ''}>Monday</option>
+                            <option ${sch.day === 'Tuesday' ? 'selected' : ''}>Tuesday</option>
+                            <option ${sch.day === 'Wednesday' ? 'selected' : ''}>Wednesday</option>
+                            <option ${sch.day === 'Thursday' ? 'selected' : ''}>Thursday</option>
+                            <option ${sch.day === 'Friday' ? 'selected' : ''}>Friday</option>
                         </select>
                         <select id="schTime_${sch.id}" style="margin:0; width:45%;">${timeOpts}</select>
                         <button class="action-btn" style="background:#ef4444; color:white; padding:4px 8px; margin:0;" onclick="deleteSlot('${st.id}', '${sch.id}')">✕</button>
@@ -450,32 +458,32 @@
                 `;
             });
         } else {
-            schedulesListHtml = `<p style="color:#64748b; font-size:11px;">لا توجد مواعيد مسجلة لهذا الطالب.</p>`;
+            schedulesListHtml = `<p style="color:#64748b; font-size:11px;">No scheduled slots for this student.</p>`;
         }
 
         let html = `
-            <h3 style="margin-top:0">تعديل بيانات الطالب: ${st.name}</h3>
-            <label>اسم الطالب:</label>
+            <h3 style="margin-top:0">Edit Student: ${st.name}</h3>
+            <label>Student Name:</label>
             <input id="editName" value="${st.name}">
             
-            <label>اللون:</label>
+            <label>Color:</label>
             <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px" id="colorGridEdit"></div>
 
-            <label>قيمة الاشتراك:</label>
+            <label>Subscription Price:</label>
             <input id="editPrice" type="number" value="${lastPeriod.price}">
 
-            <label>الدورة (بالأسابيع):</label>
+            <label>Cycle (Weeks):</label>
             <input id="editCycle" type="number" value="${lastPeriod.cycle || 4}">
 
-            <label>تاريخ البدء:</label>
+            <label>Start Date:</label>
             <input id="editDate" type="date" value="${lastPeriod.startDate || ''}">
 
-            <label style="margin-top:10px; display:block; font-weight:bold;">المواعيد الحالية:</label>
+            <label style="margin-top:10px; display:block; font-weight:bold;">Current Slots:</label>
             <div style="max-height:150px; overflow-y:auto; margin-bottom:12px;">${schedulesListHtml}</div>
 
-            <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin-bottom:8px;" onclick="saveStudentEdit('${st.id}')">حفظ التعديلات 💾</button>
-            <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="closeAll(); printSingleStudent('${st.id}')">طباعة جدول الطالب 🖨️</button>
-            <button class="action-btn" style="width:100%; background:#ef4444; color:white;" onclick="deleteStudent('${st.id}')">حذف الطالب 🗑️</button>
+            <button class="action-btn" style="width:100%; background:var(--primary); color:white; margin-bottom:8px;" onclick="saveStudentEdit('${st.id}')">Save Changes 💾</button>
+            <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="closeAll(); printSingleStudent('${st.id}')">Print Student Schedule 🖨️</button>
+            <button class="action-btn" style="width:100%; background:#ef4444; color:white;" onclick="deleteStudent('${st.id}')">Delete Student 🗑️</button>
         `;
 
         document.getElementById('editFields').innerHTML = html;
@@ -524,15 +532,15 @@
 
         commitChange();
         closeAll();
-        showToast("تم تحديث بيانات الطالب بنجاح ✅");
+        showToast("Student updated successfully ✅");
     }
 
     function deleteStudent(studentId) {
-        if(!confirm("هل أنت متأكد من حذف هذا الطالب؟")) return;
+        if(!confirm("Are you sure you want to delete this student?")) return;
         db.students = db.students.filter(s => s.id !== studentId);
         commitChange();
         closeAll();
-        showToast("تم حذف الطالب 🗑️");
+        showToast("Student deleted 🗑️");
     }
 
     function deleteSlot(studentId, schId) {
@@ -541,7 +549,7 @@
         st.schedules = st.schedules.filter(sc => sc.id !== schId);
         commitChange();
         openStudentEdit(studentId);
-        showToast("تم حذف الميعاد ❌");
+        showToast("Slot deleted ❌");
     }
 
     function handleDragStart(e, studentId, schId) {
@@ -577,7 +585,7 @@
 
         sch.day = targetDay;
         commitChange();
-        showToast("تم نقل الحصة إلى " + targetDay + " 🚚");
+        showToast("Class moved to " + targetDay + " 🚚");
         draggedData = null;
     }
 
@@ -607,7 +615,7 @@
         renderColorGridAdd();
         initLessonTimes();
 
-        const days = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+        const days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         let gridHtml = '';
 
         days.forEach(day => {
@@ -626,7 +634,7 @@
 
             let slotsHtml = '';
             if(daySchedules.length === 0) {
-                slotsHtml = `<span style="color:#64748b; font-size:10px; padding:0 5px;">لا توجد مواعيد</span>`;
+                slotsHtml = `<span style="color:#64748b; font-size:10px; padding:0 5px;">No slots</span>`;
             } else {
                 daySchedules.forEach(item => {
                     let st = item.student;
@@ -638,7 +646,7 @@
                              draggable="true" 
                              ondragstart="handleDragStart(event, '${st.id}', '${sc.id}')" 
                              ondragend="handleDragEnd(event)">
-                            <div style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;" onclick="openStudentEdit('${st.id}')" title="اضغط لتعديل الطالب">${st.name}</div>
+                            <div style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;" onclick="openStudentEdit('${st.id}')" title="Click to edit student">${st.name}</div>
                             <div class="slot-status-indicator" style="direction:ltr;">${sc.time}</div>
                         </div>
                     `;
@@ -660,8 +668,8 @@
         let baseDate = new Date(db.courseStartDate || new Date());
         if(isNaN(baseDate.getTime())) baseDate = new Date();
 
-        let weeksHeaderHtml = `<th class="sticky-name" style="background:#1E293B;">اسم الطالب</th>`;
-        let totalHeaderHtml = `<th class="sticky-name total-row" style="background:var(--gold); color:#000;">إجمالي المحصل</th>`;
+        let weeksHeaderHtml = `<th class="sticky-name" style="background:#1E293B;">Student Name</th>`;
+        let totalHeaderHtml = `<th class="sticky-name total-row" style="background:var(--gold); color:#000;">Total Collected</th>`;
         
         let weekDates = [];
         for(let w = 1; w <= 12; w++) {
@@ -672,11 +680,11 @@
             
             let isHolidayCol = db.holidays && db.holidays.includes(w);
             let hClass = isHolidayCol ? 'is-holiday-col' : '';
-            weeksHeaderHtml += `<th class="${hClass}" onclick="toggleHoliday(${w})" title="اضغط لتحويل الأسبوع إلى إجازة">${w}<br><span style="font-size:6px">${dStr}</span></th>`;
-            totalHeaderHtml += `<th class="${hClass}" style="font-size:7px;">أ${w}</th>`;
+            weeksHeaderHtml += `<th class="${hClass}" onclick="toggleHoliday(${w})" title="Click to toggle week holiday">${w}<br><span style="font-size:6px">${dStr}</span></th>`;
+            totalHeaderHtml += `<th class="${hClass}" style="font-size:7px;">W${w}</th>`;
         }
-        weeksHeaderHtml += `<th>المجموع</th>`;
-        totalHeaderHtml += `<th>الإجمالي</th>`;
+        weeksHeaderHtml += `<th>Total</th>`;
+        totalHeaderHtml += `<th>Sum</th>`;
 
         document.getElementById('accHeader').innerHTML = weeksHeaderHtml;
         document.getElementById('accTotalHeader').innerHTML = totalHeaderHtml;
@@ -686,7 +694,7 @@
         let grandTotalPaid = 0;
 
         if(db.students.length === 0) {
-            accBodyHtml = `<tr><td colspan="14" style="padding:15px; text-align:center; color:#64748b;">لا توجد طلاب مسجلة</td></tr>`;
+            accBodyHtml = `<tr><td colspan="14" style="padding:15px; text-align:center; color:#64748b;">No students registered</td></tr>`;
         } else {
             db.students.forEach(st => {
                 if(!st.attendance) st.attendance = {};
@@ -738,7 +746,7 @@
 
         accBodyHtml += `
             <tr class="total-row">
-                <td class="sticky-name grand-total-cell" style="background:#000; color:var(--gold);">الإجمالي</td>
+                <td class="sticky-name grand-total-cell" style="background:#000; color:var(--gold);">Total</td>
                 ${grandRowCells}
                 <td class="grand-total-cell" style="background:#000; color:var(--gold); font-size:10px;">${grandTotalPaid.toFixed(0)}</td>
             </tr>
@@ -766,11 +774,10 @@
         if(idx > -1) db.holidays.splice(idx, 1);
         else db.holidays.push(weekNum);
         commitChange();
-        showToast("تم تحديث الإجازة للأسبوع " + weekNum + " 🌴");
+        showToast("Holiday updated for week " + weekNum + " 🌴");
     }
 
     render();
 </script>
 </body>
 </html>
-
