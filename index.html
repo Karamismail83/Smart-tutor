@@ -185,6 +185,7 @@
 
     let historyStack = [];
     let draggedData = null;
+    let selectedColorAdd = PALETTE[0];
 
     function showToast(message) {
         let toast = document.getElementById('toast');
@@ -240,7 +241,6 @@
         window.print();
     }
 
-    // دالة تقرير الطالب مع وضع رقم تليفون المعلم تحت اسم المعلم مباشرة في ترويسة التقرير
     function generateStudentReportHTML(student, showAccount = true) {
         let teacherName = db.teacherName || 'Teacher';
         let teacherPhone = db.teacherPhone ? `<p style="margin: 3px 0 0; font-size: 11px; color: #64748b; direction: ltr; text-align: right;">Phone: ${db.teacherPhone}</p>` : '';
@@ -309,7 +309,101 @@
         `;
     }
 
-    // دوال العرض الأساسية للتطبيق
+    function renderColorPickers() {
+        const gridAdd = document.getElementById('colorGridAdd');
+        if (gridAdd) {
+            gridAdd.innerHTML = '';
+            PALETTE.forEach(c => {
+                let div = document.createElement('div');
+                div.className = `color-circle ${c === selectedColorAdd ? 'selected' : ''}`;
+                div.style.background = c;
+                div.onclick = () => {
+                    selectedColorAdd = c;
+                    renderColorPickers();
+                };
+                gridAdd.appendChild(div);
+            });
+        }
+    }
+
+    function addStudent() {
+        let name = document.getElementById('sName').value.trim();
+        let price = Number(document.getElementById('sPrice').value) || 0;
+        let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
+        let cycle = Number(document.getElementById('sCycle').value) || 4;
+
+        if(!name) { showToast('Please enter student name'); return; }
+
+        db.students.push({
+            id: 's_' + Date.now(),
+            name: name,
+            color: selectedColorAdd,
+            schedules: [],
+            periods: [{ price: price, startDate: date, cycle: cycle }],
+            attendance: {}
+        });
+
+        document.getElementById('sName').value = '';
+        document.getElementById('sPrice').value = '';
+        commitChange();
+        toggleSidebar();
+        showToast('Student added successfully');
+    }
+
+    function addSchedule() {
+        let studentId = document.getElementById('sSelect').value;
+        let day = document.getElementById('cDay').value;
+        let time = document.getElementById('cTime').value;
+
+        let student = db.students.find(s => s.id === studentId);
+        if(!student) { showToast('Please select a student'); return; }
+
+        if(!student.schedules) student.schedules = [];
+        student.schedules.push({ day, time });
+
+        commitChange();
+        toggleSidebar();
+        showToast('Schedule slot added');
+    }
+
+    function exportBackup() {
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        let dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "smart_tutor_backup.json");
+        document.body.appendChild(dlAnchorElem);
+        dlAnchorElem.click();
+        dlAnchorElem.remove();
+    }
+
+    function importBackup(element) {
+        let file = element.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                db = JSON.parse(e.target.result);
+                commitChange();
+                showToast('Backup imported successfully');
+            } catch(err) {
+                showToast('Invalid backup file');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetAllStudentsStartDate() {
+        let baseDate = document.getElementById('courseBaseDate').value;
+        if(!baseDate) { showToast('Please select a date'); return; }
+        db.students.forEach(s => {
+            if(s.periods && s.periods.length > 0) {
+                s.periods[0].startDate = baseDate;
+            }
+        });
+        commitChange();
+        showToast('All course start dates reset');
+    }
+
     function render() {
         const nameInput = document.getElementById('teacherName');
         const phoneInput = document.getElementById('teacherPhone');
@@ -320,6 +414,108 @@
             const imgEl = document.getElementById('teacherImg');
             if(imgEl) imgEl.src = db.teacherImg;
         }
+
+        // تحديث القائمة المنسدلة للطلاب في السايدبار
+        const sSelect = document.getElementById('sSelect');
+        if(sSelect) {
+            sSelect.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        // رسم جدول الحصص اليومي
+        const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        let scheduleGridHTML = '';
+        days.forEach(day => {
+            let slotsHTML = '';
+            db.students.forEach(student => {
+                if(student.schedules) {
+                    student.schedules.forEach((sc, idx) => {
+                        if(sc.day === day) {
+                            slotsHTML += `
+                                <div class="slot wide-slot" style="background:${student.color || '#3b82f6'};" draggable="true" ondragstart="drag(event, '${student.id}', ${idx})">
+                                    <div style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${student.name}</div>
+                                    <div class="slot-status-indicator">${sc.time}</div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+            });
+
+            scheduleGridHTML += `
+                <div class="day-row">
+                    <div class="day-label">${day}</div>
+                    <div class="slots" ondragover="allowDrop(event)" ondragleave="removeDragOver(event)" ondrop="drop(event, '${day}')">
+                        ${slotsHTML || '<span style="color:#64748b; font-size:10px; padding:0 5px;">No sessions</span>'}
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('scheduleGrid').innerHTML = scheduleGridHTML;
+
+        // بناء جدول الحسابات والمتابعة المالية
+        renderAccountingTable();
+    }
+
+    function renderAccountingTable() {
+        // بناء أعمدة الجدول البسيطة أو الممتدة (كمثال مبسط لأيام الشهر أو الحصص)
+        let headerHTML = `<th class="sticky-name">Student</th>`;
+        let totalHeaderHTML = `<th class="sticky-name">Total</th>`;
+        for(let i = 1; i <= 4; i++) {
+            headerHTML += `<th>W${i}</th>`;
+            totalHeaderHTML += `<th>-</th>`;
+        }
+        document.getElementById('accHeader').innerHTML = headerHTML;
+        document.getElementById('accTotalHeader').innerHTML = totalHeaderHTML;
+
+        let bodyHTML = '';
+        db.students.forEach(student => {
+            bodyHTML += `
+                <tr>
+                    <td class="sticky-name" style="background:${student.color || '#1e293b'};" onclick="openStudentReport('${student.id}')">${student.name}</td>
+            `;
+            for(let i = 1; i <= 4; i++) {
+                bodyHTML += `<td><div class="box"></div></td>`;
+            }
+            bodyHTML += `</tr>`;
+        });
+        document.getElementById('accBody').innerHTML = bodyHTML;
+    }
+
+    function openStudentReport(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if(!student) return;
+        let printContainer = document.getElementById('studentPrintContainer');
+        printContainer.innerHTML = generateStudentReportHTML(student, true);
+        document.body.classList.add('print-single-student');
+        window.print();
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+        ev.currentTarget.classList.add('drag-over');
+    }
+
+    function removeDragOver(ev) {
+        ev.currentTarget.classList.remove('drag-over');
+    }
+
+    function drag(ev, studentId, index) {
+        draggedData = { studentId, index };
+        ev.dataTransfer.setData("text/plain", studentId);
+    }
+
+    function drop(ev, newDay) {
+        ev.preventDefault();
+        ev.currentTarget.classList.remove('drag-over');
+        if(!draggedData) return;
+
+        let student = db.students.find(s => s.id === draggedData.studentId);
+        if(student && student.schedules && student.schedules[draggedData.index]) {
+            student.schedules[draggedData.index].day = newDay;
+            commitChange();
+            showToast('Session moved successfully');
+        }
+        draggedData = null;
     }
 
     function handleImageUpload(input) {
@@ -346,6 +542,7 @@
 
     window.onload = function() {
         initLessonTimes();
+        renderColorPickers();
         render();
     };
 </script>
