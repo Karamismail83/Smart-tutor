@@ -7,9 +7,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
-            --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
-            --name-w: 120px; --box-s: 24px; --primary: #6366f1;
-            --holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
+            --bg-dark: #0F172A; 
+            --gold: #FACC15; 
+            --slate: #1E293B;
+            --name-w: 130px; 
+            --box-s: 26px; 
+            --primary: #6366f1;
+            --holiday-purple: #312E81; 
+            --holiday-bg: rgba(49, 46, 129, 0.4);
         }
         
         body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
@@ -28,35 +33,33 @@
         .slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
         .slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
         
-        .slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
+        .slot { flex: 0 0 auto; min-width: 50px; background: var(--slate); padding: 4px 5px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
         .slot:active { cursor: grabbing; }
         .slot.dragging { opacity: 0.4; transform: scale(0.95); }
-        .slot.wide-slot { min-width: 62px; }
+        .slot.wide-slot { min-width: 68px; }
 
-        .slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
-        
-        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
-        .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
-        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
-        .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
-        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+        .acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .acc-table { border-collapse: collapse; width: 100%; color: #1E293B; white-space: nowrap; }
+        .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; }
+        .acc-table th { background: #1E293B; color: white; font-size: 9px; cursor: pointer; padding: 6px 2px; }
         
         .sticky-name { 
-            position: sticky; left: 0; z-index: 100; width: var(--name-w); 
+            position: sticky; left: 0; z-index: 100; width: var(--name-w); min-width: var(--name-w);
             font-weight: 900; border-right: 2px solid #ddd !important; 
             text-align: left !important; padding: 4px 6px !important; 
             color: white !important; box-sizing: border-box; 
             cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
-        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
+        .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: black; cursor: pointer; transition: all 0.1s ease; }
+        .box:hover { transform: scale(1.08); }
         .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; color: #047857; }
-        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+        .status-paid { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
+        .status-notpaid { background: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
+        .status-attended { background: #3b82f6 !important; color: white !important; border-color: #2563eb !important; }
         
-        .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
-        .is-holiday-cell { background: var(--holiday-bg) !important; }
+        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; font-size: 10px !important; }
+        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; font-weight: 900 !important; }
 
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .active { left: 0 !important; }
@@ -64,7 +67,6 @@
         .overlay.active { display: block; }
         
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
-        .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
@@ -79,22 +81,20 @@
             header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
             
             body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; }
-            body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
             body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
 
-            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; box-shadow: none !important; }
+            .teacher-box { background: #f8fafc !important; border: 2px solid #0f172a !important; border-radius: 6px !important; padding: 6px 12px !important; margin-bottom: 8px !important; }
             #teacherName { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 16px !important; font-weight: bold !important; }
             .day-row { background: #f8fafc !important; border: 1px solid #94a3b8 !important; margin-bottom: 2px !important; min-height: 32px !important; align-items: center !important; page-break-inside: avoid; }
             .day-label { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; width: 35px !important; }
-            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; align-items: center !important; }
-            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; box-shadow: none !important; }
-            .slot.wide-slot { min-width: 58px !important; }
-            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; page-break-inside: avoid; }
+            .slots { padding: 2px 4px !important; gap: 3px !important; min-height: 30px !important; }
+            .slot { border: 1px solid #334155 !important; color: #ffffff !important; font-size: 9px !important; padding: 2px 2px !important; min-width: 45px !important; }
+            .acc-table-wrapper { background: transparent !important; box-shadow: none !important; border: 1px solid #64748b !important; margin-top: 8px !important; overflow: visible !important; }
             .acc-table { width: 100% !important; table-layout: fixed !important; }
             .acc-table th { background: #0f172a !important; color: #ffffff !important; font-size: 7.5px !important; padding: 2px 1px !important; }
             .acc-table td { border: 1px solid #cbd5e1 !important; padding: 1px !important; }
             .sticky-name { color: #ffffff !important; border-right: 2px solid #0f172a !important; font-size: 8.5px !important; padding-left: 4px !important; width: 90px !important; }
-            .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #64748b !important; }
+            .box { width: 18px !important; height: 18px !important; font-size: 9px !important; border: 1px solid #64748b !important; }
             .total-row { background: #f1f5f9 !important; color: #000000 !important; font-size: 8px !important; }
             .grand-total-cell { background: #0f172a !important; color: #ffffff !important; font-size: 9px !important; }
         }
@@ -110,10 +110,10 @@
     <h2 style="margin-top:0">Settings ⚙️</h2>
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
-        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
+        <h3 style="margin-top:0;">Course Start Date 📅</h3>
+        <label style="font-size:11px; color:#64748b;">Global start date for cycles:</label>
         <input id="courseBaseDate" type="date">
-        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Apply Date 🔄</button>
     </div>
 
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
@@ -127,9 +127,9 @@
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
-    <input id="sPrice" type="number" placeholder="Price">
+    <input id="sPrice" type="number" placeholder="Fee per Cycle (EGP / SAR)">
     <input id="sDate" type="date">
-    <input id="sCycle" type="number" value="4">
+    <input id="sCycle" type="number" value="4" placeholder="Cycle Length (Weeks)">
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Slot (Session)</h3>
@@ -161,8 +161,8 @@
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
-            <thead id="accTotalHeader"></thead> 
             <tbody id="accBody"></tbody>
+            <tfoot><tr id="accFooter" class="total-row"></tr></tfoot>
         </table>
     </div>
 </div>
@@ -172,9 +172,9 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
-        db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = { students: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
 
     let historyStack = [];
@@ -190,9 +190,9 @@
 
     function getTimeOptionsHTML(selectedTime = '') {
         let html = '';
-        for(let h = 10; h <= 22; h++){
+        for(let h = 8; h <= 23; h++){
             for(let m of [0, 15, 30, 45]){
-                if(h === 22 && m > 0) continue;
+                if(h === 23 && m > 0) continue;
                 let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
                 let mm = m.toString().padStart(2, '0');
                 let ampm = h < 12 ? 'AM' : 'PM';
@@ -202,11 +202,6 @@
             }
         }
         return html;
-    }
-
-    function initLessonTimes() {
-        const sel = document.getElementById('cTime');
-        if (sel) sel.innerHTML = getTimeOptionsHTML();
     }
 
     function timeToMinutes(t) {
@@ -246,71 +241,10 @@
         window.print();
     }
 
-    function generateStudentReportHTML(student) {
-        let teacherName = db.teacherName || 'Teacher';
-        let schedulesHTML = '';
-        let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
-        let studentPrice = lastPeriod.price || 0;
-        let cycleWeeks = lastPeriod.cycle || 4;
-
-        if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found</td></tr>`;
-        } else {
-            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
-            sortedSchedules.forEach(sc => {
-                schedulesHTML += `
-                    <tr>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${sc.day}</td>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        return `
-            <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: rtl;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
-                    <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR</h2>
-                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Weekly Schedule</p>
-                    </div>
-                    <div style="text-align: left;">
-                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher: ${teacherName}</span>
-                    </div>
-                </div>
-
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student: ${student.name}</h3>
-                        <p style="margin: 0; font-size: 11px; color: #64748b;">Assigned weekly session times and financial details:</p>
-                    </div>
-                    <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
-                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Fee / Cycle:</div>
-                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / Every ${cycleWeeks} Weeks</div>
-                    </div>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                    <thead>
-                        <tr style="background: #0f172a; color: #ffffff;">
-                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">Day</th>
-                            <th style="padding: 10px 15px; text-align: left; font-size: 12px; direction: ltr;">Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>${schedulesHTML}</tbody>
-                </table>
-
-                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; color: #94a3b8; font-size: 10px;">
-                    Thank you for trusting Smart Tutor!
-                </div>
-            </div>
-        `;
-    }
-
     function addStudent() {
         let name = document.getElementById('sName').value.trim();
         let price = Number(document.getElementById('sPrice').value) || 0;
-        let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
+        let date = document.getElementById('sDate').value || db.courseStartDate || new Date().toISOString().slice(0,10);
         let cycle = Number(document.getElementById('sCycle').value) || 4;
 
         if(!name) { showToast('Please enter student name'); return; }
@@ -320,7 +254,8 @@
             name: name,
             color: selectedColor,
             schedules: [],
-            periods: [{ startDate: date, price: price, cycle: cycle }]
+            periods: [{ startDate: date, price: price, cycle: cycle }],
+            attendance: {}
         });
 
         document.getElementById('sName').value = '';
@@ -363,16 +298,18 @@
     function render() {
         document.getElementById('teacherName').value = db.teacherName || '';
         document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
-        initLessonTimes();
+        
+        let cTimeSel = document.getElementById('cTime');
+        if(cTimeSel) cTimeSel.innerHTML = getTimeOptionsHTML();
+
         renderColorPalette();
 
-        // تحديث قائمة الطلاب في القائمة الجانبية
         let sSelect = document.getElementById('sSelect');
         if(sSelect) {
             sSelect.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
 
-        // رسم جدول الأيام والمواعيد
+        // 1. جدول الحصص الأسبوعي
         let days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
         let gridHTML = '';
         days.forEach(day => {
@@ -405,7 +342,7 @@
         });
         document.getElementById('scheduleGrid').innerHTML = gridHTML;
 
-        // رسم الجدول المالي وجدول الحصص
+        // 2. جدول تتبع الحسابات والأسابيع التفصيلي
         renderAccountingTable();
     }
 
@@ -432,47 +369,127 @@
     }
 
     function renderAccountingTable() {
-        // حساب الأسابيع الوهمية بناء على تاريخ البداية
+        let WEEKS_COUNT = 12;
         let headerRow = `<th class="sticky-name" style="background:#1E293B">Student</th>`;
-        for(let i=1; i<=12; i++) {
-            headerRow += `<th>W${i}</th>`;
+        for(let w = 1; w <= WEEKS_COUNT; w++) {
+            headerRow += `<th>W${w}</th>`;
         }
-        headerRow += `<th>Total</th>`;
+        headerRow += `<th>Due</th><th>Paid</th><th>Balance</th>`;
         document.getElementById('accHeader').innerHTML = headerRow;
-        document.getElementById('accTotalHeader').innerHTML = '';
 
         let bodyHTML = '';
+        let grandTotalDue = 0;
+        let grandTotalPaid = 0;
+        let grandTotalBalance = 0;
+
         db.students.forEach(st => {
+            let lastPeriod = st.periods && st.periods.length ? st.periods[st.periods.length - 1] : { price: 0, cycle: 4 };
+            let cycleLen = lastPeriod.cycle || 4;
+            let cyclePrice = lastPeriod.price || 0;
+
             let rowHTML = `<tr><td class="sticky-name" style="background:${st.color || '#1E293B'}" onclick="openStudentReport('${st.id}')">${st.name}</td>`;
+            
+            let totalDue = 0;
             let totalPaid = 0;
-            for(let i=1; i<=12; i++) {
-                let status = st.attendance && st.attendance[i] ? st.attendance[i] : 'none';
-                let cls = status === 'paid' ? 'status-paid' : (status === 'notpaid' ? 'status-notpaid' : '');
-                let txt = status === 'paid' ? '✓' : (status === 'notpaid' ? '✕' : '');
-                if(status === 'paid') totalPaid += 100; // افتراضي كمثال
-                rowHTML += `<td><div class="box ${cls}" onclick="toggleStatus('${st.id}', ${i})">${txt}</div></td>`;
+
+            for(let w = 1; w <= WEEKS_COUNT; w++) {
+                let isPayWeek = ((w - 1) % cycleLen === 0);
+                if(isPayWeek) {
+                    totalDue += cyclePrice;
+                }
+
+                let status = st.attendance && st.attendance[w] ? st.attendance[w] : 'none';
+                let boxCls = isPayWeek ? 'is-pay-week ' : '';
+                let symbol = '';
+
+                if(status === 'paid') {
+                    boxCls += 'status-paid';
+                    symbol = '✓';
+                    if(isPayWeek) totalPaid += cyclePrice;
+                } else if(status === 'notpaid') {
+                    boxCls += 'status-notpaid';
+                    symbol = '✕';
+                } else if(status === 'attended') {
+                    boxCls += 'status-attended';
+                    symbol = '•';
+                }
+
+                rowHTML += `<td><div class="box ${boxCls}" onclick="toggleStatus('${st.id}', ${w})">${symbol}</div></td>`;
             }
-            rowHTML += `<td style="font-weight:bold; background:#f8fafc;">${totalPaid}</td></tr>`;
+
+            let balance = totalDue - totalPaid;
+
+            grandTotalDue += totalDue;
+            grandTotalPaid += totalPaid;
+            grandTotalBalance += balance;
+
+            let balanceColor = balance > 0 ? '#ef4444' : (balance < 0 ? '#3b82f6' : '#10b981');
+
+            rowHTML += `
+                <td style="font-weight:bold;">${totalDue}</td>
+                <td style="font-weight:bold; color:#10b981;">${totalPaid}</td>
+                <td style="font-weight:bold; color:${balanceColor};">${balance}</td>
+            </tr>`;
+
             bodyHTML += rowHTML;
         });
-        document.getElementById('accBody').innerHTML = bodyHTML || `<tr><td colspan="14" style="text-align:center; padding:15px; color:#64748b;">No students found</td></tr>`;
+
+        document.getElementById('accBody').innerHTML = bodyHTML || `<tr><td colspan="${WEEKS_COUNT + 4}" style="text-align:center; padding:15px; color:#64748b;">No students recorded</td></tr>`;
+
+        // Footer Totals
+        let footerHTML = `<td class="sticky-name grand-total-cell">TOTALS</td>`;
+        for(let w = 1; w <= WEEKS_COUNT; w++) footerHTML += `<td></td>`;
+        footerHTML += `
+            <td style="font-weight:900;">${grandTotalDue}</td>
+            <td style="font-weight:900; color:#047857;">${grandTotalPaid}</td>
+            <td style="font-weight:900; color:#b91c1c;">${grandTotalBalance}</td>
+        `;
+        document.getElementById('accFooter').innerHTML = footerHTML;
     }
 
     function toggleStatus(studentId, weekNum) {
         let st = db.students.find(s => s.id === studentId);
         if(!st) return;
         if(!st.attendance) st.attendance = {};
+        
+        // التبديل بين الحالات: مدفوع ✓ -> غير مدفوع ✕ -> حاضر • -> بدون
         let current = st.attendance[weekNum];
         if(current === 'paid') st.attendance[weekNum] = 'notpaid';
-        else if(current === 'notpaid') st.attendance[weekNum] = 'none';
+        else if(current === 'notpaid') st.attendance[weekNum] = 'attended';
+        else if(current === 'attended') st.attendance[weekNum] = 'none';
         else st.attendance[weekNum] = 'paid';
+        
         commitChange();
     }
 
     function openStudentReport(studentId) {
         let st = db.students.find(s => s.id === studentId);
         if(!st) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(st);
+
+        let teacherName = db.teacherName || 'Teacher';
+        let lastPeriod = st.periods && st.periods.length ? st.periods[st.periods.length - 1] : { price: 0, cycle: 4 };
+
+        let schedulesHTML = st.schedules.map(sc => `
+            <tr>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-weight:bold;">${sc.day}</td>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-weight:bold; color:#3b82f6;">${sc.time}</td>
+            </tr>
+        `).join('') || `<tr><td colspan="2" style="padding:10px; text-align:center;">No slots scheduled</td></tr>`;
+
+        let html = `
+            <div style="max-width:600px; margin:0 auto; background:#fff; color:#0f172a; padding:20px; border-radius:10px; border:2px solid #e2e8f0;">
+                <h2 style="margin:0; border-bottom:2px solid #facc15; padding-bottom:10px;">SMART TUTOR - STUDENT SCHEDULE</h2>
+                <p><strong>Teacher:</strong> ${teacherName}</p>
+                <p><strong>Student:</strong> ${st.name}</p>
+                <p><strong>Fee / Cycle:</strong> ${lastPeriod.price} / Every ${lastPeriod.cycle} Weeks</p>
+                <table style="width:100%; border-collapse:collapse; margin-top:15px; border:1px solid #e2e8f0;">
+                    <thead><tr style="background:#0f172a; color:#fff;"><th>Day</th><th>Time</th></tr></thead>
+                    <tbody>${schedulesHTML}</tbody>
+                </table>
+            </div>
+        `;
+
+        document.getElementById('studentPrintContainer').innerHTML = html;
         document.body.classList.add('print-single-student');
         window.print();
     }
@@ -482,7 +499,7 @@
         if(!dt) return;
         db.courseStartDate = dt;
         commitChange();
-        showToast('Course start date updated');
+        showToast('Start date updated');
     }
 
     function exportBackup() {
@@ -501,7 +518,7 @@
             try {
                 db = JSON.parse(e.target.result);
                 commitChange();
-                showToast('Backup imported successfully');
+                showToast('Backup restored successfully');
             } catch(err) {
                 showToast('Invalid backup file');
             }
