@@ -180,7 +180,7 @@
     
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v391_en')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v392_en')) || { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
         db = { students: [], holidays: [], teacherName: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
@@ -231,7 +231,7 @@
     }
 
     function save() { 
-        try { localStorage.setItem('tutor_v391_en', JSON.stringify(db)); } catch(e) {}
+        try { localStorage.setItem('tutor_v392_en', JSON.stringify(db)); } catch(e) {}
         render(); 
     }
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
@@ -707,22 +707,24 @@
                 let studentPrice = Number(lastPeriod.price) || 0;
                 let baseWeekPrice = cycleWeeks > 0 ? (studentPrice / cycleWeeks) : 0;
 
-                // نظام الترحيل الصحيح للأسابيع والأجازات
+                // التعديل هنا: خوارزمية الترحيل المترابط والدقيق لقيم الإجازات على الأسابيع التالية بالكامل
                 let deferredBalance = 0;
                 let weekExpectedList = [];
                 for(let w = 1; w <= 12; w++) {
                     let isHoliday = db.holidays && db.holidays.includes(w);
                     let isPayWeek = (w === 1 || (w - 1) % cycleWeeks === 0);
                     let currentDue = isPayWeek ? baseWeekPrice : 0;
+                    
+                    // إضافة الفائض المرحل من الأسابيع السابقة (سواء إجازات أو متراكم سابق)
                     currentDue += deferredBalance;
 
                     if(isHoliday) {
-                        deferredBalance = currentDue; // ترحيل إجمالي المبلغ المستحق للأسبوع القادم بالكامل
+                        deferredBalance = currentDue; // ترحيل المبلغ المستحق بالكامل للأسبوع القادم
                         weekExpectedList.push(0);
                     } else {
                         weekExpectedList.push(currentDue);
                         studentExpectedSum += currentDue;
-                        deferredBalance = 0; // تصفير المرحل بعد توزيعه على الأسبوع الحالي غير الإجازة
+                        deferredBalance = 0; // تفريغ الرصيد المرحل بعد إدراجه في الأسبوع النشط
                     }
                 }
 
@@ -790,7 +792,7 @@
 
     function cycleAttendance(studentId, weekNum) {
         let isHoliday = db.holidays && db.holidays.includes(weekNum);
-        if(isHoliday) return; // لا يمكن تسجيل حضور أو دفع في أسابيع الإجازات المرحّلة
+        if(isHoliday) return; // منع الضغط في أسابيع الإجازات
 
         let st = db.students.find(s => s.id === studentId);
         if(!st) return;
