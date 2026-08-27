@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Tutor - Complete Professional Edition</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -62,7 +61,7 @@
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-<!-- نافذة الإعدادات الجانبية -->
+<!-- القائمة الجانبية الكاملة والمدخلات -->
 <div class="sidebar" id="sidebar">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h2 style="margin:0; color:#0f172a;">Control Panel ⚙️</h2>
@@ -102,7 +101,15 @@
         <label>Select Student:</label>
         <select id="sSelect"></select>
         <label>Day of Week:</label>
-        <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
+        <select id="cDay">
+            <option value="Sat">Saturday</option>
+            <option value="Sun">Sunday</option>
+            <option value="Mon">Monday</option>
+            <option value="Tue">Tuesday</option>
+            <option value="Wed">Wednesday</option>
+            <option value="Thu">Thursday</option>
+            <option value="Fri">Friday</option>
+        </select>
         <label>Time Slot:</label>
         <select id="cTime"></select>
         <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px; justify-content:center;" onclick="addSchedule()">Assign Slot ➕</button>
