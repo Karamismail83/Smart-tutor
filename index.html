@@ -56,7 +56,7 @@
         .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
         
         .is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
-        .is-holiday-cell { background: var(--holiday-bg) !important; }
+        .is-holiday-cell { background: var(--holiday-bg) !important; color: #94a3b8; font-size: 9px; }
 
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .active { left: 0 !important; }
@@ -692,6 +692,7 @@
         let accBodyHtml = '';
         let weeklyCollectedSums = new Array(12).fill(0);
         let grandTotalPaid = 0;
+        let grandTotalExpected = 0;
 
         if(db.students.length === 0) {
             accBodyHtml = `<tr><td colspan="14" style="padding:15px; text-align:center; color:#64748b;">No registered students</td></tr>`;
@@ -699,10 +700,31 @@
             db.students.forEach(st => {
                 if(!st.attendance) st.attendance = {};
                 let studentPaidSum = 0;
+                let studentExpectedSum = 0;
                 
                 let lastPeriod = st.periods && st.periods.length ? st.periods[st.periods.length - 1] : { price: 0, cycle: 4 };
                 let cycleWeeks = Number(lastPeriod.cycle) || 4;
                 let studentPrice = Number(lastPeriod.price) || 0;
+                let baseWeekPrice = cycleWeeks > 0 ? (studentPrice / cycleWeeks) : 0;
+
+                // نظام الترحيل الصحيح للأسابيع والأجازات
+                let deferredBalance = 0;
+                let weekExpectedList = [];
+                for(let w = 1; w <= 12; w++) {
+                    let isHoliday = db.holidays && db.holidays.includes(w);
+                    let isPayWeek = (w === 1 || (w - 1) % cycleWeeks === 0);
+                    let currentDue = isPayWeek ? baseWeekPrice : 0;
+                    currentDue += deferredBalance;
+
+                    if(isHoliday) {
+                        deferredBalance = currentDue; // ترحيل إجمالي المبلغ المستحق للأسبوع القادم بالكامل
+                        weekExpectedList.push(0);
+                    } else {
+                        weekExpectedList.push(currentDue);
+                        studentExpectedSum += currentDue;
+                        deferredBalance = 0; // تصفير المرحل بعد توزيعه على الأسبوع الحالي غير الإجازة
+                    }
+                }
 
                 let rowCells = '';
                 for(let w = 1; w <= 12; w++) {
@@ -712,13 +734,23 @@
 
                     let boxClass = 'box';
                     if(isPayWeek) boxClass += ' is-pay-week';
-                    if(cellState === 'paid') { boxClass += ' status-paid'; studentPaidSum += (studentPrice / cycleWeeks); weeklyCollectedSums[w-1] += (studentPrice / cycleWeeks); }
+                    if(cellState === 'paid') { 
+                        boxClass += ' status-paid'; 
+                        let amountPaid = weekExpectedList[w-1] > 0 ? weekExpectedList[w-1] : baseWeekPrice;
+                        studentPaidSum += amountPaid; 
+                        weeklyCollectedSums[w-1] += amountPaid; 
+                    }
                     if(cellState === 'notpaid') boxClass += ' status-notpaid';
                     if(isHolidayCell) boxClass += ' is-holiday-cell';
 
                     let displayText = '';
-                    if(cellState === 'paid') displayText = '✓';
-                    if(cellState === 'notpaid') displayText = '✕';
+                    if(isHolidayCell) {
+                        displayText = 'Holiday';
+                    } else if(cellState === 'paid') {
+                        displayText = '✓';
+                    } else if(cellState === 'notpaid') {
+                        displayText = '✕';
+                    }
 
                     rowCells += `
                         <td class="${isHolidayCell ? 'is-holiday-cell' : ''}">
@@ -728,12 +760,13 @@
                 }
 
                 grandTotalPaid += studentPaidSum;
+                grandTotalExpected += studentExpectedSum;
 
                 accBodyHtml += `
                     <tr>
                         <td class="sticky-name" style="background:${st.color || '#1e293b'}" onclick="openStudentEdit('${st.id}')">${st.name}</td>
                         ${rowCells}
-                        <td style="font-weight:bold; background:#f8fafc;">${studentPaidSum.toFixed(0)}</td>
+                        <td style="font-weight:bold; background:#f8fafc;" title="Collected: ${studentPaidSum.toFixed(0)} / Expected: ${studentExpectedSum.toFixed(0)}">${studentPaidSum.toFixed(0)} <span style="font-size:9px; color:#64748b; display:block;">(${studentExpectedSum.toFixed(0)})</span></td>
                     </tr>
                 `;
             });
@@ -748,7 +781,7 @@
             <tr class="total-row">
                 <td class="sticky-name grand-total-cell" style="background:#000; color:var(--gold);">Total</td>
                 ${grandRowCells}
-                <td class="grand-total-cell" style="background:#000; color:var(--gold); font-size:10px;">${grandTotalPaid.toFixed(0)}</td>
+                <td class="grand-total-cell" style="background:#000; color:var(--gold); font-size:10px;" title="Collected: ${grandTotalPaid.toFixed(0)} / Expected: ${grandTotalExpected.toFixed(0)}">${grandTotalPaid.toFixed(0) + ' (' + grandTotalExpected.toFixed(0) + ')'}</td>
             </tr>
         `;
 
@@ -756,6 +789,9 @@
     }
 
     function cycleAttendance(studentId, weekNum) {
+        let isHoliday = db.holidays && db.holidays.includes(weekNum);
+        if(isHoliday) return; // لا يمكن تسجيل حضور أو دفع في أسابيع الإجازات المرحّلة
+
         let st = db.students.find(s => s.id === studentId);
         if(!st) return;
         if(!st.attendance) st.attendance = {};
