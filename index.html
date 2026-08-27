@@ -106,7 +106,6 @@
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
 
-<!-- القائمة الجانبية لإدارة المدخلات والإضافات -->
 <div class="sidebar" id="sidebar">
     <h2 style="margin-top:0">Settings ⚙️</h2>
     
@@ -125,16 +124,15 @@
     </div>
 
     <hr style="margin:15px 0; opacity:0.1">
-    <h3>Add Student (مدخلات الطالب)</h3>
+    <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
-    
     <hr style="margin:20px 0; opacity:0.1">
-    <h3>Add Slot (إضافة حصة / موعد)</h3>
+    <h3>Add Slot (Session)</h3>
     <select id="sSelect"></select>
     <select id="cDay"><option>Sat</option><option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option></select>
     <select id="cTime"></select>
@@ -159,10 +157,7 @@
         <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
     </div>
 
-    <!-- شبكة جدول الحصص الأسبوعية -->
     <div id="scheduleGrid"></div>
-    
-    <!-- جدول الحسابات والدخل المالي -->
     <div class="acc-table-wrapper">
         <table class="acc-table">
             <thead><tr id="accHeader"></tr></thead>
@@ -183,6 +178,7 @@
     }
 
     let historyStack = [];
+    let draggedData = null;
     let selectedColor = PALETTE[0];
 
     function showToast(message) {
@@ -234,11 +230,6 @@
     function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
     function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
 
-    function printFullSchedule() {
-        document.body.classList.remove('print-single-student');
-        window.print();
-    }
-
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
@@ -250,62 +241,130 @@
         document.getElementById('overlay').classList.remove('active');
     }
 
-    // دوال إدارة الطلاب والمدخلات الأساسية
-    function renderColorGrid() {
-        const grid = document.getElementById('colorGridAdd');
-        if(!grid) return;
-        grid.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="selectedColor='${c}'; renderColorGrid()"></div>`).join('');
+    function printFullSchedule() {
+        document.body.classList.remove('print-single-student');
+        window.print();
+    }
+
+    function generateStudentReportHTML(student) {
+        let teacherName = db.teacherName || 'Teacher';
+        let schedulesHTML = '';
+        let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+        let studentPrice = lastPeriod.price || 0;
+        let cycleWeeks = lastPeriod.cycle || 4;
+
+        if(!student.schedules || student.schedules.length === 0) {
+            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #64748b;">No scheduled slots found</td></tr>`;
+        } else {
+            let sortedSchedules = [...student.schedules].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+            sortedSchedules.forEach(sc => {
+                schedulesHTML += `
+                    <tr>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #0f172a;">${sc.day}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px; color: #3b82f6; text-align: left; direction: ltr;">${sc.time}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        return `
+            <div style="max-width: 650px; margin: 0 auto; background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: Arial, sans-serif; direction: rtl;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 20px;">SMART TUTOR</h2>
+                        <p style="margin: 3px 0 0; color: #64748b; font-size: 11px;">Official Weekly Schedule</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #0f172a;">Teacher: ${teacherName}</span>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0 0 3px 0; font-size: 16px; color: #0f172a;">Student: ${student.name}</h3>
+                        <p style="margin: 0; font-size: 11px; color: #64748b;">Assigned weekly session times and financial details:</p>
+                    </div>
+                    <div style="background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
+                        <div style="font-size: 10px; color: #64748b; font-weight: bold;">Fee / Cycle:</div>
+                        <div style="font-size: 14px; color: #047857; font-weight: 900;">${studentPrice} / Every ${cycleWeeks} Weeks</div>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #0f172a; color: #ffffff;">
+                            <th style="padding: 10px 15px; text-align: right; font-size: 12px;">Day</th>
+                            <th style="padding: 10px 15px; text-align: left; font-size: 12px; direction: ltr;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>${schedulesHTML}</tbody>
+                </table>
+
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; color: #94a3b8; font-size: 10px;">
+                    Thank you for trusting Smart Tutor!
+                </div>
+            </div>
+        `;
     }
 
     function addStudent() {
-        let nameInput = document.getElementById('sName');
-        let priceInput = document.getElementById('sPrice');
-        let dateInput = document.getElementById('sDate');
-        let cycleInput = document.getElementById('sCycle');
+        let name = document.getElementById('sName').value.trim();
+        let price = Number(document.getElementById('sPrice').value) || 0;
+        let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
+        let cycle = Number(document.getElementById('sCycle').value) || 4;
 
-        let name = nameInput.value.trim();
-        if(!name) return showToast('Please enter student name');
-
-        let price = Number(priceInput.value) || 0;
-        let startDate = dateInput.value || new Date().toISOString().slice(0,10);
-        let cycle = Number(cycleInput.value) || 4;
+        if(!name) { showToast('Please enter student name'); return; }
 
         db.students.push({
             id: 's_' + Date.now(),
             name: name,
             color: selectedColor,
             schedules: [],
-            periods: [{ startDate, price, cycle }]
+            periods: [{ startDate: date, price: price, cycle: cycle }]
         });
 
-        nameInput.value = '';
-        priceInput.value = '';
-        commitChange();
+        document.getElementById('sName').value = '';
+        document.getElementById('sPrice').value = '';
         toggleSidebar();
+        commitChange();
         showToast('Student added successfully');
     }
 
     function addSchedule() {
-        let sSelect = document.getElementById('sSelect');
-        let cDay = document.getElementById('cDay').value;
-        let cTime = document.getElementById('cTime').value;
+        let studentId = document.getElementById('sSelect').value;
+        let day = document.getElementById('cDay').value;
+        let time = document.getElementById('cTime').value;
 
-        let studentId = sSelect.value;
-        let student = db.students.find(s => s.id === studentId);
-        if(!student) return showToast('Please select a valid student');
+        let st = db.students.find(s => s.id === studentId);
+        if(!st) { showToast('Please select a valid student'); return; }
 
-        if(!student.schedules) student.schedules = [];
-        student.schedules.push({ day: cDay, time: cTime });
-
-        commitChange();
+        st.schedules.push({ day, time });
         toggleSidebar();
+        commitChange();
         showToast('Slot added successfully');
+    }
+
+    function renderColorPalette() {
+        let grid = document.getElementById('colorGridAdd');
+        if(!grid) return;
+        grid.innerHTML = '';
+        PALETTE.forEach(color => {
+            let div = document.createElement('div');
+            div.className = `color-circle ${color === selectedColor ? 'selected' : ''}`;
+            div.style.background = color;
+            div.onclick = () => {
+                selectedColor = color;
+                renderColorPalette();
+            };
+            grid.appendChild(div);
+        });
     }
 
     function render() {
         document.getElementById('teacherName').value = db.teacherName || '';
+        document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         initLessonTimes();
-        renderColorGrid();
+        renderColorPalette();
 
         // تحديث قائمة الطلاب في القائمة الجانبية
         let sSelect = document.getElementById('sSelect');
@@ -313,40 +372,154 @@
             sSelect.innerHTML = db.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
 
-        // رسم جدول الحصص الأسبوعية
+        // رسم جدول الأيام والمواعيد
         let days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-        let scheduleGridHTML = '';
+        let gridHTML = '';
         days.forEach(day => {
-            let daySlots = [];
+            let daySchedules = [];
             db.students.forEach(st => {
-                if(st.schedules) {
-                    st.schedules.forEach(sc => {
-                        if(sc.day === day) {
-                            daySlots.push({ student: st, time: sc.time });
-                        }
-                    });
-                }
+                st.schedules.forEach(sc => {
+                    if(sc.day === day) {
+                        daySchedules.push({ student: st, time: sc.time });
+                    }
+                });
             });
-            daySlots.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
-            let slotsHTML = daySlots.map(sl => `
-                <div class="slot" style="border-right: 3px solid ${sl.student.color || '#fff'}">
-                    <div style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sl.student.name}</div>
-                    <div style="font-size: 9px; opacity: 0.8; direction: ltr;">${sl.time}</div>
+            daySchedules.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+            let slotsHTML = daySchedules.map(item => `
+                <div class="slot wide-slot" style="background:${item.student.color || '#1e293b'}" draggable="true" ondragstart="drag(event, '${item.student.id}', '${day}', '${item.time}')">
+                    <div style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.student.name}</div>
+                    <div style="font-size:9px; opacity:0.9;">${item.time}</div>
                 </div>
             `).join('');
 
-            scheduleGridHTML += `
+            gridHTML += `
                 <div class="day-row">
                     <div class="day-label">${day}</div>
-                    <div class="slots">${slotsHTML || '<span style="color:#64748b; font-size:10px; padding-left:5px;">No sessions</span>'}</div>
+                    <div class="slots" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropToDay(event, '${day}')">
+                        ${slotsHTML || '<span style="color:#64748b; font-size:10px; padding:0 5px;">No sessions</span>'}
+                    </div>
                 </div>
             `;
         });
-        document.getElementById('scheduleGrid').innerHTML = scheduleGridHTML;
+        document.getElementById('scheduleGrid').innerHTML = gridHTML;
+
+        // رسم الجدول المالي وجدول الحصص
+        renderAccountingTable();
     }
 
-    // التشغيل الأولي
+    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+    function leaveDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
+    function drag(ev, studentId, oldDay, oldTime) {
+        draggedData = { studentId, oldDay, oldTime };
+        ev.dataTransfer.setData('text/plain', studentId);
+    }
+    function dropToDay(ev, newDay) {
+        ev.preventDefault();
+        ev.currentTarget.classList.remove('drag-over');
+        if(!draggedData) return;
+        let st = db.students.find(s => s.id === draggedData.studentId);
+        if(st) {
+            let sc = st.schedules.find(s => s.day === draggedData.oldDay && s.time === draggedData.oldTime);
+            if(sc) {
+                sc.day = newDay;
+                commitChange();
+                showToast('Schedule updated');
+            }
+        }
+        draggedData = null;
+    }
+
+    function renderAccountingTable() {
+        // حساب الأسابيع الوهمية بناء على تاريخ البداية
+        let headerRow = `<th class="sticky-name" style="background:#1E293B">Student</th>`;
+        for(let i=1; i<=12; i++) {
+            headerRow += `<th>W${i}</th>`;
+        }
+        headerRow += `<th>Total</th>`;
+        document.getElementById('accHeader').innerHTML = headerRow;
+        document.getElementById('accTotalHeader').innerHTML = '';
+
+        let bodyHTML = '';
+        db.students.forEach(st => {
+            let rowHTML = `<tr><td class="sticky-name" style="background:${st.color || '#1E293B'}" onclick="openStudentReport('${st.id}')">${st.name}</td>`;
+            let totalPaid = 0;
+            for(let i=1; i<=12; i++) {
+                let status = st.attendance && st.attendance[i] ? st.attendance[i] : 'none';
+                let cls = status === 'paid' ? 'status-paid' : (status === 'notpaid' ? 'status-notpaid' : '');
+                let txt = status === 'paid' ? '✓' : (status === 'notpaid' ? '✕' : '');
+                if(status === 'paid') totalPaid += 100; // افتراضي كمثال
+                rowHTML += `<td><div class="box ${cls}" onclick="toggleStatus('${st.id}', ${i})">${txt}</div></td>`;
+            }
+            rowHTML += `<td style="font-weight:bold; background:#f8fafc;">${totalPaid}</td></tr>`;
+            bodyHTML += rowHTML;
+        });
+        document.getElementById('accBody').innerHTML = bodyHTML || `<tr><td colspan="14" style="text-align:center; padding:15px; color:#64748b;">No students found</td></tr>`;
+    }
+
+    function toggleStatus(studentId, weekNum) {
+        let st = db.students.find(s => s.id === studentId);
+        if(!st) return;
+        if(!st.attendance) st.attendance = {};
+        let current = st.attendance[weekNum];
+        if(current === 'paid') st.attendance[weekNum] = 'notpaid';
+        else if(current === 'notpaid') st.attendance[weekNum] = 'none';
+        else st.attendance[weekNum] = 'paid';
+        commitChange();
+    }
+
+    function openStudentReport(studentId) {
+        let st = db.students.find(s => s.id === studentId);
+        if(!st) return;
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(st);
+        document.body.classList.add('print-single-student');
+        window.print();
+    }
+
+    function resetAllStudentsStartDate() {
+        let dt = document.getElementById('courseBaseDate').value;
+        if(!dt) return;
+        db.courseStartDate = dt;
+        commitChange();
+        showToast('Course start date updated');
+    }
+
+    function exportBackup() {
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        let dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "smart_tutor_backup.json");
+        dlAnchorElem.click();
+    }
+
+    function importBackup(element) {
+        let file = element.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                db = JSON.parse(e.target.result);
+                commitChange();
+                showToast('Backup imported successfully');
+            } catch(err) {
+                showToast('Invalid backup file');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function handleImageUpload(input) {
+        if(input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('teacherImg').src = e.target.result;
+                showToast('Teacher image updated');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
     render();
 </script>
 </body>
