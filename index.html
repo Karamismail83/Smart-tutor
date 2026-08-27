@@ -39,8 +39,6 @@
         .acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
         .acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
         .acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
-        .total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
-        .grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
         
         .sticky-name { 
             position: sticky; left: 0; z-index: 100; width: var(--name-w); 
@@ -51,9 +49,6 @@
         }
 
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
-        .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-        .status-paid { background: #d1fae5 !important; color: #047857; }
-        .status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
 
         .sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .active { left: 0 !important; }
@@ -89,13 +84,6 @@
     <h2 style="margin-top:0">Settings ⚙️</h2>
     
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
-        <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
-        <input id="courseBaseDate" type="date">
-        <button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
-    </div>
-
-    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Backup & Restore 💾</h3>
         <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
         <button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
@@ -105,6 +93,8 @@
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
     <input id="sName" placeholder="Student Name">
+    <input id="sPhone" type="tel" placeholder="Phone Number (e.g. 05xxxxxxxx)">
+    <input id="sLocation" placeholder="Google Maps Link or Address">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
@@ -232,6 +222,8 @@
 
     function addStudent() {
         let name = document.getElementById('sName').value.trim();
+        let phone = document.getElementById('sPhone').value.trim();
+        let location = document.getElementById('sLocation').value.trim();
         let price = Number(document.getElementById('sPrice').value) || 0;
         let date = document.getElementById('sDate').value || new Date().toISOString().slice(0,10);
         let cycle = Number(document.getElementById('sCycle').value) || 4;
@@ -241,6 +233,8 @@
         let newStudent = {
             id: 's_' + Date.now(),
             name: name,
+            phone: phone,
+            location: location,
             color: selectedColor,
             schedules: [],
             periods: [{ price: price, startDate: date, cycle: cycle }]
@@ -249,6 +243,8 @@
         db.students.push(newStudent);
         commitChange();
         document.getElementById('sName').value = '';
+        document.getElementById('sPhone').value = '';
+        document.getElementById('sLocation').value = '';
         document.getElementById('sPrice').value = '';
         toggleSidebar();
         showToast('Student added successfully');
@@ -296,6 +292,13 @@
         let price = lastPeriod.price || 0;
         let cycle = lastPeriod.cycle || 4;
 
+        let contactInfoHTML = `
+            <div style="margin-top: 10px; display: flex; gap: 15px; flex-wrap: wrap;">
+                ${student.phone ? `<a href="tel:${student.phone}" style="background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px;">📞 Call: ${student.phone}</a>` : ''}
+                ${student.location ? `<a href="${student.location.startsWith('http') ? student.location : 'https://maps.google.com/?q=' + encodeURIComponent(student.location)}" target="_blank" style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px;">📍 Open in Google Maps</a>` : ''}
+            </div>
+        `;
+
         let accountSectionHTML = '';
         if (showAccount) {
             accountSectionHTML = `
@@ -318,9 +321,9 @@
                     </div>
                 </div>
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
+                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #0f172a;">Student Name: ${student.name}</h3>
                     ${accountSectionHTML}
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Here are the assigned weekly session times:</p>
+                    ${contactInfoHTML}
                 </div>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                     <thead>
@@ -478,19 +481,6 @@
             };
             reader.readAsDataURL(input.files[0]);
         }
-    }
-
-    function resetAllStudentsStartDate() {
-        let newDate = document.getElementById('courseBaseDate').value;
-        if(!newDate) { showToast('Please select a date'); return; }
-        db.courseStartDate = newDate;
-        db.students.forEach(s => {
-            if(s.periods && s.periods.length > 0) {
-                s.periods[0].startDate = newDate;
-            }
-        });
-        commitChange();
-        showToast('All dates reset successfully');
     }
 
     function toggleSidebar() {
