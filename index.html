@@ -212,14 +212,9 @@
     </div>
     <div class="map-status" id="newStudentGeoStatus"></div>
 
-    <label style="font-size:11px; color:#64748b;">📅 Preferred Days</label>
-    <div id="sPrefDays" style="margin-bottom:12px;"></div>
-
-    <label style="font-size:11px; color:#64748b;">⏰ Preferred Time (From - To)</label>
-    <div style="display:flex; gap:6px;">
-        <select id="sPrefFrom" style="margin-bottom:12px;"></select>
-        <select id="sPrefTo" style="margin-bottom:12px;"></select>
-    </div>
+    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+    <div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
+    <div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
@@ -333,11 +328,7 @@
     function initLessonTimes() {
         const sel = document.getElementById('cTime');
         if (sel) sel.innerHTML = getTimeOptionsHTML();
-        const pf = document.getElementById('sPrefFrom');
-        const pt = document.getElementById('sPrefTo');
-        if (pf) pf.innerHTML = getTimeOptionsHTML('4:00 PM');
-        if (pt) pt.innerHTML = getTimeOptionsHTML('8:00 PM');
-        buildDayPills('sPrefDays', []);
+        buildDayPrefUI('sPrefDays', []);
     }
 
     function buildDayPills(containerId, selectedDays, prefix = '') {
@@ -361,6 +352,83 @@
 
     function getSelectedDays(containerId) {
         return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+    }
+
+    // ---- Per-day preferred schedule (day + its own from/to time range) ----
+    // A student's preference is stored as an array like:
+    // [{ day:'Sat', from:'4:00 PM', to:'6:00 PM' }, { day:'Mon', from:'6:00 PM', to:'8:00 PM' }, ...]
+    // containerId is e.g. 'sPrefDays' or 'ePrefDays'; it expects sibling elements
+    // #<containerId>_pills and #<containerId>_times to exist.
+    function buildDayPrefUI(containerId, prefSchedule) {
+        prefSchedule = prefSchedule || [];
+        const pillsEl = document.getElementById(containerId + '_pills');
+        if (!pillsEl) return;
+        const selectedDays = prefSchedule.map(p => p.day);
+        pillsEl.classList.add('day-pills-row');
+        pillsEl.innerHTML = daysOrder.map(d => {
+            const isChecked = selectedDays.includes(d);
+            return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPrefPill(this, '${containerId}')">
+                        <input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked'); renderDayPrefTimes('${containerId}');">
+                        ${dayNamesMap[d]}
+                    </label>`;
+        }).join('');
+        renderDayPrefTimes(containerId, prefSchedule);
+    }
+
+    function toggleDayPrefPill(label, containerId) {
+        const cb = label.querySelector('input');
+        cb.checked = !cb.checked;
+        label.classList.toggle('checked', cb.checked);
+        renderDayPrefTimes(containerId);
+    }
+
+    function renderDayPrefTimes(containerId, initialSchedule) {
+        const timesEl = document.getElementById(containerId + '_times');
+        if (!timesEl) return;
+        // Keep whatever times are already set for days that stay checked
+        const existing = {};
+        timesEl.querySelectorAll('.pref-time-row').forEach(row => {
+            const day = row.getAttribute('data-day');
+            existing[day] = {
+                from: row.querySelector('.pref-from').value,
+                to: row.querySelector('.pref-to').value
+            };
+        });
+        if (initialSchedule) {
+            initialSchedule.forEach(p => { if (!existing[p.day]) existing[p.day] = { from: p.from, to: p.to }; });
+        }
+        const checkedDays = Array.from(document.querySelectorAll(`#${containerId}_pills input:checked`)).map(cb => cb.value);
+        const orderedDays = daysOrder.filter(d => checkedDays.includes(d));
+        timesEl.innerHTML = orderedDays.map(d => {
+            const vals = existing[d] || { from: '4:00 PM', to: '8:00 PM' };
+            return `<div class="pref-time-row" data-day="${d}" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                        <span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
+                        <select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
+                        <span style="font-size:10px; flex-shrink:0;">-</span>
+                        <select class="pref-to" style="margin:0;">${getTimeOptionsHTML(vals.to)}</select>
+                    </div>`;
+        }).join('');
+    }
+
+    function getPrefSchedule(containerId) {
+        const timesEl = document.getElementById(containerId + '_times');
+        if (!timesEl) return [];
+        return Array.from(timesEl.querySelectorAll('.pref-time-row')).map(row => ({
+            day: row.getAttribute('data-day'),
+            from: row.querySelector('.pref-from').value,
+            to: row.querySelector('.pref-to').value
+        }));
+    }
+
+    // Backward compatible reader: prefers the new per-day preferredSchedule, but falls back
+    // to the old single preferredDays + preferredFrom/preferredTo shape for students saved
+    // before this feature existed.
+    function getStudentPrefSchedule(s) {
+        if (s.preferredSchedule && s.preferredSchedule.length) return s.preferredSchedule;
+        if (s.preferredDays && s.preferredDays.length) {
+            return s.preferredDays.map(d => ({ day: d, from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM' }));
+        }
+        return [];
     }
 
     // ---- Geocoding, reverse-geocoding & place search helpers ----
@@ -804,7 +872,7 @@
             toggleSidebar();
             return;
         }
-        const withPrefs = (db.students || []).filter(s => s.preferredDays && s.preferredDays.length && s.lat != null);
+        const withPrefs = (db.students || []).filter(s => getStudentPrefSchedule(s).length && s.lat != null);
         if (!withPrefs.length) {
             alert('You need at least one student with a computed location and preferred days set');
             return;
@@ -813,10 +881,10 @@
         let entries = [];
         withPrefs.forEach(s => {
             const dist = s.distanceKm != null ? s.distanceKm : Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
-            (s.preferredDays || []).forEach(day => {
+            getStudentPrefSchedule(s).forEach(p => {
                 entries.push({
-                    studentId: s.id, name: s.name, color: s.color, day, dist,
-                    from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM'
+                    studentId: s.id, name: s.name, color: s.color, day: p.day, dist,
+                    from: p.from || '4:00 PM', to: p.to || '8:00 PM'
                 });
             });
         });
@@ -1396,9 +1464,7 @@
         if(!n) return; commitChange(); 
         if(!db.students) db.students = [];
         let address = document.getElementById('sAddress')?.value.trim() || '';
-        let preferredDays = getSelectedDays('sPrefDays');
-        let preferredFrom = document.getElementById('sPrefFrom')?.value || '';
-        let preferredTo = document.getElementById('sPrefTo')?.value || '';
+        let preferredSchedule = getPrefSchedule('sPrefDays');
         let pendingLoc = window.__pendingStudentLoc || null;
         let newStudent = { 
             id: Date.now(), 
@@ -1406,7 +1472,7 @@
             color: col, 
             financialMap: {}, 
             schedules: [], 
-            address, preferredDays, preferredFrom, preferredTo,
+            address, preferredSchedule,
             lat: pendingLoc ? pendingLoc.lat : null,
             lng: pendingLoc ? pendingLoc.lng : null,
             distanceKm: null,
@@ -1421,7 +1487,7 @@
         window.__pendingStudentLoc = null;
         let ns = document.getElementById('newStudentGeoStatus');
         if (ns) ns.innerText = '';
-        buildDayPills('sPrefDays', []);
+        buildDayPrefUI('sPrefDays', []);
         if (!pendingLoc && address && db.teacherLat != null) {
             geocodeAddress(address).then(loc => {
                 if (loc) {
@@ -1473,14 +1539,9 @@
             </div>
             <div style="margin:-6px 0 12px;">${distHtml}</div>
 
-            <label style="font-size:11px; color:#64748b;">📅 Preferred Days</label>
-            <div id="ePrefDays" style="margin-bottom:12px;"></div>
-
-            <label style="font-size:11px; color:#64748b;">⏰ Preferred Time (From - To)</label>
-            <div style="display:flex; gap:6px;">
-                <select id="ePrefFrom" style="margin-bottom:12px;"></select>
-                <select id="ePrefTo" style="margin-bottom:12px;"></select>
-            </div>
+            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+            <div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
+            <div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 
             <hr>
             <h4>Billing Periods</h4>
@@ -1505,9 +1566,7 @@
             <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
         `;
         initColors('ecg', 'eColor', s.color);
-        buildDayPills('ePrefDays', s.preferredDays || []);
-        document.getElementById('ePrefFrom').innerHTML = getTimeOptionsHTML(s.preferredFrom || '4:00 PM');
-        document.getElementById('ePrefTo').innerHTML = getTimeOptionsHTML(s.preferredTo || '8:00 PM');
+        buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
         document.getElementById('editModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
     }
@@ -1548,9 +1607,7 @@
             let newAddress = document.getElementById('eAddress')?.value.trim() || '';
             if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
             s.address = newAddress;
-            s.preferredDays = getSelectedDays('ePrefDays');
-            s.preferredFrom = document.getElementById('ePrefFrom')?.value || '';
-            s.preferredTo = document.getElementById('ePrefTo')?.value || '';
+            s.preferredSchedule = getPrefSchedule('ePrefDays');
             let newPeriods = [];
             document.querySelectorAll('.period-card').forEach(card => {
                 newPeriods.push({
