@@ -212,10 +212,10 @@
     </div>
     <div class="map-status" id="newStudentGeoStatus"></div>
 
-    <label style="font-size:11px; color:#64748b;">🔢 عدد أيام الحصص الأسبوعية (تساعدك عند اقتراح الجدول)</label>
-    <input id="sWeeklyDays" type="number" min="1" placeholder="مثال: 2">
+    <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
+    <input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
 
-    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة، وحدد "إجباري" لليوم اللي لازم يتحط)</label>
+    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
     <div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
     <div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 
@@ -413,9 +413,9 @@
                         <select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
                         <span style="font-size:10px; flex-shrink:0;">-</span>
                         <select class="pref-to" style="margin:0;">${getTimeOptionsHTML(vals.to)}</select>
-                        <label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="يوم إجباري لهذا الطالب">
+                        <label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="Mandatory day for this student">
                             <input type="checkbox" class="pref-mandatory" style="width:14px;height:14px;margin:0;" ${vals.mandatory ? 'checked' : ''}>
-                            إجباري
+                            Mandatory
                         </label>
                     </div>`;
         }).join('');
@@ -445,8 +445,8 @@
 
     // Given a student's full preferred-day list, decide which days should actually be used
     // when building a suggested schedule, respecting:
-    //  - mandatory days (always included, teacher-picked via the "إجباري" checkbox)
-    //  - weeklyDaysCount (the "عدد أيام الحصص الأسبوعية" field): caps how many days total are
+    //  - mandatory days (always included, teacher-picked via the "Mandatory" checkbox)
+    //  - weeklyDaysCount (the "Weekly Session Days" field): caps how many days total are
     //    suggested for this student. If not set, every preferred day is used (old behavior).
     // If weeklyDaysCount is smaller than the number of mandatory days, the mandatory days win
     // and the count is effectively raised to cover them all.
@@ -961,7 +961,7 @@
 
     function renderSuggestionModal(suggestions) {
         let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Days marked ★ إجباري are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Days marked ★Mandatory are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
@@ -971,7 +971,7 @@
                 html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
                 suggestions[day].forEach(e => {
                     html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
-                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★إجباري</span>' : ''}</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
                         <span>${e.timeLabel}</span>
                         <span class="distance-badge">${e.dist} km</span>
                     </div>`;
@@ -1583,10 +1583,10 @@
             </div>
             <div style="margin:-6px 0 12px;">${distHtml}</div>
 
-            <label style="font-size:11px; color:#64748b;">🔢 عدد أيام الحصص الأسبوعية (تساعدك عند اقتراح الجدول)</label>
-            <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="مثال: 2">
+            <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
+            <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
 
-            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة، وحدد "إجباري" لليوم اللي لازم يتحط)</label>
+            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
             <div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
             <div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 
