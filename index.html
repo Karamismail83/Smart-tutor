@@ -270,6 +270,12 @@
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+
+    // Default map center: Al-Ahsa oasis (Al-Hofuf / Al-Mubarraz area), so the map and search
+    // both default to this region instead of a generic world view.
+    const DEFAULT_REGION_LAT = 25.3838;
+    const DEFAULT_REGION_LNG = 49.5922;
+    const DEFAULT_REGION_ZOOM = 11; // wide enough to see Al-Hofuf, Al-Mubarraz and surrounding villages together
     
     const dayNamesMap = {
         "Sat": "Sat",
@@ -462,7 +468,12 @@
 
     async function geocodeAddress(address, biasLat = null, biasLon = null) {
         if (!address || !address.trim()) return null;
-        if (biasLat == null && db.teacherLat != null) { biasLat = db.teacherLat; biasLon = db.teacherLng; }
+        if (biasLat == null) {
+            // Prefer the teacher's saved home location as the bias point; if that isn't set yet,
+            // default to the Al-Ahsa region so local place names resolve there first.
+            biasLat = db.teacherLat != null ? db.teacherLat : DEFAULT_REGION_LAT;
+            biasLon = db.teacherLat != null ? db.teacherLng : DEFAULT_REGION_LNG;
+        }
         const results = await placesSearch(address, 1, biasLat, biasLon);
         if (results.length) return { lat: results[0].lat, lng: results[0].lon };
         return null;
@@ -508,10 +519,10 @@
     let mapSearchResultsData = [];
 
     function ensurePickerMap(initialLat, initialLng) {
-        const lat = initialLat != null ? initialLat : 30.0444;
-        const lng = initialLng != null ? initialLng : 31.2357;
+        const lat = initialLat != null ? initialLat : DEFAULT_REGION_LAT;
+        const lng = initialLng != null ? initialLng : DEFAULT_REGION_LNG;
         if (!pickerMapInstance) {
-            pickerMapInstance = L.map('pickerMap', { zoomControl: true }).setView([lat, lng], initialLat != null ? 16 : 6);
+            pickerMapInstance = L.map('pickerMap', { zoomControl: true }).setView([lat, lng], initialLat != null ? 16 : DEFAULT_REGION_ZOOM);
 
             pickerStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -530,7 +541,7 @@
                 updatePickerStatus();
             });
         } else {
-            pickerMapInstance.setView([lat, lng], initialLat != null ? 16 : pickerMapInstance.getZoom());
+            pickerMapInstance.setView([lat, lng], initialLat != null ? 16 : DEFAULT_REGION_ZOOM);
             pickerMarker.setLatLng([lat, lng]);
         }
         setTimeout(() => pickerMapInstance.invalidateSize(), 200);
