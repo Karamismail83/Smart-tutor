@@ -79,10 +79,15 @@
         .suggest-row { display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px; margin-bottom:4px; font-size:11px; }
         .suggest-row.conflict { border-color:#ef4444; background:#fef2f2; }
 
-        .loc-btn-row { display:flex; gap:6px; margin: -6px 0 12px; }
-        .loc-btn { flex:1; background:#f1f5f9; border:1px solid #cbd5e1; color:#1E293B; padding:7px 6px; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; }
-        .loc-btn:active { background:#e2e8f0; }
-        .loc-btn.primary { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+        /* Single, elegant "set location on map" icon button (Google Maps style entry point) */
+        .addr-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+        .addr-row input { margin:0; }
+        .loc-icon-btn {
+            flex-shrink:0; width:38px; height:38px; min-width:38px; border-radius:50%;
+            background:#0ea5e9; color:#fff; border:none; display:flex; align-items:center;
+            justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.25);
+        }
+        .loc-icon-btn:active { background:#0284c7; }
 
         #mapModal { display:none; top:0; left:0; width:100%; height:100%; z-index:5000; padding:0; box-shadow:none; transition:none; flex-direction:column; }
         #mapModal.active { display:flex; }
@@ -142,18 +147,18 @@
 <div class="modal" id="mapModal">
     <div class="map-top-bar">
         <div class="map-icon-btn" onclick="closeAll()">✕</div>
-        <input id="mapSearchInput" placeholder="ابحث عن مكان أو عنوان..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
+        <input id="mapSearchInput" placeholder="Search for a place or address..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
         <div class="map-icon-btn" onclick="searchMapLocation()">🔍</div>
         <div id="mapSearchResults"></div>
     </div>
     <div id="pickerMap"></div>
     <div class="map-fab-stack">
-        <div class="locate-fab" id="satelliteToggleBtn" title="القمر الصناعي" onclick="toggleSatellite()">🛰️</div>
-        <div class="locate-fab" title="موقعي الحالي" onclick="useMyLocationInPicker()">🎯</div>
+        <div class="locate-fab" id="satelliteToggleBtn" title="Satellite view" onclick="toggleSatellite()">🛰️</div>
+        <div class="locate-fab" title="Use my current location" onclick="useMyLocationInPicker()">🎯</div>
     </div>
     <div class="map-bottom-bar">
         <div class="map-status" id="mapPickerStatus"></div>
-        <button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">✅ تأكيد هذا الموقع</button>
+        <button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">✅ Confirm This Location</button>
     </div>
 </div>
 <div id="studentPrintContainer"></div>
@@ -165,16 +170,15 @@
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Teacher Phone 📱</h3>
         <label style="font-size:11px; color:#64748b;">Phone number to display under teacher name in student reports:</label>
-        <input id="teacherPhoneInput" type="text" placeholder="e.g. +966 5XXXXXXXX" oninput="db.teacherPhone=this.value; save();">
+        <input id="teacherPhoneInput" type="text" placeholder="e.g. +1 555 0100" oninput="db.teacherPhone=this.value; save();">
     </div>
 
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-        <h3 style="margin-top:0;">🏠 عنوان بيتك (لحساب المسافات)</h3>
-        <label style="font-size:11px; color:#64748b;">اكتب عنوانك (المنطقة/الشارع/المدينة) عشان النظام يحسب المسافة لكل طالب:</label>
-        <input id="teacherAddressInput" type="text" placeholder="مثال: مدينة نصر، القاهرة" oninput="db.teacherAddress=this.value;">
-        <div class="loc-btn-row">
-            <button type="button" class="loc-btn primary" onclick="openMapPicker('teacher')">🗺️ على الخريطة</button>
-            <button type="button" class="loc-btn" onclick="geocodeTeacherAddress()">🔎 من العنوان المكتوب</button>
+        <h3 style="margin-top:0;">🏠 Your Home Address (for distance calculations)</h3>
+        <label style="font-size:11px; color:#64748b;">Enter your address (area/street/city), or just tap the pin to set it precisely on the map:</label>
+        <div class="addr-row">
+            <input id="teacherAddressInput" type="text" placeholder="e.g. Downtown, Springfield" oninput="db.teacherAddress=this.value;">
+            <button type="button" class="loc-icon-btn" onclick="openMapPicker('teacher')" title="Set location on map">📍</button>
         </div>
         <div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:-6px;"></div>
     </div>
@@ -201,18 +205,17 @@
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
 
-    <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب (لحساب المسافة)</label>
-    <input id="sAddress" placeholder="مثال: مصر الجديدة، القاهرة">
-    <div class="loc-btn-row">
-        <button type="button" class="loc-btn primary" onclick="openMapPicker('newStudent')">🗺️ على الخريطة</button>
-        <button type="button" class="loc-btn" onclick="quickUseMyLocation('newStudent')">🎯 موقعي الحالي</button>
+    <label style="font-size:11px; color:#64748b;">📍 Student Address/Area (for distance)</label>
+    <div class="addr-row">
+        <input id="sAddress" placeholder="e.g. Uptown, Springfield">
+        <button type="button" class="loc-icon-btn" onclick="openMapPicker('newStudent')" title="Set location on map">📍</button>
     </div>
     <div class="map-status" id="newStudentGeoStatus"></div>
 
-    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة للطالب</label>
+    <label style="font-size:11px; color:#64748b;">📅 Preferred Days</label>
     <div id="sPrefDays" style="margin-bottom:12px;"></div>
 
-    <label style="font-size:11px; color:#64748b;">⏰ الوقت المفضل (من - إلى)</label>
+    <label style="font-size:11px; color:#64748b;">⏰ Preferred Time (From - To)</label>
     <div style="display:flex; gap:6px;">
         <select id="sPrefFrom" style="margin-bottom:12px;"></select>
         <select id="sPrefTo" style="margin-bottom:12px;"></select>
@@ -239,7 +242,7 @@
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
-        <button class="action-btn" style="background:#0ea5e9; color:white;" onclick="generateSuggestedSchedule()">🧭 اقتراح جدول</button>
+        <button class="action-btn" style="background:#0ea5e9; color:white;" onclick="generateSuggestedSchedule()">🧭 Suggest Schedule</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
@@ -278,14 +281,14 @@
         "Fri": "Fri"
     };
 
-    const dayNamesArabic = {
-        "Sat": "السبت",
-        "Sun": "الأحد",
-        "Mon": "الاثنين",
-        "Tue": "الثلاثاء",
-        "Wed": "الأربعاء",
-        "Thu": "الخميس",
-        "Fri": "الجمعة"
+    const dayNamesFull = {
+        "Sat": "Saturday",
+        "Sun": "Sunday",
+        "Mon": "Monday",
+        "Tue": "Tuesday",
+        "Wed": "Wednesday",
+        "Thu": "Thursday",
+        "Fri": "Friday"
     };
 
     let db;
@@ -354,22 +357,80 @@
         return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
     }
 
-    // ---- Geocoding & distance helpers ----
+    // ---- Geocoding, reverse-geocoding & place search helpers ----
+    // Uses Photon (Komoot) as the primary provider, since it indexes POIs/places far more
+    // broadly than Nominatim alone (closer to what people expect from Google Maps search),
+    // then falls back to Nominatim if Photon has no results or is unreachable.
+
+    function formatPhotonName(p) {
+        if (!p) return '';
+        const parts = [p.name, p.street, p.city || p.county, p.state, p.country].filter(Boolean);
+        // Avoid immediate duplicate parts (e.g. name === city)
+        const seen = new Set();
+        const clean = parts.filter(x => {
+            const k = x.toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+        return clean.join(', ');
+    }
+
+    async function photonSearch(query, limit = 8) {
+        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}&lang=en`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data || !data.features) return [];
+        return data.features.map(f => ({
+            lat: f.geometry.coordinates[1],
+            lon: f.geometry.coordinates[0],
+            display_name: formatPhotonName(f.properties) || query
+        }));
+    }
+
+    async function nominatimSearch(query, limit = 8) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(query)}`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+        if (!data) return [];
+        return data.map(r => ({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), display_name: r.display_name }));
+    }
+
+    async function placesSearch(query, limit = 8) {
+        // Merge results from both providers so uncommon POIs (only in one index) still show up.
+        let results = [];
+        try { results = results.concat(await photonSearch(query, limit)); } catch (e) { /* offline or blocked */ }
+        if (results.length < 3) {
+            try { results = results.concat(await nominatimSearch(query, limit)); } catch (e) { /* offline or blocked */ }
+        }
+        // De-duplicate near-identical coordinates
+        const out = [];
+        for (const r of results) {
+            if (!out.some(o => Math.abs(o.lat - r.lat) < 0.0005 && Math.abs(o.lon - r.lon) < 0.0005)) out.push(r);
+        }
+        return out.slice(0, limit);
+    }
+
     async function geocodeAddress(address) {
         if (!address || !address.trim()) return null;
-        try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
-            const data = await res.json();
-            if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-        } catch (e) { /* offline or blocked - ignore */ }
+        const results = await placesSearch(address, 1);
+        if (results.length) return { lat: results[0].lat, lng: results[0].lon };
         return null;
     }
 
     async function reverseGeocode(lat, lng) {
         try {
+            const url = `https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data && data.features && data.features[0]) {
+                const name = formatPhotonName(data.features[0].properties);
+                if (name) return name;
+            }
+        } catch (e) { /* offline or blocked - ignore */ }
+        try {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`;
-            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
+            const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
             const data = await res.json();
             if (data && data.display_name) return data.display_name;
         } catch (e) { /* offline or blocked - ignore */ }
@@ -385,6 +446,9 @@
     }
 
     // ---- Professional location picker (map + GPS + search + satellite), Google-Maps-style ----
+    // This is the single entry point for setting any location: tap the 📍 icon next to an
+    // address field, then inside the map you can search, drop/drag a pin, or use your
+    // current location - exactly like the Google Maps "choose a location" flow.
     let pickerMapInstance = null;
     let pickerMarker = null;
     let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
@@ -441,7 +505,7 @@
         const statusEl = document.getElementById('mapPickerStatus');
         if (!statusEl || !pickerMarker) return;
         const ll = pickerMarker.getLatLng();
-        statusEl.innerText = `الإحداثيات: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+        statusEl.innerText = `Coordinates: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
     }
 
     async function searchMapLocation() {
@@ -449,28 +513,26 @@
         const resultsEl = document.getElementById('mapSearchResults');
         if (!q) { resultsEl.style.display = 'none'; return; }
         resultsEl.style.display = 'block';
-        resultsEl.innerHTML = '<div class="map-search-item">⏳ جاري البحث...</div>';
+        resultsEl.innerHTML = '<div class="map-search-item">⏳ Searching...</div>';
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(q)}`;
-            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
-            const data = await res.json();
-            mapSearchResultsData = data || [];
+            const results = await placesSearch(q, 8);
+            mapSearchResultsData = results;
             if (mapSearchResultsData.length) {
                 resultsEl.innerHTML = mapSearchResultsData.map((r, i) =>
                     `<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
                 ).join('');
             } else {
-                resultsEl.innerHTML = '<div class="map-search-item">لا توجد نتائج، جرّب كلمات مختلفة</div>';
+                resultsEl.innerHTML = '<div class="map-search-item">No results found, try different keywords</div>';
             }
         } catch (e) {
-            resultsEl.innerHTML = '<div class="map-search-item">⚠️ حدث خطأ في البحث</div>';
+            resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>';
         }
     }
 
     function selectSearchResult(idx) {
         const r = mapSearchResultsData[idx];
         if (!r || !pickerMapInstance) return;
-        const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+        const lat = r.lat, lng = r.lon;
         pickerMarker.setLatLng([lat, lng]);
         pickerMapInstance.setView([lat, lng], 16);
         document.getElementById('mapSearchInput').value = r.display_name;
@@ -481,16 +543,20 @@
     function openMapPicker(context) {
         pickerContext = context;
         let initLat = null, initLng = null;
-        let placeholder = 'ابحث عن مكان أو عنوان...';
+        let placeholder = 'Search for a place or address...';
+        let typedAddress = '';
 
         if (context === 'teacher') {
-            placeholder = 'ابحث عن عنوان بيتك...';
+            placeholder = 'Search for your home address...';
+            typedAddress = document.getElementById('teacherAddressInput')?.value.trim() || '';
             if (db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
         } else if (context === 'newStudent') {
-            placeholder = 'ابحث عن عنوان الطالب...';
+            placeholder = 'Search for the student\'s address...';
+            typedAddress = document.getElementById('sAddress')?.value.trim() || '';
         } else if (context && context.type === 'edit') {
-            placeholder = 'ابحث عن عنوان الطالب...';
+            placeholder = 'Search for the student\'s address...';
             let s = db.students.find(x => x.id === context.id);
+            typedAddress = document.getElementById('eAddress')?.value.trim() || (s ? (s.address || '') : '');
             if (s && s.lat != null) { initLat = s.lat; initLng = s.lng; }
         }
 
@@ -498,29 +564,35 @@
 
         let searchInput = document.getElementById('mapSearchInput');
         searchInput.placeholder = placeholder;
-        searchInput.value = '';
+        searchInput.value = typedAddress;
         document.getElementById('mapSearchResults').style.display = 'none';
         document.getElementById('mapModal').classList.add('active');
 
         setTimeout(() => {
             ensurePickerMap(initLat, initLng);
-            if (initLat == null) useMyLocationInPicker(true);
+            if (initLat == null) {
+                if (typedAddress) {
+                    searchMapLocation();
+                } else {
+                    useMyLocationInPicker(true);
+                }
+            }
         }, 50);
     }
 
     function useMyLocationInPicker(silent) {
         const statusEl = document.getElementById('mapPickerStatus');
         if (!navigator.geolocation) {
-            if (!silent) alert('المتصفح ده مش بيدعم تحديد الموقع');
+            if (!silent) alert("This browser doesn't support location detection");
             return;
         }
-        if (statusEl) statusEl.innerText = '⏳ جاري تحديد موقعك الحالي...';
+        if (statusEl) statusEl.innerText = '⏳ Finding your current location...';
         navigator.geolocation.getCurrentPosition((pos) => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             ensurePickerMap(lat, lng);
             if (pickerMapInstance) pickerMapInstance.setView([lat, lng], 16);
         }, (err) => {
-            if (statusEl) statusEl.innerText = silent ? '' : '⚠️ لم نتمكن من الوصول لموقعك، حرك الدبوس يدويًا';
+            if (statusEl) statusEl.innerText = silent ? '' : '⚠️ Could not access your location, drag the pin manually';
         }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
@@ -528,7 +600,7 @@
         if (!pickerMarker) { closeAll(); return; }
         const ll = pickerMarker.getLatLng();
         const statusEl = document.getElementById('mapPickerStatus');
-        if (statusEl) statusEl.innerText = '⏳ جاري حفظ الموقع...';
+        if (statusEl) statusEl.innerText = '⏳ Saving location...';
         const addr = await reverseGeocode(ll.lat, ll.lng);
 
         if (pickerContext === 'teacher') {
@@ -540,15 +612,15 @@
             let tAddrInput = document.getElementById('teacherAddressInput');
             if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
             let tGeoStatus = document.getElementById('teacherGeoStatus');
-            if (tGeoStatus) tGeoStatus.innerText = '✅ تم تحديد الموقع من الخريطة';
+            if (tGeoStatus) tGeoStatus.innerText = '✅ Location set from the map';
             recalcAllDistances();
-            showToast('تم حفظ موقع بيتك ✅');
+            showToast('Home location saved ✅');
         } else if (pickerContext === 'newStudent') {
             window.__pendingStudentLoc = { lat: ll.lat, lng: ll.lng };
             if (addr) document.getElementById('sAddress').value = addr;
             let ns = document.getElementById('newStudentGeoStatus');
-            if (ns) ns.innerText = '✅ تم تحديد الموقع، هيتحفظ مع الطالب';
-            showToast('تم تحديد موقع الطالب ✅');
+            if (ns) ns.innerText = '✅ Location set, will be saved with the student';
+            showToast('Student location set ✅');
         } else if (pickerContext && pickerContext.type === 'edit') {
             let s = db.students.find(x => x.id === pickerContext.id);
             if (s) {
@@ -559,46 +631,18 @@
                     s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, ll.lat, ll.lng) * 10) / 10;
                 }
                 save();
-                showToast('تم تحديث موقع الطالب ✅');
+                showToast('Student location updated ✅');
                 openEdit(s.id);
             }
         }
         closeAll();
     }
 
-    function quickUseMyLocation(context) {
-        if (!navigator.geolocation) { alert('المتصفح ده مش بيدعم تحديد الموقع'); return; }
-        const statusId = context === 'newStudent' ? 'newStudentGeoStatus' : 'teacherGeoStatus';
-        const statusEl = document.getElementById(statusId);
-        if (statusEl) statusEl.innerText = '⏳ جاري تحديد موقعك الحالي...';
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const lat = pos.coords.latitude, lng = pos.coords.longitude;
-            const addr = await reverseGeocode(lat, lng);
-            if (context === 'newStudent') {
-                window.__pendingStudentLoc = { lat, lng };
-                if (addr) document.getElementById('sAddress').value = addr;
-                if (statusEl) statusEl.innerText = '✅ تم تحديد موقعك الحالي للطالب';
-                showToast('تم تحديد الموقع ✅');
-            } else if (context === 'teacher') {
-                commitChange();
-                db.teacherLat = lat; db.teacherLng = lng;
-                if (addr) db.teacherAddress = addr;
-                save();
-                document.getElementById('teacherAddressInput').value = db.teacherAddress || '';
-                if (statusEl) statusEl.innerText = '✅ تم تحديد موقعك الحالي';
-                recalcAllDistances();
-                showToast('تم حفظ موقع بيتك ✅');
-            }
-        }, () => {
-            if (statusEl) statusEl.innerText = '⚠️ لم نتمكن من الوصول لموقعك، جرّب زر الخريطة';
-        }, { enableHighAccuracy: true, timeout: 10000 });
-    }
-
     async function geocodeTeacherAddress() {
         const addr = document.getElementById('teacherAddressInput').value.trim();
         const statusEl = document.getElementById('teacherGeoStatus');
-        if (!addr) { alert('من فضلك اكتب عنوانك الأول'); return; }
-        statusEl.innerText = '⏳ جاري تحديد الموقع...';
+        if (!addr) { alert('Please enter your address first'); return; }
+        statusEl.innerText = '⏳ Locating...';
         const loc = await geocodeAddress(addr);
         if (loc) {
             commitChange();
@@ -606,10 +650,10 @@
             db.teacherLat = loc.lat;
             db.teacherLng = loc.lng;
             save();
-            statusEl.innerText = '✅ تم تحديد الموقع بنجاح';
+            statusEl.innerText = '✅ Location set successfully';
             recalcAllDistances();
         } else {
-            statusEl.innerText = '⚠️ لم نتمكن من تحديد العنوان، حاول عنوان أوضح أو استخدم الخريطة';
+            statusEl.innerText = '⚠️ Could not locate this address, try a clearer address or use the map';
         }
     }
 
@@ -642,13 +686,13 @@
 
     function generateSuggestedSchedule() {
         if (db.teacherLat == null) {
-            alert('من فضلك أدخل عنوان بيتك واحسب الموقع أولاً من ⚙️ الإعدادات');
+            alert('Please set your home address first from ⚙️ Settings');
             toggleSidebar();
             return;
         }
         const withPrefs = (db.students || []).filter(s => s.preferredDays && s.preferredDays.length && s.lat != null);
         if (!withPrefs.length) {
-            alert('محتاج على الأقل طالب واحد عنده عنوان محسوب وأيام مفضلة محددة');
+            alert('You need at least one student with a computed location and preferred days set');
             return;
         }
 
@@ -681,7 +725,7 @@
                     }
                     slot += 30;
                 }
-                if (!placed) dayResult.push({ ...e, minutes: null, timeLabel: 'لا يوجد وقت متاح في نطاقه المفضل', conflict: true });
+                if (!placed) dayResult.push({ ...e, minutes: null, timeLabel: 'No available time in preferred range', conflict: true });
             });
             dayResult.sort((a, b) => (a.minutes ?? 9999) - (b.minutes ?? 9999));
             if (dayResult.length) suggestions[day] = dayResult;
@@ -692,27 +736,27 @@
     }
 
     function renderSuggestionModal(suggestions) {
-        let html = `<h3>🧭 الجدول المقترح</h3>
-            <p style="font-size:11px; color:#64748b;">مرتب حسب المسافة من بيتك وتفضيلات كل طالب. راجع التعارضات (باللون الأحمر) وعدّلها يدويًا بعد التطبيق لو حبيت.</p>`;
+        let html = `<h3>🧭 Suggested Schedule</h3>
+            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
-            html += `<p>مفيش اقتراحات ممكنة حاليًا.</p>`;
+            html += `<p>No suggestions are possible right now.</p>`;
         } else {
             dayKeys.forEach(day => {
-                html += `<div class="suggest-day-block"><b>${dayNamesArabic[day]}</b>`;
+                html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
                 suggestions[day].forEach(e => {
                     html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
                         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}</span>
                         <span>${e.timeLabel}</span>
-                        <span class="distance-badge">${e.dist} كم</span>
+                        <span class="distance-badge">${e.dist} km</span>
                     </div>`;
                 });
                 html += `</div>`;
             });
-            html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ تطبيق الجدول المقترح</button>`;
+            html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ Apply Suggested Schedule</button>`;
         }
-        html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">إغلاق</button>`;
+        html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">Close</button>`;
 
         document.getElementById('editFields').innerHTML = html;
         document.getElementById('editModal').classList.add('active');
@@ -721,7 +765,7 @@
 
     function applySuggestedSchedule() {
         if (!lastSuggestion) return;
-        if (!confirm('هيتم استبدال جدول الطلاب اللي ليهم اقتراح بالمواعيد الجديدة. تكمل؟')) return;
+        if (!confirm('This will replace the schedule for students who have a suggestion with the new times. Continue?')) return;
         commitChange();
         Object.keys(lastSuggestion).forEach(day => {
             lastSuggestion[day].forEach(e => {
@@ -735,7 +779,7 @@
         });
         save();
         closeAll();
-        showToast('تم تطبيق الجدول المقترح ✅');
+        showToast('Suggested schedule applied ✅');
     }
 
     function timeToMinutes(t) {
@@ -766,7 +810,7 @@
 
     function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
         let teacherName = db.teacherName || 'Teacher';
-        let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px; direction:ltr;">📱 ${db.teacherPhone}</div>` : '';
+        let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${db.teacherPhone}</div>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
@@ -779,12 +823,11 @@
             });
             
             sortedSchedules.forEach(sc => {
-                let bilingualDay = dayNamesMap[sc.day] || sc.day;
-                let arabicDay = dayNamesArabic[sc.day] || '';
+                let fullDay = dayNamesFull[sc.day] || sc.day;
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${bilingualDay} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(${arabicDay})</span></td>
-                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${fullDay}</td>
+                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left;">${sc.time}</td>
                     </tr>
                 `;
             });
@@ -794,14 +837,14 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #1e293b; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
-                    <div style="text-align: right;">
-                        <span style="font-size: 12px; color: #94a3b8; display: block;">المبلغ المستحق:</span>
+                <div style="background: #1e293b; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 12px; color: #94a3b8; display: block;">Amount Due:</span>
                         <strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
                     </div>
-                    <div>
-                        <span style="font-size: 12px; color: #94a3b8; display: block; text-align: left;">Every ${lastPeriod.cycle || 4} Weeks:</span>
-                        <strong style="font-size: 14px; color: #ffffff; direction: ltr; unicode-bidi: embed; display: inline-block;">كل ٤ أسابيع</strong>
+                    <div style="text-align: right;">
+                        <span style="font-size: 12px; color: #94a3b8; display: block;">Billing Cycle:</span>
+                        <strong style="font-size: 14px; color: #ffffff;">Every ${lastPeriod.cycle || 4} Weeks</strong>
                     </div>
                 </div>
             `;
@@ -835,7 +878,7 @@
                 <table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
-                            <th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Day / اليوم</th>
+                            <th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
                             <th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
                         </tr>
                     </thead>
@@ -1005,7 +1048,7 @@
         let tAddrInput = document.getElementById('teacherAddressInput');
         if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
         let tGeoStatus = document.getElementById('teacherGeoStatus');
-        if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ الموقع محفوظ' : '';
+        if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ Location saved' : '';
         document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         
@@ -1298,29 +1341,28 @@
             <div class="period-card">
                 <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
                 <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="${p.cycle}">
+                <label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="${p.cycle}">
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
-        let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} كم من بيتك</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">لسه معملهاش حساب مسافة</span>` : '');
+        let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
 
         document.getElementById('editFields').innerHTML = `
             <h3>Edit Student</h3>
             <label>Name</label><input id="en" value="${s.name}">
             <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
 
-            <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب</label>
-            <input id="eAddress" value="${s.address || ''}" placeholder="مثال: مصر الجديدة، القاهرة">
-            <div class="loc-btn-row">
-                <button type="button" class="loc-btn primary" onclick="openMapPicker({type:'edit', id:${s.id}})">🗺️ على الخريطة</button>
-                <button type="button" class="loc-btn" onclick="recomputeStudentDistance(${s.id})">🔎 من العنوان المكتوب</button>
+            <label style="font-size:11px; color:#64748b;">📍 Student Address/Area</label>
+            <div class="addr-row">
+                <input id="eAddress" value="${s.address || ''}" placeholder="e.g. Uptown, Springfield">
+                <button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">📍</button>
             </div>
             <div style="margin:-6px 0 12px;">${distHtml}</div>
 
-            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة</label>
+            <label style="font-size:11px; color:#64748b;">📅 Preferred Days</label>
             <div id="ePrefDays" style="margin-bottom:12px;"></div>
 
-            <label style="font-size:11px; color:#64748b;">⏰ الوقت المفضل (من - إلى)</label>
+            <label style="font-size:11px; color:#64748b;">⏰ Preferred Time (From - To)</label>
             <div style="display:flex; gap:6px;">
                 <select id="ePrefFrom" style="margin-bottom:12px;"></select>
                 <select id="ePrefTo" style="margin-bottom:12px;"></select>
@@ -1360,8 +1402,8 @@
         let s = db.students.find(x => x.id === id);
         if (!s) return;
         let address = document.getElementById('eAddress').value.trim();
-        if (!address) { alert('اكتب عنوان الطالب الأول'); return; }
-        if (db.teacherLat == null) { alert('لازم تحفظ عنوان بيتك من الإعدادات الأول'); return; }
+        if (!address) { alert('Please enter the student\'s address first'); return; }
+        if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
         const loc = await geocodeAddress(address);
         if (loc) {
             commitChange();
@@ -1371,7 +1413,7 @@
             save();
             openEdit(id);
         } else {
-            alert('لم نتمكن من تحديد هذا العنوان، حاول تكتبه بشكل أوضح أو استخدم الخريطة');
+            alert('Could not locate this address, try writing it more clearly or use the map');
         }
     }
 
@@ -1379,7 +1421,7 @@
         const div = document.createElement('div');
         div.className = 'period-card';
         let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
         document.getElementById('editPeriods').appendChild(div);
     }
 
