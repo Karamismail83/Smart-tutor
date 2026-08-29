@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Tutor - Professional Print Schedule</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
         :root {
             --bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
@@ -76,6 +78,16 @@
         .suggest-row { display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px; margin-bottom:4px; font-size:11px; }
         .suggest-row.conflict { border-color:#ef4444; background:#fef2f2; }
 
+        .loc-btn-row { display:flex; gap:6px; margin: -6px 0 12px; }
+        .loc-btn { flex:1; background:#f1f5f9; border:1px solid #cbd5e1; color:#1E293B; padding:7px 6px; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; }
+        .loc-btn:active { background:#e2e8f0; }
+        .loc-btn.primary { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+
+        #mapModal { z-index: 5000; }
+        #pickerMap { width:100%; height: 280px; border-radius: 10px; border:1px solid #cbd5e1; margin-bottom:10px; }
+        .map-status { font-size:11px; color:#64748b; margin: -4px 0 10px; min-height:14px; }
+        .locate-fab { position:absolute; z-index:5001; background:#fff; border:1px solid #cbd5e1; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+
         #studentPrintContainer { display: none; }
         
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -116,6 +128,17 @@
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
+<div class="modal" id="mapModal">
+    <h3 style="margin-top:0" id="mapModalTitle">📍 تحديد الموقع على الخريطة</h3>
+    <p style="font-size:11px; color:#64748b; margin-top:-6px;">حرك الدبوس لمكانك بالظبط، أو دوس على زر موقعي الحالي عشان نحدده تلقائيًا.</p>
+    <div style="position:relative;">
+        <div id="pickerMap"></div>
+    </div>
+    <div class="map-status" id="mapPickerStatus"></div>
+    <button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-bottom:8px;" onclick="useMyLocationInPicker()">🎯 استخدم موقعي الحالي</button>
+    <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="confirmMapPicker()">✅ تأكيد هذا الموقع</button>
+    <button class="action-btn" style="width:100%;" onclick="closeAll()">إلغاء</button>
+</div>
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
 
@@ -132,8 +155,11 @@
         <h3 style="margin-top:0;">🏠 عنوان بيتك (لحساب المسافات)</h3>
         <label style="font-size:11px; color:#64748b;">اكتب عنوانك (المنطقة/الشارع/المدينة) عشان النظام يحسب المسافة لكل طالب:</label>
         <input id="teacherAddressInput" type="text" placeholder="مثال: مدينة نصر، القاهرة" oninput="db.teacherAddress=this.value;">
-        <button class="action-btn" style="width:100%; background:#0ea5e9; color:white;" onclick="geocodeTeacherAddress()">📍 حفظ واحسب الموقع</button>
-        <div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:6px;"></div>
+        <div class="loc-btn-row">
+            <button type="button" class="loc-btn primary" onclick="openMapPicker('teacher')">🗺️ على الخريطة</button>
+            <button type="button" class="loc-btn" onclick="geocodeTeacherAddress()">🔎 من العنوان المكتوب</button>
+        </div>
+        <div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:-6px;"></div>
     </div>
 
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
@@ -160,6 +186,11 @@
 
     <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب (لحساب المسافة)</label>
     <input id="sAddress" placeholder="مثال: مصر الجديدة، القاهرة">
+    <div class="loc-btn-row">
+        <button type="button" class="loc-btn primary" onclick="openMapPicker('newStudent')">🗺️ على الخريطة</button>
+        <button type="button" class="loc-btn" onclick="quickUseMyLocation('newStudent')">🎯 موقعي الحالي</button>
+    </div>
+    <div class="map-status" id="newStudentGeoStatus"></div>
 
     <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة للطالب</label>
     <div id="sPrefDays" style="margin-bottom:12px;"></div>
@@ -317,12 +348,171 @@
         return null;
     }
 
+    async function reverseGeocode(lat, lng) {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
+            const data = await res.json();
+            if (data && data.display_name) return data.display_name;
+        } catch (e) { /* offline or blocked - ignore */ }
+        return null;
+    }
+
     function haversineKm(lat1, lon1, lat2, lon2) {
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // ---- Professional location picker (map + GPS), Aramex-style ----
+    let pickerMapInstance = null;
+    let pickerMarker = null;
+    let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
+
+    function ensurePickerMap(initialLat, initialLng) {
+        const lat = initialLat != null ? initialLat : 30.0444;
+        const lng = initialLng != null ? initialLng : 31.2357;
+        if (!pickerMapInstance) {
+            pickerMapInstance = L.map('pickerMap').setView([lat, lng], initialLat != null ? 15 : 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(pickerMapInstance);
+            pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMapInstance);
+            pickerMarker.on('dragend', () => updatePickerStatus());
+            pickerMapInstance.on('click', (e) => {
+                pickerMarker.setLatLng(e.latlng);
+                updatePickerStatus();
+            });
+        } else {
+            pickerMapInstance.setView([lat, lng], initialLat != null ? 15 : pickerMapInstance.getZoom());
+            pickerMarker.setLatLng([lat, lng]);
+            setTimeout(() => pickerMapInstance.invalidateSize(), 150);
+        }
+        updatePickerStatus();
+    }
+
+    async function updatePickerStatus() {
+        const statusEl = document.getElementById('mapPickerStatus');
+        if (!statusEl || !pickerMarker) return;
+        const ll = pickerMarker.getLatLng();
+        statusEl.innerText = `الإحداثيات: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+    }
+
+    function openMapPicker(context) {
+        pickerContext = context;
+        let initLat = null, initLng = null;
+        let title = '📍 تحديد الموقع على الخريطة';
+
+        if (context === 'teacher') {
+            title = '🏠 تحديد موقع بيتك على الخريطة';
+            if (db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
+        } else if (context === 'newStudent') {
+            title = '📍 تحديد موقع الطالب على الخريطة';
+        } else if (context && context.type === 'edit') {
+            title = '📍 تحديد موقع الطالب على الخريطة';
+            let s = db.students.find(x => x.id === context.id);
+            if (s && s.lat != null) { initLat = s.lat; initLng = s.lng; }
+        }
+
+        if (initLat == null && db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
+
+        document.getElementById('mapModalTitle').innerText = title;
+        document.getElementById('mapModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+
+        setTimeout(() => {
+            ensurePickerMap(initLat, initLng);
+            if (initLat == null) useMyLocationInPicker(true);
+        }, 50);
+    }
+
+    function useMyLocationInPicker(silent) {
+        const statusEl = document.getElementById('mapPickerStatus');
+        if (!navigator.geolocation) {
+            if (!silent) alert('المتصفح ده مش بيدعم تحديد الموقع');
+            return;
+        }
+        if (statusEl) statusEl.innerText = '⏳ جاري تحديد موقعك الحالي...';
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            ensurePickerMap(lat, lng);
+            if (pickerMapInstance) pickerMapInstance.setView([lat, lng], 16);
+        }, (err) => {
+            if (statusEl) statusEl.innerText = silent ? '' : '⚠️ لم نتمكن من الوصول لموقعك، حرك الدبوس يدويًا';
+        }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    async function confirmMapPicker() {
+        if (!pickerMarker) { closeAll(); return; }
+        const ll = pickerMarker.getLatLng();
+        const statusEl = document.getElementById('mapPickerStatus');
+        if (statusEl) statusEl.innerText = '⏳ جاري حفظ الموقع...';
+        const addr = await reverseGeocode(ll.lat, ll.lng);
+
+        if (pickerContext === 'teacher') {
+            commitChange();
+            db.teacherLat = ll.lat;
+            db.teacherLng = ll.lng;
+            if (addr) db.teacherAddress = addr;
+            save();
+            let tAddrInput = document.getElementById('teacherAddressInput');
+            if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
+            let tGeoStatus = document.getElementById('teacherGeoStatus');
+            if (tGeoStatus) tGeoStatus.innerText = '✅ تم تحديد الموقع من الخريطة';
+            recalcAllDistances();
+            showToast('تم حفظ موقع بيتك ✅');
+        } else if (pickerContext === 'newStudent') {
+            window.__pendingStudentLoc = { lat: ll.lat, lng: ll.lng };
+            if (addr) document.getElementById('sAddress').value = addr;
+            let ns = document.getElementById('newStudentGeoStatus');
+            if (ns) ns.innerText = '✅ تم تحديد الموقع، هيتحفظ مع الطالب';
+            showToast('تم تحديد موقع الطالب ✅');
+        } else if (pickerContext && pickerContext.type === 'edit') {
+            let s = db.students.find(x => x.id === pickerContext.id);
+            if (s) {
+                commitChange();
+                s.lat = ll.lat; s.lng = ll.lng;
+                if (addr) s.address = addr;
+                if (db.teacherLat != null) {
+                    s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, ll.lat, ll.lng) * 10) / 10;
+                }
+                save();
+                showToast('تم تحديث موقع الطالب ✅');
+                openEdit(s.id);
+            }
+        }
+        closeAll();
+    }
+
+    function quickUseMyLocation(context) {
+        if (!navigator.geolocation) { alert('المتصفح ده مش بيدعم تحديد الموقع'); return; }
+        const statusId = context === 'newStudent' ? 'newStudentGeoStatus' : 'teacherGeoStatus';
+        const statusEl = document.getElementById(statusId);
+        if (statusEl) statusEl.innerText = '⏳ جاري تحديد موقعك الحالي...';
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            const addr = await reverseGeocode(lat, lng);
+            if (context === 'newStudent') {
+                window.__pendingStudentLoc = { lat, lng };
+                if (addr) document.getElementById('sAddress').value = addr;
+                if (statusEl) statusEl.innerText = '✅ تم تحديد موقعك الحالي للطالب';
+                showToast('تم تحديد الموقع ✅');
+            } else if (context === 'teacher') {
+                commitChange();
+                db.teacherLat = lat; db.teacherLng = lng;
+                if (addr) db.teacherAddress = addr;
+                save();
+                document.getElementById('teacherAddressInput').value = db.teacherAddress || '';
+                if (statusEl) statusEl.innerText = '✅ تم تحديد موقعك الحالي';
+                recalcAllDistances();
+                showToast('تم حفظ موقع بيتك ✅');
+            }
+        }, () => {
+            if (statusEl) statusEl.innerText = '⚠️ لم نتمكن من الوصول لموقعك، جرّب زر الخريطة';
+        }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
     async function geocodeTeacherAddress() {
@@ -340,7 +530,7 @@
             statusEl.innerText = '✅ تم تحديد الموقع بنجاح';
             recalcAllDistances();
         } else {
-            statusEl.innerText = '⚠️ لم نتمكن من تحديد العنوان، حاول عنوان أوضح';
+            statusEl.innerText = '⚠️ لم نتمكن من تحديد العنوان، حاول عنوان أوضح أو استخدم الخريطة';
         }
     }
 
@@ -973,20 +1163,30 @@
         let preferredDays = getSelectedDays('sPrefDays');
         let preferredFrom = document.getElementById('sPrefFrom')?.value || '';
         let preferredTo = document.getElementById('sPrefTo')?.value || '';
+        let pendingLoc = window.__pendingStudentLoc || null;
         let newStudent = { 
             id: Date.now(), 
             name: n, 
             color: col, 
             financialMap: {}, 
             schedules: [], 
-            address, preferredDays, preferredFrom, preferredTo, lat: null, lng: null, distanceKm: null,
+            address, preferredDays, preferredFrom, preferredTo,
+            lat: pendingLoc ? pendingLoc.lat : null,
+            lng: pendingLoc ? pendingLoc.lng : null,
+            distanceKm: null,
             periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }] 
         };
+        if (pendingLoc && db.teacherLat != null) {
+            newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, pendingLoc.lat, pendingLoc.lng) * 10) / 10;
+        }
         db.students.push(newStudent); 
         save(); closeAll();
         document.getElementById('sAddress').value = '';
+        window.__pendingStudentLoc = null;
+        let ns = document.getElementById('newStudentGeoStatus');
+        if (ns) ns.innerText = '';
         buildDayPills('sPrefDays', []);
-        if (address && db.teacherLat != null) {
+        if (!pendingLoc && address && db.teacherLat != null) {
             geocodeAddress(address).then(loc => {
                 if (loc) {
                     newStudent.lat = loc.lat; newStudent.lng = loc.lng;
@@ -1032,7 +1232,11 @@
 
             <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب</label>
             <input id="eAddress" value="${s.address || ''}" placeholder="مثال: مصر الجديدة، القاهرة">
-            <div style="margin:-6px 0 12px;">${distHtml} <button type="button" onclick="recomputeStudentDistance(${s.id})" style="background:none;border:none;color:#0ea5e9;font-size:11px;cursor:pointer;text-decoration:underline;">إعادة حساب المسافة</button></div>
+            <div class="loc-btn-row">
+                <button type="button" class="loc-btn primary" onclick="openMapPicker({type:'edit', id:${s.id}})">🗺️ على الخريطة</button>
+                <button type="button" class="loc-btn" onclick="recomputeStudentDistance(${s.id})">🔎 من العنوان المكتوب</button>
+            </div>
+            <div style="margin:-6px 0 12px;">${distHtml}</div>
 
             <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة</label>
             <div id="ePrefDays" style="margin-bottom:12px;"></div>
@@ -1088,7 +1292,7 @@
             save();
             openEdit(id);
         } else {
-            alert('لم نتمكن من تحديد هذا العنوان، حاول تكتبه بشكل أوضح');
+            alert('لم نتمكن من تحديد هذا العنوان، حاول تكتبه بشكل أوضح أو استخدم الخريطة');
         }
     }
 
