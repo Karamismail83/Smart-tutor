@@ -136,7 +136,7 @@
 
     <hr style="margin:15px 0; opacity:0.1">
     <h3>Add Student</h3>
-    <input id="sName" placeholder="Student Name">
+    <input id="sName" placeholder="Name">
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
@@ -276,7 +276,7 @@
 
     function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
         let teacherName = db.teacherName || 'Teacher';
-        let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:2px;">📱 ${db.teacherPhone}</div>` : '';
+        let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px; direction:ltr;">📱 ${db.teacherPhone}</div>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
@@ -318,24 +318,27 @@
         }
 
         return `
-            <div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 16px; border-radius: 14px; border: 2px solid #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden; box-shadow: 0 0 0 1px rgba(250,204,21,0.15) inset;">
+            <div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 18px; border-radius: 14px; border: 3px double #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden;">
 
-                <div style="position:absolute; top:0; left:0; right:0; height:5px; background: repeating-linear-gradient(90deg, #facc15 0 14px, #0f172a 14px 20px);"></div>
-                <div style="position:absolute; bottom:0; left:0; right:0; height:5px; background: repeating-linear-gradient(90deg, #facc15 0 14px, #0f172a 14px 20px);"></div>
-                <div style="position:absolute; top:-40px; right:-40px; width:120px; height:120px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.18) 0%, rgba(250,204,21,0) 70%);"></div>
-                <div style="position:absolute; bottom:-50px; left:-50px; width:140px; height:140px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.14) 0%, rgba(56,189,248,0) 70%);"></div>
+                <div style="position:absolute; top:8px; left:8px; width:14px; height:14px; border-top:2px solid #facc15; border-left:2px solid #facc15; border-radius:3px 0 0 0;"></div>
+                <div style="position:absolute; top:8px; right:8px; width:14px; height:14px; border-top:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 3px 0 0;"></div>
+                <div style="position:absolute; bottom:8px; left:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-left:2px solid #facc15; border-radius:0 0 0 3px;"></div>
+                <div style="position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 0 3px 0;"></div>
+                <div style="position:absolute; top:-60px; right:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.10) 0%, rgba(250,204,21,0) 70%); pointer-events:none;"></div>
+                <div style="position:absolute; bottom:-60px; left:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0) 70%); pointer-events:none;"></div>
 
-                <div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 8px; margin-bottom: 10px;">
+                <div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 9px; margin-bottom: 10px;">
                     <div>
                         <h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
                         <p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">Official Weekly Schedule</p>
                     </div>
-                    <div style="text-align: right;">
-                        <span style="background: #1e293b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; display: inline-block; text-align: right;">${teacherName}${teacherPhone}</span>
+                    <div style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; text-align: right; line-height:1.3;">
+                        <div>${teacherName}</div>
+                        ${teacherPhone}
                     </div>
                 </div>
                 <div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${student.color || '#3b82f6'};">
-                    <h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Student Name: ${student.name}</h3>
+                    <h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Name: ${student.name}</h3>
                     <p style="margin: 0; font-size: 11px; color: #94a3b8;">Here are the assigned weekly session times:</p>
                 </div>
                 ${financialsHTML}
@@ -792,7 +795,7 @@
                     <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
                 </label>
                 <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
-                    <input type="checkbox" id="includePhoneCheckbox" style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
+                    <input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
                 </label>
             </div>
 
