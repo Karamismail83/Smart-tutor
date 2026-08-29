@@ -215,6 +215,9 @@
     <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
     <input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
 
+    <label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+    <input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
+
     <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
     <div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
     <div id="sPrefDays_times" style="margin-bottom:12px;"></div>
@@ -269,10 +272,11 @@
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 
-    // Default length of one session, used only for the "Suggest Schedule" placement logic.
-    // The "to" time in a student's per-day preference is the time the LAST session of that
-    // day must be finished by (not merely the last allowed start time) - so a candidate start
-    // time is only accepted if start + DEFAULT_SESSION_MINUTES still fits at or before "to".
+    // Fallback length of one session, used only for the "Suggest Schedule" placement logic
+    // when a student doesn't have their own "Session Duration" set. The "to" time in a
+    // student's per-day preference is the time the LAST session of that day must be finished
+    // by (not merely the last allowed start time) - so a candidate start time is only accepted
+    // if start + <that student's session duration> still fits at or before "to".
     const DEFAULT_SESSION_MINUTES = 60;
 
     // Default map center: Al-Ahsa oasis (Al-Hofuf / Al-Mubarraz area), so the map and search
@@ -924,9 +928,10 @@
             const dist = s.distanceKm != null ? s.distanceKm : Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
             const fullPref = getStudentPrefSchedule(s);
             const selectedPref = selectStudentScheduleDays(s, fullPref);
+            const durationMinutes = Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES;
             selectedPref.forEach(p => {
                 entries.push({
-                    studentId: s.id, name: s.name, color: s.color, day: p.day, dist,
+                    studentId: s.id, name: s.name, color: s.color, day: p.day, dist, durationMinutes,
                     from: p.from || '4:00 PM', to: p.to || '8:00 PM', mandatory: !!p.mandatory
                 });
             });
@@ -940,16 +945,22 @@
                 if (a.mandatory !== b.mandatory) return a.mandatory ? -1 : 1;
                 return a.dist - b.dist;
             });
-            let usedTimes = [];
+            // Track actual [start, end) intervals rather than bare start times, since each
+            // student can have their own session duration - a 30-minute session and a
+            // 90-minute session need very different amounts of room to avoid overlapping.
+            let usedIntervals = [];
             let dayResult = [];
             dayEntries.forEach(e => {
                 let fromMin = timeToMinutes(e.from);
                 let toMin = timeToMinutes(e.to);
+                let duration = e.durationMinutes || DEFAULT_SESSION_MINUTES;
                 let slot = fromMin, placed = false;
-                while (slot + DEFAULT_SESSION_MINUTES <= toMin) {
-                    if (!usedTimes.some(t => Math.abs(t - slot) < 60)) {
-                        usedTimes.push(slot);
-                        dayResult.push({ ...e, minutes: slot, timeLabel: minutesToTimeLabel(slot), conflict: false });
+                while (slot + duration <= toMin) {
+                    let slotEnd = slot + duration;
+                    let overlaps = usedIntervals.some(iv => slot < iv.end && slotEnd > iv.start);
+                    if (!overlaps) {
+                        usedIntervals.push({ start: slot, end: slotEnd });
+                        dayResult.push({ ...e, minutes: slot, timeLabel: minutesToTimeLabel(slot), endTimeLabel: minutesToTimeLabel(slotEnd), conflict: false });
                         placed = true;
                         break;
                     }
@@ -967,7 +978,7 @@
 
     function renderSuggestionModal(suggestions) {
         let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Days marked ★Mandatory are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences, using each student's own session duration. Days marked ★Mandatory are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
@@ -976,9 +987,10 @@
             dayKeys.forEach(day => {
                 html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
                 suggestions[day].forEach(e => {
+                    let timeDisplay = e.conflict ? e.timeLabel : `${e.timeLabel} - ${e.endTimeLabel}`;
                     html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
                         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
-                        <span>${e.timeLabel}</span>
+                        <span>${timeDisplay}</span>
                         <span class="distance-badge">${e.dist} km</span>
                     </div>`;
                 });
@@ -986,6 +998,7 @@
             });
             html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ Apply Suggested Schedule</button>`;
         }
+        html += `<button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-top:8px;" onclick="generateSuggestedSchedule()">🔄 Re-suggest</button>`;
         html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">Close</button>`;
 
         document.getElementById('editFields').innerHTML = html;
@@ -1514,6 +1527,7 @@
         let address = document.getElementById('sAddress')?.value.trim() || '';
         let preferredSchedule = getPrefSchedule('sPrefDays');
         let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
+        let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
         let pendingLoc = window.__pendingStudentLoc || null;
         let newStudent = { 
             id: Date.now(), 
@@ -1521,7 +1535,7 @@
             color: col, 
             financialMap: {}, 
             schedules: [], 
-            address, preferredSchedule, weeklyDaysCount,
+            address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
             lat: pendingLoc ? pendingLoc.lat : null,
             lng: pendingLoc ? pendingLoc.lng : null,
             distanceKm: null,
@@ -1534,6 +1548,7 @@
         save(); closeAll();
         document.getElementById('sAddress').value = '';
         document.getElementById('sWeeklyDays').value = '';
+        document.getElementById('sSessionDuration').value = '';
         window.__pendingStudentLoc = null;
         let ns = document.getElementById('newStudentGeoStatus');
         if (ns) ns.innerText = '';
@@ -1591,6 +1606,9 @@
 
             <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
             <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
+
+            <label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+            <input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
 
             <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
             <div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
@@ -1662,6 +1680,7 @@
             s.address = newAddress;
             s.preferredSchedule = getPrefSchedule('ePrefDays');
             s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
+            s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
             let newPeriods = [];
             document.querySelectorAll('.period-card').forEach(card => {
                 newPeriods.push({
