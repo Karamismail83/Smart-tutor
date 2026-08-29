@@ -147,7 +147,7 @@
 <div class="modal" id="mapModal">
     <div class="map-top-bar">
         <div class="map-icon-btn" onclick="closeAll()">✕</div>
-        <input id="mapSearchInput" placeholder="Search for a place or address..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
+        <input id="mapSearchInput" placeholder="Search, or paste coordinates / a Google Maps link..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
         <div class="map-icon-btn" onclick="searchMapLocation()">🔍</div>
         <div id="mapSearchResults"></div>
     </div>
@@ -536,11 +536,50 @@
         statusEl.innerText = `Coordinates: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
     }
 
+    // Recognize coordinates or a full (non-shortened) Google Maps URL pasted into the search
+    // box, and read the exact lat/lng straight out of it. This is the most reliable way to
+    // place a pin, since it uses Google's own coordinates rather than our free search index.
+    function extractLatLngFromInput(q) {
+        q = q.trim();
+        let m = q.match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+        if (m) {
+            const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+            if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
+        }
+        m = q.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+        m = q.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+        if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+        m = q.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+        return null;
+    }
+
+    function isShortGoogleLink(q) {
+        return /(maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(q);
+    }
+
     async function searchMapLocation() {
         const q = document.getElementById('mapSearchInput').value.trim();
         const resultsEl = document.getElementById('mapSearchResults');
         if (!q) { resultsEl.style.display = 'none'; return; }
         resultsEl.style.display = 'block';
+
+        const coords = extractLatLngFromInput(q);
+        if (coords) {
+            pickerMarker.setLatLng([coords.lat, coords.lng]);
+            pickerMapInstance.setView([coords.lat, coords.lng], 17);
+            updatePickerStatus();
+            resultsEl.innerHTML = `<div class="map-search-item">✅ Jumped to the exact pasted location</div>`;
+            setTimeout(() => { resultsEl.style.display = 'none'; }, 1200);
+            return;
+        }
+
+        if (isShortGoogleLink(q)) {
+            resultsEl.innerHTML = `<div class="map-search-item">This is a shortened Google Maps link and can't be read directly here. Open it once in your browser, then paste the full address-bar link (it will contain @lat,lng) - or in Google Maps, long-press the spot to drop a pin and paste the coordinates shown at the bottom.</div>`;
+            return;
+        }
+
         resultsEl.innerHTML = '<div class="map-search-item">⏳ Searching...</div>';
         try {
             let biasLat = null, biasLon = null;
@@ -555,7 +594,7 @@
                     `<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
                 ).join('') + googleFallbackItemHTML(q);
             } else {
-                resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". Try a nearby street or area name instead, or look it up below.</div>` + googleFallbackItemHTML(q);
+                resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". Try a nearby street or area name instead, or use the option below.</div>` + googleFallbackItemHTML(q);
             }
         } catch (e) {
             resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>' + googleFallbackItemHTML(q);
@@ -564,10 +603,11 @@
 
     function googleFallbackItemHTML(q) {
         // Our map search runs on free OpenStreetMap-based data, which doesn't have the same
-        // depth of small-business listings as Google Maps. This gives an escape hatch: open
-        // Google Maps in a new tab to visually find the place, then come back and drop the pin
-        // on the same spot here (satellite view helps line it up).
-        return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">🔎 Not found here? Search "${q}" on Google Maps, then drop the pin on the same spot below</div>`;
+        // depth of small-business listings as Google Maps. This gives a reliable escape hatch:
+        // find the place in Google Maps, then long-press it there to drop a pin - Google shows
+        // the exact coordinates at the bottom of the screen - copy those and paste them back
+        // into this search box (or paste the full google.com/maps/... link) to jump right to it.
+        return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">🔎 Not found here? Open "${q}" on Google Maps, long-press it to get coordinates, then paste them back here</div>`;
     }
 
     function selectSearchResult(idx) {
@@ -584,18 +624,18 @@
     function openMapPicker(context) {
         pickerContext = context;
         let initLat = null, initLng = null;
-        let placeholder = 'Search for a place or address...';
+        let placeholder = 'Search, or paste coordinates / a Google Maps link...';
         let typedAddress = '';
 
         if (context === 'teacher') {
-            placeholder = 'Search for your home address...';
+            placeholder = 'Search your home, or paste coordinates / a Maps link...';
             typedAddress = document.getElementById('teacherAddressInput')?.value.trim() || '';
             if (db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
         } else if (context === 'newStudent') {
-            placeholder = 'Search for the student\'s address...';
+            placeholder = 'Search, or paste coordinates / a Maps link...';
             typedAddress = document.getElementById('sAddress')?.value.trim() || '';
         } else if (context && context.type === 'edit') {
-            placeholder = 'Search for the student\'s address...';
+            placeholder = 'Search, or paste coordinates / a Maps link...';
             let s = db.students.find(x => x.id === context.id);
             typedAddress = document.getElementById('eAddress')?.value.trim() || (s ? (s.address || '') : '');
             if (s && s.lat != null) { initLat = s.lat; initLng = s.lng; }
