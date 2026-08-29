@@ -68,6 +68,14 @@
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
+        .day-pill { display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer; color:#1E293B; margin:2px; user-select:none; }
+        .day-pill input { width:auto; margin:0; padding:0; }
+        .day-pill.checked { background:#facc15; border-color:#b45309; }
+        .distance-badge { display:inline-block; background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px; margin-top:4px; }
+        .suggest-day-block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; margin-bottom:8px; }
+        .suggest-row { display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px; margin-bottom:4px; font-size:11px; }
+        .suggest-row.conflict { border-color:#ef4444; background:#fef2f2; }
+
         #studentPrintContainer { display: none; }
         
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -121,6 +129,14 @@
     </div>
 
     <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <h3 style="margin-top:0;">🏠 عنوان بيتك (لحساب المسافات)</h3>
+        <label style="font-size:11px; color:#64748b;">اكتب عنوانك (المنطقة/الشارع/المدينة) عشان النظام يحسب المسافة لكل طالب:</label>
+        <input id="teacherAddressInput" type="text" placeholder="مثال: مدينة نصر، القاهرة" oninput="db.teacherAddress=this.value;">
+        <button class="action-btn" style="width:100%; background:#0ea5e9; color:white;" onclick="geocodeTeacherAddress()">📍 حفظ واحسب الموقع</button>
+        <div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:6px;"></div>
+    </div>
+
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
         <h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
         <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
         <input id="courseBaseDate" type="date">
@@ -141,6 +157,19 @@
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
     <input id="sCycle" type="number" value="4">
+
+    <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب (لحساب المسافة)</label>
+    <input id="sAddress" placeholder="مثال: مصر الجديدة، القاهرة">
+
+    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة للطالب</label>
+    <div id="sPrefDays" style="margin-bottom:12px;"></div>
+
+    <label style="font-size:11px; color:#64748b;">⏰ الوقت المفضل (من - إلى)</label>
+    <div style="display:flex; gap:6px;">
+        <select id="sPrefFrom" style="margin-bottom:12px;"></select>
+        <select id="sPrefTo" style="margin-bottom:12px;"></select>
+    </div>
+
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Slot (Session)</h3>
@@ -162,6 +191,7 @@
     <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
     <div style="display: flex; gap: 5px;">
         <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
+        <button class="action-btn" style="background:#0ea5e9; color:white;" onclick="generateSuggestedSchedule()">🧭 اقتراح جدول</button>
         <button class="action-btn" onclick="undo()">↩️ UNDO</button>
         <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
     </div>
@@ -246,6 +276,197 @@
     function initLessonTimes() {
         const sel = document.getElementById('cTime');
         if (sel) sel.innerHTML = getTimeOptionsHTML();
+        const pf = document.getElementById('sPrefFrom');
+        const pt = document.getElementById('sPrefTo');
+        if (pf) pf.innerHTML = getTimeOptionsHTML('4:00 PM');
+        if (pt) pt.innerHTML = getTimeOptionsHTML('8:00 PM');
+        buildDayPills('sPrefDays', []);
+    }
+
+    function buildDayPills(containerId, selectedDays, prefix = '') {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = daysOrder.map(d => {
+            const isChecked = selectedDays.includes(d);
+            return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPill(this)">
+                        <input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked');">
+                        ${dayNamesArabic[d]}
+                    </label>`;
+        }).join('');
+    }
+
+    function toggleDayPill(label) {
+        const cb = label.querySelector('input');
+        cb.checked = !cb.checked;
+        label.classList.toggle('checked', cb.checked);
+    }
+
+    function getSelectedDays(containerId) {
+        return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+    }
+
+    // ---- Geocoding & distance helpers ----
+    async function geocodeAddress(address) {
+        if (!address || !address.trim()) return null;
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
+            const data = await res.json();
+            if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        } catch (e) { /* offline or blocked - ignore */ }
+        return null;
+    }
+
+    function haversineKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    async function geocodeTeacherAddress() {
+        const addr = document.getElementById('teacherAddressInput').value.trim();
+        const statusEl = document.getElementById('teacherGeoStatus');
+        if (!addr) { alert('من فضلك اكتب عنوانك الأول'); return; }
+        statusEl.innerText = '⏳ جاري تحديد الموقع...';
+        const loc = await geocodeAddress(addr);
+        if (loc) {
+            commitChange();
+            db.teacherAddress = addr;
+            db.teacherLat = loc.lat;
+            db.teacherLng = loc.lng;
+            save();
+            statusEl.innerText = '✅ تم تحديد الموقع بنجاح';
+            recalcAllDistances();
+        } else {
+            statusEl.innerText = '⚠️ لم نتمكن من تحديد العنوان، حاول عنوان أوضح';
+        }
+    }
+
+    async function recalcAllDistances() {
+        if (db.teacherLat == null || !db.students) return;
+        for (const s of db.students) {
+            if (s.address) {
+                if (s.lat == null) {
+                    const loc = await geocodeAddress(s.address);
+                    if (loc) { s.lat = loc.lat; s.lng = loc.lng; }
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+                if (s.lat != null) {
+                    s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
+                }
+            }
+        }
+        save();
+    }
+
+    function minutesToTimeLabel(mins) {
+        let h = Math.floor(mins / 60), m = mins % 60;
+        let ampm = h < 12 ? 'AM' : 'PM';
+        let hh = h % 12 === 0 ? 12 : h % 12;
+        return `${hh}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    // ---- Suggested schedule generator ----
+    let lastSuggestion = null;
+
+    function generateSuggestedSchedule() {
+        if (db.teacherLat == null) {
+            alert('من فضلك أدخل عنوان بيتك واحسب الموقع أولاً من ⚙️ الإعدادات');
+            toggleSidebar();
+            return;
+        }
+        const withPrefs = (db.students || []).filter(s => s.preferredDays && s.preferredDays.length && s.lat != null);
+        if (!withPrefs.length) {
+            alert('محتاج على الأقل طالب واحد عنده عنوان محسوب وأيام مفضلة محددة');
+            return;
+        }
+
+        let entries = [];
+        withPrefs.forEach(s => {
+            const dist = s.distanceKm != null ? s.distanceKm : Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
+            (s.preferredDays || []).forEach(day => {
+                entries.push({
+                    studentId: s.id, name: s.name, color: s.color, day, dist,
+                    from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM'
+                });
+            });
+        });
+
+        let suggestions = {};
+        daysOrder.forEach(day => {
+            let dayEntries = entries.filter(e => e.day === day).sort((a, b) => a.dist - b.dist);
+            let usedTimes = [];
+            let dayResult = [];
+            dayEntries.forEach(e => {
+                let fromMin = timeToMinutes(e.from);
+                let toMin = timeToMinutes(e.to);
+                let slot = fromMin, placed = false;
+                while (slot + 30 <= toMin) {
+                    if (!usedTimes.some(t => Math.abs(t - slot) < 60)) {
+                        usedTimes.push(slot);
+                        dayResult.push({ ...e, minutes: slot, timeLabel: minutesToTimeLabel(slot), conflict: false });
+                        placed = true;
+                        break;
+                    }
+                    slot += 30;
+                }
+                if (!placed) dayResult.push({ ...e, minutes: null, timeLabel: 'لا يوجد وقت متاح في نطاقه المفضل', conflict: true });
+            });
+            dayResult.sort((a, b) => (a.minutes ?? 9999) - (b.minutes ?? 9999));
+            if (dayResult.length) suggestions[day] = dayResult;
+        });
+
+        lastSuggestion = suggestions;
+        renderSuggestionModal(suggestions);
+    }
+
+    function renderSuggestionModal(suggestions) {
+        let html = `<h3>🧭 الجدول المقترح</h3>
+            <p style="font-size:11px; color:#64748b;">مرتب حسب المسافة من بيتك وتفضيلات كل طالب. راجع التعارضات (باللون الأحمر) وعدّلها يدويًا بعد التطبيق لو حبيت.</p>`;
+
+        const dayKeys = Object.keys(suggestions);
+        if (!dayKeys.length) {
+            html += `<p>مفيش اقتراحات ممكنة حاليًا.</p>`;
+        } else {
+            dayKeys.forEach(day => {
+                html += `<div class="suggest-day-block"><b>${dayNamesArabic[day]}</b>`;
+                suggestions[day].forEach(e => {
+                    html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}</span>
+                        <span>${e.timeLabel}</span>
+                        <span class="distance-badge">${e.dist} كم</span>
+                    </div>`;
+                });
+                html += `</div>`;
+            });
+            html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ تطبيق الجدول المقترح</button>`;
+        }
+        html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">إغلاق</button>`;
+
+        document.getElementById('editFields').innerHTML = html;
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function applySuggestedSchedule() {
+        if (!lastSuggestion) return;
+        if (!confirm('هيتم استبدال جدول الطلاب اللي ليهم اقتراح بالمواعيد الجديدة. تكمل؟')) return;
+        commitChange();
+        Object.keys(lastSuggestion).forEach(day => {
+            lastSuggestion[day].forEach(e => {
+                if (e.conflict) return;
+                let student = db.students.find(s => s.id === e.studentId);
+                if (!student) return;
+                if (!student.schedules) student.schedules = [];
+                student.schedules = student.schedules.filter(sc => sc.day !== day);
+                student.schedules.push({ day, time: e.timeLabel, offset: 0, status: 0 });
+            });
+        });
+        save();
+        closeAll();
+        showToast('تم تطبيق الجدول المقترح ✅');
     }
 
     function timeToMinutes(t) {
@@ -512,6 +733,10 @@
         
         document.getElementById('teacherName').value = db.teacherName || '';
         document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
+        let tAddrInput = document.getElementById('teacherAddressInput');
+        if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
+        let tGeoStatus = document.getElementById('teacherGeoStatus');
+        if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ الموقع محفوظ' : '';
         document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
         
@@ -744,15 +969,32 @@
         let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
         if(!n) return; commitChange(); 
         if(!db.students) db.students = [];
-        db.students.push({ 
+        let address = document.getElementById('sAddress')?.value.trim() || '';
+        let preferredDays = getSelectedDays('sPrefDays');
+        let preferredFrom = document.getElementById('sPrefFrom')?.value || '';
+        let preferredTo = document.getElementById('sPrefTo')?.value || '';
+        let newStudent = { 
             id: Date.now(), 
             name: n, 
             color: col, 
             financialMap: {}, 
             schedules: [], 
+            address, preferredDays, preferredFrom, preferredTo, lat: null, lng: null, distanceKm: null,
             periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }] 
-        }); 
+        };
+        db.students.push(newStudent); 
         save(); closeAll();
+        document.getElementById('sAddress').value = '';
+        buildDayPills('sPrefDays', []);
+        if (address && db.teacherLat != null) {
+            geocodeAddress(address).then(loc => {
+                if (loc) {
+                    newStudent.lat = loc.lat; newStudent.lng = loc.lng;
+                    newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+                    save();
+                }
+            });
+        }
     }
     
     function addSchedule() { 
@@ -781,10 +1023,26 @@
                 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
             </div>`).join('');
 
+        let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} كم من بيتك</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">لسه معملهاش حساب مسافة</span>` : '');
+
         document.getElementById('editFields').innerHTML = `
             <h3>Edit Student</h3>
             <label>Name</label><input id="en" value="${s.name}">
             <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+
+            <label style="font-size:11px; color:#64748b;">📍 عنوان/منطقة الطالب</label>
+            <input id="eAddress" value="${s.address || ''}" placeholder="مثال: مصر الجديدة، القاهرة">
+            <div style="margin:-6px 0 12px;">${distHtml} <button type="button" onclick="recomputeStudentDistance(${s.id})" style="background:none;border:none;color:#0ea5e9;font-size:11px;cursor:pointer;text-decoration:underline;">إعادة حساب المسافة</button></div>
+
+            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة</label>
+            <div id="ePrefDays" style="margin-bottom:12px;"></div>
+
+            <label style="font-size:11px; color:#64748b;">⏰ الوقت المفضل (من - إلى)</label>
+            <div style="display:flex; gap:6px;">
+                <select id="ePrefFrom" style="margin-bottom:12px;"></select>
+                <select id="ePrefTo" style="margin-bottom:12px;"></select>
+            </div>
+
             <hr>
             <h4>Billing Periods</h4>
             <div id="editPeriods">${phtml}</div>
@@ -808,8 +1066,30 @@
             <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
         `;
         initColors('ecg', 'eColor', s.color);
+        buildDayPills('ePrefDays', s.preferredDays || []);
+        document.getElementById('ePrefFrom').innerHTML = getTimeOptionsHTML(s.preferredFrom || '4:00 PM');
+        document.getElementById('ePrefTo').innerHTML = getTimeOptionsHTML(s.preferredTo || '8:00 PM');
         document.getElementById('editModal').classList.add('active');
         document.getElementById('overlay').classList.add('active');
+    }
+
+    async function recomputeStudentDistance(id) {
+        let s = db.students.find(x => x.id === id);
+        if (!s) return;
+        let address = document.getElementById('eAddress').value.trim();
+        if (!address) { alert('اكتب عنوان الطالب الأول'); return; }
+        if (db.teacherLat == null) { alert('لازم تحفظ عنوان بيتك من الإعدادات الأول'); return; }
+        const loc = await geocodeAddress(address);
+        if (loc) {
+            commitChange();
+            s.address = address;
+            s.lat = loc.lat; s.lng = loc.lng;
+            s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+            save();
+            openEdit(id);
+        } else {
+            alert('لم نتمكن من تحديد هذا العنوان، حاول تكتبه بشكل أوضح');
+        }
     }
 
     function addNewPeriod() {
@@ -826,6 +1106,12 @@
         if(s) {
             s.name = document.getElementById('en').value;
             s.color = document.getElementById('hidden_ecg').value;
+            let newAddress = document.getElementById('eAddress')?.value.trim() || '';
+            if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
+            s.address = newAddress;
+            s.preferredDays = getSelectedDays('ePrefDays');
+            s.preferredFrom = document.getElementById('ePrefFrom')?.value || '';
+            s.preferredTo = document.getElementById('ePrefTo')?.value || '';
             let newPeriods = [];
             document.querySelectorAll('.period-card').forEach(card => {
                 newPeriods.push({
@@ -836,6 +1122,15 @@
             });
             s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
             save(); 
+            if (s.address && s.lat == null && db.teacherLat != null) {
+                geocodeAddress(s.address).then(loc => {
+                    if (loc) {
+                        s.lat = loc.lat; s.lng = loc.lng;
+                        s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+                        save();
+                    }
+                });
+            }
         }
         closeAll();
     }
