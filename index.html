@@ -212,7 +212,10 @@
     </div>
     <div class="map-status" id="newStudentGeoStatus"></div>
 
-    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+    <label style="font-size:11px; color:#64748b;">🔢 عدد أيام الحصص الأسبوعية (تساعدك عند اقتراح الجدول)</label>
+    <input id="sWeeklyDays" type="number" min="1" placeholder="مثال: 2">
+
+    <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة، وحدد "إجباري" لليوم اللي لازم يتحط)</label>
     <div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
     <div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 
@@ -356,7 +359,7 @@
 
     // ---- Per-day preferred schedule (day + its own from/to time range) ----
     // A student's preference is stored as an array like:
-    // [{ day:'Sat', from:'4:00 PM', to:'6:00 PM' }, { day:'Mon', from:'6:00 PM', to:'8:00 PM' }, ...]
+    // [{ day:'Sat', from:'4:00 PM', to:'6:00 PM', mandatory:false }, { day:'Mon', from:'6:00 PM', to:'8:00 PM', mandatory:true }, ...]
     // containerId is e.g. 'sPrefDays' or 'ePrefDays'; it expects sibling elements
     // #<containerId>_pills and #<containerId>_times to exist.
     function buildDayPrefUI(containerId, prefSchedule) {
@@ -388,27 +391,32 @@
     function renderDayPrefTimes(containerId, initialSchedule) {
         const timesEl = document.getElementById(containerId + '_times');
         if (!timesEl) return;
-        // Keep whatever times are already set for days that stay checked
+        // Keep whatever times/mandatory flag are already set for days that stay checked
         const existing = {};
         timesEl.querySelectorAll('.pref-time-row').forEach(row => {
             const day = row.getAttribute('data-day');
             existing[day] = {
                 from: row.querySelector('.pref-from').value,
-                to: row.querySelector('.pref-to').value
+                to: row.querySelector('.pref-to').value,
+                mandatory: row.querySelector('.pref-mandatory')?.checked || false
             };
         });
         if (initialSchedule) {
-            initialSchedule.forEach(p => { if (!existing[p.day]) existing[p.day] = { from: p.from, to: p.to }; });
+            initialSchedule.forEach(p => { if (!existing[p.day]) existing[p.day] = { from: p.from, to: p.to, mandatory: !!p.mandatory }; });
         }
         const checkedDays = Array.from(document.querySelectorAll(`#${containerId}_pills input:checked`)).map(cb => cb.value);
         const orderedDays = daysOrder.filter(d => checkedDays.includes(d));
         timesEl.innerHTML = orderedDays.map(d => {
-            const vals = existing[d] || { from: '4:00 PM', to: '8:00 PM' };
+            const vals = existing[d] || { from: '4:00 PM', to: '8:00 PM', mandatory: false };
             return `<div class="pref-time-row" data-day="${d}" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
                         <span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
                         <select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
                         <span style="font-size:10px; flex-shrink:0;">-</span>
                         <select class="pref-to" style="margin:0;">${getTimeOptionsHTML(vals.to)}</select>
+                        <label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="يوم إجباري لهذا الطالب">
+                            <input type="checkbox" class="pref-mandatory" style="width:14px;height:14px;margin:0;" ${vals.mandatory ? 'checked' : ''}>
+                            إجباري
+                        </label>
                     </div>`;
         }).join('');
     }
@@ -419,7 +427,8 @@
         return Array.from(timesEl.querySelectorAll('.pref-time-row')).map(row => ({
             day: row.getAttribute('data-day'),
             from: row.querySelector('.pref-from').value,
-            to: row.querySelector('.pref-to').value
+            to: row.querySelector('.pref-to').value,
+            mandatory: row.querySelector('.pref-mandatory')?.checked || false
         }));
     }
 
@@ -429,9 +438,32 @@
     function getStudentPrefSchedule(s) {
         if (s.preferredSchedule && s.preferredSchedule.length) return s.preferredSchedule;
         if (s.preferredDays && s.preferredDays.length) {
-            return s.preferredDays.map(d => ({ day: d, from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM' }));
+            return s.preferredDays.map(d => ({ day: d, from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM', mandatory: false }));
         }
         return [];
+    }
+
+    // Given a student's full preferred-day list, decide which days should actually be used
+    // when building a suggested schedule, respecting:
+    //  - mandatory days (always included, teacher-picked via the "إجباري" checkbox)
+    //  - weeklyDaysCount (the "عدد أيام الحصص الأسبوعية" field): caps how many days total are
+    //    suggested for this student. If not set, every preferred day is used (old behavior).
+    // If weeklyDaysCount is smaller than the number of mandatory days, the mandatory days win
+    // and the count is effectively raised to cover them all.
+    function selectStudentScheduleDays(s, fullPref) {
+        if (!fullPref || !fullPref.length) return [];
+        if (!s.weeklyDaysCount) return fullPref;
+        const mandatory = fullPref.filter(p => p.mandatory);
+        const optional = fullPref.filter(p => !p.mandatory);
+        let count = Math.max(Number(s.weeklyDaysCount) || 0, mandatory.length);
+        let remaining = Math.max(0, count - mandatory.length);
+        let chosenOptional = optional
+            .slice()
+            .sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day))
+            .slice(0, remaining);
+        let combined = mandatory.concat(chosenOptional);
+        combined.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+        return combined;
     }
 
     // ---- Geocoding, reverse-geocoding & place search helpers ----
@@ -884,17 +916,24 @@
         let entries = [];
         withPrefs.forEach(s => {
             const dist = s.distanceKm != null ? s.distanceKm : Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
-            getStudentPrefSchedule(s).forEach(p => {
+            const fullPref = getStudentPrefSchedule(s);
+            const selectedPref = selectStudentScheduleDays(s, fullPref);
+            selectedPref.forEach(p => {
                 entries.push({
                     studentId: s.id, name: s.name, color: s.color, day: p.day, dist,
-                    from: p.from || '4:00 PM', to: p.to || '8:00 PM'
+                    from: p.from || '4:00 PM', to: p.to || '8:00 PM', mandatory: !!p.mandatory
                 });
             });
         });
 
         let suggestions = {};
         daysOrder.forEach(day => {
-            let dayEntries = entries.filter(e => e.day === day).sort((a, b) => a.dist - b.dist);
+            // Mandatory entries go first so they always get first pick of an open time slot
+            // on their day, before the rest of that day's candidates are placed by distance.
+            let dayEntries = entries.filter(e => e.day === day).sort((a, b) => {
+                if (a.mandatory !== b.mandatory) return a.mandatory ? -1 : 1;
+                return a.dist - b.dist;
+            });
             let usedTimes = [];
             let dayResult = [];
             dayEntries.forEach(e => {
@@ -922,7 +961,7 @@
 
     function renderSuggestionModal(suggestions) {
         let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences. Days marked ★ إجباري are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
@@ -932,7 +971,7 @@
                 html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
                 suggestions[day].forEach(e => {
                     html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
-                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}</span>
+                        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★إجباري</span>' : ''}</span>
                         <span>${e.timeLabel}</span>
                         <span class="distance-badge">${e.dist} km</span>
                     </div>`;
@@ -1468,6 +1507,7 @@
         if(!db.students) db.students = [];
         let address = document.getElementById('sAddress')?.value.trim() || '';
         let preferredSchedule = getPrefSchedule('sPrefDays');
+        let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
         let pendingLoc = window.__pendingStudentLoc || null;
         let newStudent = { 
             id: Date.now(), 
@@ -1475,7 +1515,7 @@
             color: col, 
             financialMap: {}, 
             schedules: [], 
-            address, preferredSchedule,
+            address, preferredSchedule, weeklyDaysCount,
             lat: pendingLoc ? pendingLoc.lat : null,
             lng: pendingLoc ? pendingLoc.lng : null,
             distanceKm: null,
@@ -1487,6 +1527,7 @@
         db.students.push(newStudent); 
         save(); closeAll();
         document.getElementById('sAddress').value = '';
+        document.getElementById('sWeeklyDays').value = '';
         window.__pendingStudentLoc = null;
         let ns = document.getElementById('newStudentGeoStatus');
         if (ns) ns.innerText = '';
@@ -1542,7 +1583,10 @@
             </div>
             <div style="margin:-6px 0 12px;">${distHtml}</div>
 
-            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+            <label style="font-size:11px; color:#64748b;">🔢 عدد أيام الحصص الأسبوعية (تساعدك عند اقتراح الجدول)</label>
+            <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="مثال: 2">
+
+            <label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة، وحدد "إجباري" لليوم اللي لازم يتحط)</label>
             <div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
             <div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 
@@ -1611,6 +1655,7 @@
             if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
             s.address = newAddress;
             s.preferredSchedule = getPrefSchedule('ePrefDays');
+            s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
             let newPeriods = [];
             document.querySelectorAll('.period-card').forEach(card => {
                 newPeriods.push({
