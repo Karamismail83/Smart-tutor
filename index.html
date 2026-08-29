@@ -70,8 +70,9 @@
         .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
         .color-circle.selected { border-color: #000; transform: scale(1.1); }
 
-        .day-pill { display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer; color:#1E293B; margin:2px; user-select:none; }
-        .day-pill input { width:auto; margin:0; padding:0; }
+        .day-pills-row { display:flex; flex-wrap:nowrap; gap:3px; }
+        .day-pill { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:5px 2px; font-size:9.5px; font-weight:bold; cursor:pointer; color:#1E293B; user-select:none; flex:1 1 0; min-width:0; }
+        .day-pill input { display:none; }
         .day-pill.checked { background:#facc15; border-color:#b45309; }
         .distance-badge { display:inline-block; background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px; margin-top:4px; }
         .suggest-day-block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; margin-bottom:8px; }
@@ -83,10 +84,20 @@
         .loc-btn:active { background:#e2e8f0; }
         .loc-btn.primary { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
 
-        #mapModal { z-index: 5000; }
-        #pickerMap { width:100%; height: 280px; border-radius: 10px; border:1px solid #cbd5e1; margin-bottom:10px; }
-        .map-status { font-size:11px; color:#64748b; margin: -4px 0 10px; min-height:14px; }
-        .locate-fab { position:absolute; z-index:5001; background:#fff; border:1px solid #cbd5e1; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+        #mapModal { display:none; top:0; left:0; width:100%; height:100%; z-index:5000; padding:0; box-shadow:none; transition:none; flex-direction:column; }
+        #mapModal.active { display:flex; }
+        .map-top-bar { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #e2e8f0; background:#fff; position:relative; z-index:5002; flex-shrink:0; }
+        .map-icon-btn { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:50%; width:36px; height:36px; min-width:36px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; flex-shrink:0; }
+        #mapSearchInput { flex:1; margin:0; padding:8px 10px; font-size:12px; }
+        #mapSearchResults { position:absolute; top:56px; left:12px; right:12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); z-index:5003; max-height:240px; overflow-y:auto; display:none; }
+        .map-search-item { padding:10px 12px; font-size:11.5px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
+        .map-search-item:last-child { border-bottom:none; }
+        .map-search-item:hover { background:#f8fafc; }
+        #pickerMap { width:100%; flex:1; min-height:0; }
+        .map-fab-stack { position:fixed; right:14px; bottom:96px; display:flex; flex-direction:column; gap:10px; z-index:5002; }
+        .locate-fab { background:#fff; border:1px solid #cbd5e1; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.28); }
+        .map-bottom-bar { padding:10px 14px 14px; border-top:1px solid #e2e8f0; background:#fff; flex-shrink:0; position:relative; z-index:5002; }
+        .map-status { font-size:11px; color:#64748b; margin: 0 0 8px; min-height:14px; text-align:center; }
 
         #studentPrintContainer { display: none; }
         
@@ -129,15 +140,21 @@
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
 <div class="modal" id="mapModal">
-    <h3 style="margin-top:0" id="mapModalTitle">📍 تحديد الموقع على الخريطة</h3>
-    <p style="font-size:11px; color:#64748b; margin-top:-6px;">حرك الدبوس لمكانك بالظبط، أو دوس على زر موقعي الحالي عشان نحدده تلقائيًا.</p>
-    <div style="position:relative;">
-        <div id="pickerMap"></div>
+    <div class="map-top-bar">
+        <div class="map-icon-btn" onclick="closeAll()">✕</div>
+        <input id="mapSearchInput" placeholder="ابحث عن مكان أو عنوان..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
+        <div class="map-icon-btn" onclick="searchMapLocation()">🔍</div>
+        <div id="mapSearchResults"></div>
     </div>
-    <div class="map-status" id="mapPickerStatus"></div>
-    <button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-bottom:8px;" onclick="useMyLocationInPicker()">🎯 استخدم موقعي الحالي</button>
-    <button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="confirmMapPicker()">✅ تأكيد هذا الموقع</button>
-    <button class="action-btn" style="width:100%;" onclick="closeAll()">إلغاء</button>
+    <div id="pickerMap"></div>
+    <div class="map-fab-stack">
+        <div class="locate-fab" id="satelliteToggleBtn" title="القمر الصناعي" onclick="toggleSatellite()">🛰️</div>
+        <div class="locate-fab" title="موقعي الحالي" onclick="useMyLocationInPicker()">🎯</div>
+    </div>
+    <div class="map-bottom-bar">
+        <div class="map-status" id="mapPickerStatus"></div>
+        <button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">✅ تأكيد هذا الموقع</button>
+    </div>
 </div>
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
@@ -317,11 +334,12 @@
     function buildDayPills(containerId, selectedDays, prefix = '') {
         const el = document.getElementById(containerId);
         if (!el) return;
+        el.classList.add('day-pills-row');
         el.innerHTML = daysOrder.map(d => {
             const isChecked = selectedDays.includes(d);
             return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPill(this)">
                         <input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked');">
-                        ${dayNamesArabic[d]}
+                        ${dayNamesMap[d]}
                     </label>`;
         }).join('');
     }
@@ -366,20 +384,31 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // ---- Professional location picker (map + GPS), Aramex-style ----
+    // ---- Professional location picker (map + GPS + search + satellite), Google-Maps-style ----
     let pickerMapInstance = null;
     let pickerMarker = null;
     let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
+    let pickerStreetLayer = null;
+    let pickerSatelliteLayer = null;
+    let pickerIsSatellite = false;
+    let mapSearchResultsData = [];
 
     function ensurePickerMap(initialLat, initialLng) {
         const lat = initialLat != null ? initialLat : 30.0444;
         const lng = initialLng != null ? initialLng : 31.2357;
         if (!pickerMapInstance) {
-            pickerMapInstance = L.map('pickerMap').setView([lat, lng], initialLat != null ? 15 : 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pickerMapInstance = L.map('pickerMap', { zoomControl: true }).setView([lat, lng], initialLat != null ? 16 : 6);
+
+            pickerStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '© OpenStreetMap'
             }).addTo(pickerMapInstance);
+
+            pickerSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Esri World Imagery'
+            });
+
             pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMapInstance);
             pickerMarker.on('dragend', () => updatePickerStatus());
             pickerMapInstance.on('click', (e) => {
@@ -387,11 +416,25 @@
                 updatePickerStatus();
             });
         } else {
-            pickerMapInstance.setView([lat, lng], initialLat != null ? 15 : pickerMapInstance.getZoom());
+            pickerMapInstance.setView([lat, lng], initialLat != null ? 16 : pickerMapInstance.getZoom());
             pickerMarker.setLatLng([lat, lng]);
-            setTimeout(() => pickerMapInstance.invalidateSize(), 150);
         }
+        setTimeout(() => pickerMapInstance.invalidateSize(), 200);
         updatePickerStatus();
+    }
+
+    function toggleSatellite() {
+        if (!pickerMapInstance) return;
+        pickerIsSatellite = !pickerIsSatellite;
+        if (pickerIsSatellite) {
+            pickerMapInstance.removeLayer(pickerStreetLayer);
+            pickerSatelliteLayer.addTo(pickerMapInstance);
+        } else {
+            pickerMapInstance.removeLayer(pickerSatelliteLayer);
+            pickerStreetLayer.addTo(pickerMapInstance);
+        }
+        let btn = document.getElementById('satelliteToggleBtn');
+        if (btn) btn.innerText = pickerIsSatellite ? '🗺️' : '🛰️';
     }
 
     async function updatePickerStatus() {
@@ -401,27 +444,63 @@
         statusEl.innerText = `الإحداثيات: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
     }
 
+    async function searchMapLocation() {
+        const q = document.getElementById('mapSearchInput').value.trim();
+        const resultsEl = document.getElementById('mapSearchResults');
+        if (!q) { resultsEl.style.display = 'none'; return; }
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = '<div class="map-search-item">⏳ جاري البحث...</div>';
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(q)}`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'ar' } });
+            const data = await res.json();
+            mapSearchResultsData = data || [];
+            if (mapSearchResultsData.length) {
+                resultsEl.innerHTML = mapSearchResultsData.map((r, i) =>
+                    `<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
+                ).join('');
+            } else {
+                resultsEl.innerHTML = '<div class="map-search-item">لا توجد نتائج، جرّب كلمات مختلفة</div>';
+            }
+        } catch (e) {
+            resultsEl.innerHTML = '<div class="map-search-item">⚠️ حدث خطأ في البحث</div>';
+        }
+    }
+
+    function selectSearchResult(idx) {
+        const r = mapSearchResultsData[idx];
+        if (!r || !pickerMapInstance) return;
+        const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+        pickerMarker.setLatLng([lat, lng]);
+        pickerMapInstance.setView([lat, lng], 16);
+        document.getElementById('mapSearchInput').value = r.display_name;
+        document.getElementById('mapSearchResults').style.display = 'none';
+        updatePickerStatus();
+    }
+
     function openMapPicker(context) {
         pickerContext = context;
         let initLat = null, initLng = null;
-        let title = '📍 تحديد الموقع على الخريطة';
+        let placeholder = 'ابحث عن مكان أو عنوان...';
 
         if (context === 'teacher') {
-            title = '🏠 تحديد موقع بيتك على الخريطة';
+            placeholder = 'ابحث عن عنوان بيتك...';
             if (db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
         } else if (context === 'newStudent') {
-            title = '📍 تحديد موقع الطالب على الخريطة';
+            placeholder = 'ابحث عن عنوان الطالب...';
         } else if (context && context.type === 'edit') {
-            title = '📍 تحديد موقع الطالب على الخريطة';
+            placeholder = 'ابحث عن عنوان الطالب...';
             let s = db.students.find(x => x.id === context.id);
             if (s && s.lat != null) { initLat = s.lat; initLng = s.lng; }
         }
 
         if (initLat == null && db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
 
-        document.getElementById('mapModalTitle').innerText = title;
+        let searchInput = document.getElementById('mapSearchInput');
+        searchInput.placeholder = placeholder;
+        searchInput.value = '';
+        document.getElementById('mapSearchResults').style.display = 'none';
         document.getElementById('mapModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
 
         setTimeout(() => {
             ensurePickerMap(initLat, initLng);
