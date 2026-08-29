@@ -269,6 +269,12 @@
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 
+    // Default length of one session, used only for the "Suggest Schedule" placement logic.
+    // The "to" time in a student's per-day preference is the time the LAST session of that
+    // day must be finished by (not merely the last allowed start time) - so a candidate start
+    // time is only accepted if start + DEFAULT_SESSION_MINUTES still fits at or before "to".
+    const DEFAULT_SESSION_MINUTES = 60;
+
     // Default map center: Al-Ahsa oasis (Al-Hofuf / Al-Mubarraz area), so the map and search
     // both default to this region instead of a generic world view.
     const DEFAULT_REGION_LAT = 25.3838;
@@ -412,7 +418,7 @@
                         <span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
                         <select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
                         <span style="font-size:10px; flex-shrink:0;">-</span>
-                        <select class="pref-to" style="margin:0;">${getTimeOptionsHTML(vals.to)}</select>
+                        <select class="pref-to" style="margin:0;" title="End time of the last session that day">${getTimeOptionsHTML(vals.to)}</select>
                         <label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="Mandatory day for this student">
                             <input type="checkbox" class="pref-mandatory" style="width:14px;height:14px;margin:0;" ${vals.mandatory ? 'checked' : ''}>
                             Mandatory
@@ -940,7 +946,7 @@
                 let fromMin = timeToMinutes(e.from);
                 let toMin = timeToMinutes(e.to);
                 let slot = fromMin, placed = false;
-                while (slot + 30 <= toMin) {
+                while (slot + DEFAULT_SESSION_MINUTES <= toMin) {
                     if (!usedTimes.some(t => Math.abs(t - slot) < 60)) {
                         usedTimes.push(slot);
                         dayResult.push({ ...e, minutes: slot, timeLabel: minutesToTimeLabel(slot), conflict: false });
