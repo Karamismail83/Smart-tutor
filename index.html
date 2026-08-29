@@ -414,19 +414,41 @@
 
         let results = await oneAttempt(query);
 
-        // Neither OpenStreetMap-based provider indexes every small business by name (unlike
-        // Google's proprietary places database). If the exact phrase finds nothing, retry with
-        // shorter fragments of the query - this often still locates the right street/area even
-        // when the specific shop name isn't mapped.
+        // Neither OpenStreetMap-based provider indexes every small business, nor building/unit
+        // -level numbering from structured national address formats (e.g. Saudi National
+        // Address: "Building No, Unit No, District, City PostalCode"). If the exact phrase
+        // finds nothing, retry with the parts of it that ARE real, mappable places:
+        // district and city names, with the building/unit numbers and postal code stripped out.
         if (results.length === 0) {
+            const candidates = [];
+
+            if (query.includes(',')) {
+                const segs = query.split(',')
+                    .map(s => s.trim().replace(/\s*\d{4,6}\s*$/, '').trim())
+                    .filter(s => s && !/^\d+$/.test(s));
+                if (segs.length) {
+                    candidates.push(segs.join(', '));      // all place-name segments together
+                    candidates.push(segs[segs.length - 1]); // last segment (often the city)
+                    candidates.push(segs[0]);               // first segment (often the district)
+                    // Split segments like "Al Hufuf and Al Mubarraz" into separate place names
+                    segs.forEach(s => {
+                        if (/\band\b/i.test(s)) {
+                            s.split(/\band\b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
+                        }
+                    });
+                }
+            }
+
             const words = query.trim().split(/\s+/);
             if (words.length > 1) {
-                const attempts = [words.slice(1).join(' '), words.slice(0, -1).join(' ')];
-                for (const attempt of attempts) {
-                    if (!attempt) continue;
-                    results = await oneAttempt(attempt);
-                    if (results.length) break;
-                }
+                candidates.push(words.slice(1).join(' '));
+                candidates.push(words.slice(0, -1).join(' '));
+            }
+
+            for (const candidate of candidates) {
+                if (!candidate) continue;
+                results = await oneAttempt(candidate);
+                if (results.length) break;
             }
         }
 
@@ -594,7 +616,7 @@
                     `<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
                 ).join('') + googleFallbackItemHTML(q);
             } else {
-                resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". Try a nearby street or area name instead, or use the option below.</div>` + googleFallbackItemHTML(q);
+                resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". If this includes a building/unit number, free map data won't have that level of detail - try just the district or city name, or use the option below for exact accuracy.</div>` + googleFallbackItemHTML(q);
             }
         } catch (e) {
             resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>' + googleFallbackItemHTML(q);
