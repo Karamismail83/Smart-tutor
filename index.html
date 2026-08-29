@@ -367,18 +367,21 @@
         pillsEl.classList.add('day-pills-row');
         pillsEl.innerHTML = daysOrder.map(d => {
             const isChecked = selectedDays.includes(d);
-            return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPrefPill(this, '${containerId}')">
-                        <input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked'); renderDayPrefTimes('${containerId}');">
+            return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}">
+                        <input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onchange="handleDayPrefToggle(this, '${containerId}')">
                         ${dayNamesMap[d]}
                     </label>`;
         }).join('');
         renderDayPrefTimes(containerId, prefSchedule);
     }
 
-    function toggleDayPrefPill(label, containerId) {
-        const cb = label.querySelector('input');
-        cb.checked = !cb.checked;
-        label.classList.toggle('checked', cb.checked);
+    // Fires once per real toggle (via the checkbox's native 'change' event). Clicking anywhere
+    // on the label - not just the tiny hidden checkbox - naturally forwards to this, since the
+    // checkbox is nested inside the label. We deliberately do NOT also attach a click handler
+    // to the label itself: the browser already forwards a synthetic click from label -> checkbox
+    // automatically, so handling both would toggle the checked state twice and cancel out.
+    function handleDayPrefToggle(cb, containerId) {
+        cb.parentElement.classList.toggle('checked', cb.checked);
         renderDayPrefTimes(containerId);
     }
 
