@@ -78,7 +78,7 @@
             html, body { background: #0F172A !important; color: #FFFFFF !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
             
-            body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; background: #0F172A !important; color: #FFFFFF !important; }
+            body.print-single-student #studentPrintContainer { display: block !important; padding: 10px; background: #0F172A !important; color: #FFFFFF !important; }
             body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
             body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
 
@@ -140,7 +140,7 @@
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
     <input id="sPrice" type="number" placeholder="Price">
     <input id="sDate" type="date">
-    <input id="sCycle" type="number" value="4">
+    <input id="sCycle" type="number" value="4" placeholder="Cycle (Weeks)">
     <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
     <hr style="margin:20px 0; opacity:0.1">
     <h3>Add Slot (Session)</h3>
@@ -189,6 +189,7 @@
 <script>
     const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+    let selectedAddColor = PALETTE[0];
     
     const dayNamesMap = {
         "Sat": "Sat",
@@ -202,9 +203,9 @@
 
     let db;
     try {
-        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', teacherImg: '', courseStartDate: new Date().toISOString().slice(0,10) };
     } catch(e) {
-        db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
+        db = { students: [], holidays: [], teacherName: '', teacherPhone: '', teacherImg: '', courseStartDate: new Date().toISOString().slice(0,10) };
     }
 
     let historyStack = [];
@@ -264,13 +265,23 @@
         window.print();
     }
 
+    function printStudentReport(studentId, includeFinancials = false) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+        
+        let container = document.getElementById('studentPrintContainer');
+        container.innerHTML = generateStudentReportHTML(student, includeFinancials);
+        document.body.classList.add('print-single-student');
+        window.print();
+    }
+
     function generateStudentReportHTML(student, includeFinancials = false) {
         let teacherName = db.teacherName || 'Teacher';
         let teacherPhone = db.teacherPhone ? `<br><span style="font-size:11px; color:#94a3b8; font-weight:normal;">📞 ${db.teacherPhone}</span>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 6px 10px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => {
                 let dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
@@ -282,8 +293,8 @@
                 let bilingualDay = dayNamesMap[sc.day] || sc.day;
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">${bilingualDay}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 5px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">${bilingualDay}</td>
+                        <td style="padding: 5px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
             });
@@ -293,577 +304,417 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #1e293b; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
+                <div style="background: #1e293b; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
                     <div style="text-align: right;">
-                        <span style="font-size: 12px; color: #94a3b8; display: block;">المبلغ المستحق:</span>
+                        <span style="font-size: 12px; color: #94a3b8; display: block;">Amount Due:</span>
                         <strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
                     </div>
                     <div>
-                        <span style="font-size: 12px; color: #94a3b8; display: block; text-align: left;">Every ${lastPeriod.cycle || 4} Weeks:</span>
-                        <strong style="font-size: 14px; color: #ffffff; direction: ltr; unicode-bidi: embed; display: inline-block;">كل ٤ أسابيع</strong>
+                        <span style="font-size: 12px; color: #94a3b8; display: block; text-align: left;">Cycle (Weeks):</span>
+                        <strong style="font-size: 14px; color: #ffffff;">${lastPeriod.cycle || 4}</strong>
                     </div>
                 </div>
             `;
         }
 
         return `
-            <div style="max-width: 600px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 30px; border-radius: 12px; border: 2px solid #facc15; font-family: Arial, sans-serif;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="max-width: 480px; margin: 0 auto; background: #0f172a; padding: 10px 12px; border-radius: 8px; border: 2px solid #facc15; font-family: sans-serif; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 6px; margin-bottom: 8px;">
                     <div>
-                        <h2 style="margin: 0; color: #ffffff; font-size: 22px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
-                        <p style="margin: 3px 0 0; color: #94a3b8; font-size: 12px;">Official Weekly Schedule</p>
+                        <h1 style="margin: 0; font-size: 20px; color: #facc15;">${teacherName}</h1>
+                        ${teacherPhone}
                     </div>
                     <div style="text-align: right;">
-                        <span style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #ffffff; border: 1px solid #334155; display: inline-block;">Teacher: ${teacherName} ${teacherPhone}</span>
+                        <h2 style="margin: 0; font-size: 18px; color: #ffffff;">${student.name}</h2>
+                        <span style="font-size: 11px; color: #94a3b8;">Student Schedule</span>
                     </div>
                 </div>
-                <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; border: 1px solid #334155;">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #ffffff;">Student Name: ${student.name}</h3>
-                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Here are the assigned weekly session times:</p>
-                </div>
                 ${financialsHTML}
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 6px; overflow: hidden;">
                     <thead>
-                        <tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
+                        <tr style="background: #334155; color: #facc15; text-align: left;">
+                            <th style="padding: 5px 10px; font-size: 12px;">Day</th>
+                            <th style="padding: 5px 10px; font-size: 12px;">Time</th>
                         </tr>
                     </thead>
-                    <tbody>${schedulesHTML}</tbody>
+                    <tbody>
+                        ${schedulesHTML}
+                    </tbody>
                 </table>
-                <div style="text-align: center; border-top: 1px dashed #334155; padding-top: 15px; color: #64748b; font-size: 11px;">
-                    Thank you for trusting us with your education.
-                </div>
             </div>
         `;
     }
 
-    function printSingleStudent(studentId, includeFinancials = false) {
-        let student = db.students.find(s => s.id === studentId);
-        if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials);
-        document.body.classList.add('print-single-student');
-        window.print();
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
     }
 
-    function downloadStudentImage(studentId, includeFinancials = false) {
+    function closeAll() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('editModal').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                db.teacherImg = e.target.result;
+                document.getElementById('teacherImg').src = db.teacherImg;
+                commitChange();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function initColorPicker() {
+        let grid = document.getElementById('colorGridAdd');
+        if (!grid) return;
+        grid.innerHTML = '';
+        PALETTE.forEach((color, idx) => {
+            let circle = document.createElement('div');
+            circle.className = `color-circle ${idx === 0 ? 'selected' : ''}`;
+            circle.style.backgroundColor = color;
+            circle.onclick = () => {
+                document.querySelectorAll('#colorGridAdd .color-circle').forEach(c => c.classList.remove('selected'));
+                circle.classList.add('selected');
+                selectedAddColor = color;
+            };
+            grid.appendChild(circle);
+        });
+    }
+
+    function addStudent() {
+        let name = document.getElementById('sName').value.trim();
+        let price = parseFloat(document.getElementById('sPrice').value) || 0;
+        let date = document.getElementById('sDate').value || db.courseStartDate;
+        let cycle = parseInt(document.getElementById('sCycle').value) || 4;
+
+        if (!name) return showToast('Please enter a student name');
+
+        let student = {
+            id: 's_' + Date.now(),
+            name: name,
+            color: selectedAddColor,
+            payments: {},
+            schedules: [],
+            periods: [{ startDate: date, price: price, cycle: cycle }]
+        };
+
+        db.students.push(student);
+        commitChange();
+        document.getElementById('sName').value = '';
+        document.getElementById('sPrice').value = '';
+        showToast('Student added successfully');
+        closeAll();
+    }
+
+    function addSchedule() {
+        let studentId = document.getElementById('sSelect').value;
+        let day = document.getElementById('cDay').value;
+        let time = document.getElementById('cTime').value;
+
         let student = db.students.find(s => s.id === studentId);
-        if(!student) return;
-        let tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-        tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials);
-        document.body.appendChild(tempDiv);
-        html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
-            let link = document.createElement('a');
-            link.download = `Student_Report_${student.name}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            document.body.removeChild(tempDiv);
-        }).catch(() => { document.body.removeChild(tempDiv); });
+        if (!student) return showToast('Please select a student');
+
+        if (!student.schedules) student.schedules = [];
+        student.schedules.push({ id: 'slot_' + Date.now(), day: day, time: time });
+
+        commitChange();
+        showToast('Slot added');
+        closeAll();
+    }
+
+    function editStudent(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        let fields = document.getElementById('editFields');
+        let period = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4, startDate: db.courseStartDate };
+
+        fields.innerHTML = `
+            <h3>Edit Student: ${student.name}</h3>
+            <label>Name</label>
+            <input id="editSName" value="${student.name}">
+            <label>Price</label>
+            <input id="editSPrice" type="number" value="${period.price || 0}">
+            <label>Cycle (Weeks)</label>
+            <input id="editSCycle" type="number" value="${period.cycle || 4}">
+            <div style="margin-top:15px; display:flex; gap:5px;">
+                <button class="action-btn" style="flex:1; background:#10b981; color:white;" onclick="saveStudentEdit('${student.id}')">Save</button>
+                <button class="action-btn" style="background:#3b82f6; color:white;" onclick="printStudentReport('${student.id}', true)">🖨️ Report</button>
+                <button class="action-btn" style="background:#ef4444; color:white;" onclick="deleteStudent('${student.id}')">Delete</button>
+            </div>
+        `;
+
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    function saveStudentEdit(studentId) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        student.name = document.getElementById('editSName').value.trim();
+        let price = parseFloat(document.getElementById('editSPrice').value) || 0;
+        let cycle = parseInt(document.getElementById('editSCycle').value) || 4;
+
+        if (student.periods && student.periods.length) {
+            student.periods[student.periods.length - 1].price = price;
+            student.periods[student.periods.length - 1].cycle = cycle;
+        } else {
+            student.periods = [{ startDate: db.courseStartDate, price: price, cycle: cycle }];
+        }
+
+        commitChange();
+        closeAll();
+        showToast('Student updated');
+    }
+
+    function deleteStudent(studentId) {
+        if (confirm('Are you sure you want to delete this student?')) {
+            db.students = db.students.filter(s => s.id !== studentId);
+            commitChange();
+            closeAll();
+            showToast('Student deleted');
+        }
+    }
+
+    function togglePayment(studentId, weekIndex) {
+        let student = db.students.find(s => s.id === studentId);
+        if (!student) return;
+
+        if (!student.payments) student.payments = {};
+        let currentStatus = student.payments[weekIndex];
+
+        if (!currentStatus) {
+            student.payments[weekIndex] = 'paid';
+        } else if (currentStatus === 'paid') {
+            student.payments[weekIndex] = 'notpaid';
+        } else {
+            delete student.payments[weekIndex];
+        }
+
+        commitChange();
     }
 
     function resetAllStudentsStartDate() {
         let newDate = document.getElementById('courseBaseDate').value;
-        if(!newDate) { alert('Please select a valid date first'); return; }
-        if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
-            commitChange();
-            db.courseStartDate = newDate;
-            db.students.forEach(student => {
-                if(student.periods && student.periods.length > 0) student.periods[0].startDate = newDate;
-            });
-            save();
-            alert('Course start date reset for all students successfully!');
-            closeAll();
-        }
+        if (!newDate) return showToast('Select a valid date');
+
+        db.courseStartDate = newDate;
+        db.students.forEach(s => {
+            if (s.periods && s.periods.length) {
+                s.periods[0].startDate = newDate;
+            }
+        });
+
+        commitChange();
+        showToast('Course dates reset');
     }
 
     function exportBackup() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
-        const downloadAnchor = document.createElement('a');
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        let downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
+        downloadAnchor.setAttribute("download", `tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
     }
 
     function importBackup(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (confirm('Are you sure you want to restore this backup? Current data will be replaced.')) {
-                        commitChange();
-                        db = importedData;
-                        save();
-                        alert('Data restored successfully!');
-                        closeAll();
-                    }
-                } catch (err) { alert('Invalid backup file!'); }
-            };
-            reader.readAsText(input.files[0]);
-        }
+        let file = input.files[0];
+        if (!file) return;
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let imported = JSON.parse(e.target.result);
+                if (imported && imported.students) {
+                    db = imported;
+                    commitChange();
+                    showToast('Backup restored successfully');
+                } else {
+                    showToast('Invalid backup file structure');
+                }
+            } catch(err) {
+                showToast('Error reading backup file');
+            }
+        };
+        reader.readAsText(file);
     }
 
-    function moveSlot(studentId, fromDay, time, targetDay) {
-        commitChange();
-        let student = db.students.find(s => s.id === studentId);
-        if (!student) return;
-        let idx = student.schedules.findIndex(s => s.day === fromDay && s.time === time);
-        if (idx > -1) {
-            student.schedules[idx].day = targetDay;
-        }
-        save();
-    }
+    function renderScheduleGrid() {
+        let grid = document.getElementById('scheduleGrid');
+        grid.innerHTML = '';
 
-    function handleDragStart(e, studentId, day, time) {
-        draggedData = { studentId, day, time };
-        e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
-    }
+        daysOrder.forEach(day => {
+            let row = document.createElement('div');
+            row.className = 'day-row';
 
-    function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-    function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-    
-    function handleDrop(e, targetDay) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('drag-over');
-        if (!draggedData) return;
-        moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
-        draggedData = null;
-    }
+            let label = document.createElement('div');
+            label.className = 'day-label';
+            label.innerText = day;
+            row.appendChild(label);
 
-    function enableHorizontalDrag() {
-        let isDraggingHorizontal = false;
-        let startX = 0;
-        let currentSlot = null;
-        let initialOffset = 0;
+            let slotsContainer = document.createElement('div');
+            slotsContainer.className = 'slots';
+            slotsContainer.dataset.day = day;
 
-        document.querySelectorAll('.slot').forEach(slot => {
-            slot.addEventListener('mousedown', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-                isDraggingHorizontal = true;
-                currentSlot = slot;
-                startX = e.clientX;
-                initialOffset = parseFloat(slot.getAttribute('data-offset')) || 0;
-                slot.style.zIndex = '100';
-            });
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDraggingHorizontal || !currentSlot) return;
-            let diffX = e.clientX - startX;
-            let newOffset = initialOffset + diffX;
-            currentSlot.style.marginLeft = `${newOffset}px`;
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (isDraggingHorizontal && currentSlot) {
-                let sId = Number(currentSlot.getAttribute('data-studentid'));
-                let day = currentSlot.getAttribute('data-day');
-                let time = currentSlot.getAttribute('data-time');
-                let finalMarginLeft = parseFloat(currentSlot.style.marginLeft) || 0;
-
-                let student = db.students.find(s => s.id === sId);
-                if (student && student.schedules) {
-                    let targetSlot = student.schedules.find(s => s.day === day && s.time === time);
-                    if (targetSlot) {
-                        commitChange();
-                        targetSlot.offset = Math.round(finalMarginLeft);
-                        save();
+            slotsContainer.ondragover = (e) => { e.preventDefault(); slotsContainer.classList.add('drag-over'); };
+            slotsContainer.ondragleave = () => { slotsContainer.classList.remove('drag-over'); };
+            slotsContainer.ondrop = (e) => {
+                e.preventDefault();
+                slotsContainer.classList.remove('drag-over');
+                if (draggedData) {
+                    let student = db.students.find(s => s.id === draggedData.studentId);
+                    if (student) {
+                        let sc = student.schedules.find(s => s.id === draggedData.slotId);
+                        if (sc) {
+                            sc.day = day;
+                            commitChange();
+                        }
                     }
                 }
-                isDraggingHorizontal = false;
-                currentSlot = null;
+            };
+
+            let allSlots = [];
+            db.students.forEach(student => {
+                if (student.schedules) {
+                    student.schedules.filter(s => s.day === day).forEach(sc => {
+                        allSlots.push({ ...sc, student: student });
+                    });
+                }
+            });
+
+            allSlots.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+            allSlots.forEach(item => {
+                let slot = document.createElement('div');
+                slot.className = 'slot wide-slot';
+                slot.style.backgroundColor = item.student.color;
+                slot.draggable = true;
+
+                slot.ondragstart = () => {
+                    draggedData = { studentId: item.student.id, slotId: item.id };
+                    slot.classList.add('dragging');
+                };
+                slot.ondragend = () => { slot.classList.remove('dragging'); };
+
+                slot.innerHTML = `
+                    <div style="font-weight:bold;">${item.student.name}</div>
+                    <div style="font-size:8px; opacity:0.9;">${item.time}</div>
+                `;
+                slot.onclick = () => editStudent(item.student.id);
+
+                slotsContainer.appendChild(slot);
+            });
+
+            row.appendChild(slotsContainer);
+            grid.appendChild(row);
+        });
+    }
+
+    function renderAccountingTable() {
+        let header = document.getElementById('accHeader');
+        let totalHeader = document.getElementById('accTotalHeader');
+        let body = document.getElementById('accBody');
+
+        header.innerHTML = '<th class="sticky-name">Student</th>';
+        totalHeader.innerHTML = '<th class="sticky-name total-row">Total</th>';
+        body.innerHTML = '';
+
+        let numWeeks = 16;
+        let weekTotals = new Array(numWeeks).fill(0);
+
+        for (let w = 1; w <= numWeeks; w++) {
+            let th = document.createElement('th');
+            th.innerText = `W${w}`;
+            header.appendChild(th);
+        }
+
+        db.students.forEach(student => {
+            let tr = document.createElement('tr');
+
+            let nameTd = document.createElement('td');
+            nameTd.className = 'sticky-name';
+            nameTd.style.backgroundColor = student.color;
+            nameTd.innerText = student.name;
+            nameTd.onclick = () => editStudent(student.id);
+            tr.appendChild(nameTd);
+
+            let period = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+
+            for (let w = 1; w <= numWeeks; w++) {
+                let td = document.createElement('td');
+                let box = document.createElement('div');
+                box.className = 'box';
+
+                let isPayWeek = (w % (period.cycle || 4)) === 1;
+                if (isPayWeek) box.classList.add('is-pay-week');
+
+                let status = student.payments ? student.payments[w] : null;
+                if (status === 'paid') {
+                    box.classList.add('status-paid');
+                    box.innerText = '✓';
+                    weekTotals[w - 1] += (period.price || 0);
+                } else if (status === 'notpaid') {
+                    box.classList.add('status-notpaid');
+                    box.innerText = '✗';
+                }
+
+                box.onclick = () => togglePayment(student.id, w);
+                td.appendChild(box);
+                tr.appendChild(td);
             }
+
+            body.appendChild(tr);
+        });
+
+        let grandTotal = 0;
+        for (let w = 1; w <= numWeeks; w++) {
+            let td = document.createElement('th');
+            td.innerText = weekTotals[w - 1] ? weekTotals[w - 1] : '-';
+            totalHeader.appendChild(td);
+            grandTotal += weekTotals[w - 1];
+        }
+
+        let firstTotalCell = totalHeader.querySelector('th:nth-child(2)');
+        if (firstTotalCell) {
+            firstTotalCell.classList.add('grand-total-cell');
+        }
+    }
+
+    function renderSelectOptions() {
+        let sel = document.getElementById('sSelect');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Select Student...</option>';
+        db.students.forEach(s => {
+            let opt = document.createElement('option');
+            opt.value = s.id;
+            opt.innerText = s.name;
+            sel.appendChild(opt);
         });
     }
 
     function render() {
-        const grid = document.getElementById('scheduleGrid');
-        const body = document.getElementById('accBody');
-        const totalH = document.getElementById('accTotalHeader');
-        const sSelect = document.getElementById('sSelect');
-        
-        if (!grid || !body || !totalH || !sSelect) return;
+        if (db.teacherName) document.getElementById('teacherName').value = db.teacherName;
+        if (db.teacherPhone) document.getElementById('teacherPhoneInput').value = db.teacherPhone;
+        if (db.courseStartDate) document.getElementById('courseBaseDate').value = db.courseStartDate;
+        if (db.teacherImg) document.getElementById('teacherImg').src = db.teacherImg;
 
-        grid.innerHTML = ''; 
-        sSelect.innerHTML = '<option value="">Select Student</option>';
-        
-        document.getElementById('teacherName').value = db.teacherName || '';
-        document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
-        document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
-        document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
-        
-        const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        days.forEach(d => { 
-            let bilingualDayLabel = dayNamesMap[d] || d;
-            grid.innerHTML += `
-                <div class="day-row">
-                    <div class="day-label">${bilingualDayLabel}</div>
-                    <div class="slots" id="slot-${d}" 
-                         ondragover="handleDragOver(event)" 
-                         ondragleave="handleDragLeave(event)" 
-                         ondrop="handleDrop(event, '${d}')">
-                    </div>
-                </div>`; 
-        });
-        
-        let allSchedulesByDay = {};
-        days.forEach(d => allSchedulesByDay[d] = []);
-
-        if(db.students && Array.isArray(db.students)) {
-            db.students.forEach(s => {
-                sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-                if(s.schedules && Array.isArray(s.schedules)) {
-                    s.schedules.forEach(sc => {
-                        if(allSchedulesByDay[sc.day]) {
-                            allSchedulesByDay[sc.day].push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id, minutes: timeToMinutes(sc.time) });
-                        }
-                    });
-                }
-            });
-        }
-
-        days.forEach(d => {
-            let daySlots = allSchedulesByDay[d];
-            daySlots.sort((a, b) => a.minutes - b.minutes);
-
-            daySlots.forEach((sc, index) => {
-                let div = document.createElement('div'); 
-                div.className = 'slot'; 
-                div.style.background = sc.studentColor || '#3b82f6';
-                div.setAttribute('data-studentid', sc.studentId);
-                div.setAttribute('data-day', sc.day);
-                div.setAttribute('data-time', sc.time);
-                div.setAttribute('data-offset', sc.offset || 0);
-
-                if (index < daySlots.length - 1) {
-                    let nextSc = daySlots[index + 1];
-                    let diffMinutes = nextSc.minutes - sc.minutes;
-                    if (diffMinutes > 60) {
-                        div.classList.add('wide-slot');
-                    }
-                }
-
-                if (sc.status === 1) div.style.border = '2px solid #22c55e';
-                else if (sc.status === 2) { div.style.border = '2px solid #ef4444'; div.style.opacity = '0.7'; }
-                else if (sc.status === 3) { div.style.border = '2px dashed #facc15'; div.style.opacity = '0.6'; }
-
-                if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
-
-                div.draggable = true;
-                div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
-                div.onclick = (e) => {
-                    if (!e.defaultPrevented) openSlotModal(sc.studentId, sc.day, sc.time);
-                };
-                
-                let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
-                div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
-                document.getElementById(`slot-${sc.day}`)?.appendChild(div);
-            });
-        });
-
-        enableHorizontalDrag();
-
-        let dates = []; 
-        let startDateVal = db.courseStartDate || new Date().toISOString().slice(0,10);
-        let dBase = new Date(startDateVal);
-        
-        for(let i=0; i<24; i++){ 
-            let thu = new Date(dBase); 
-            thu.setDate(dBase.getDate()+5); 
-            dates.push(new Date(thu)); 
-            dBase.setDate(dBase.getDate()+7); 
-        }
-        
-        let income = Array(dates.length).fill(0);
-        let grandTotal = 0;
-        if(db.students) {
-            grandTotal = db.students.reduce((acc, s) => {
-                let lastPeriod = s.periods && s.periods.length ? s.periods[s.periods.length-1] : { price: 0 };
-                return acc + (lastPeriod.price || 0);
-            }, 0);
-        }
-
-        let studentRowsHTML = '';
-
-        if (db.students && Array.isArray(db.students)) {
-            db.students.forEach((s) => {
-                if(!s.financialMap) s.financialMap = {};
-                let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
-                dates.forEach((d, i) => {
-                    let isHol = (db.holidays || []).includes(i), isPay = false;
-                    let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
-                    if (activeP && !isHol) {
-                        let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
-                        let hCount = 0;
-                        for (let j = 0; j <= i; j++) if ((db.holidays || []).includes(j) && dates[j] >= new Date(activeP.startDate)) hCount++;
-                        let eff = totalWeeks - hCount;
-                        if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
-                    }
-                    let st_val = s.financialMap[i] || 0;
-                    let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : '');
-                    row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${st_val==1?'status-paid':st_val==2?'status-notpaid':''}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
-                });
-                row += '</tr>';
-                studentRowsHTML += row;
-            });
-        }
-
-        body.innerHTML = studentRowsHTML;
-        
-        document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
-        totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` + income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') + `</tr>`;
-        initColors('colorGridAdd', 'sColor');
+        renderScheduleGrid();
+        renderAccountingTable();
+        renderSelectOptions();
     }
 
-    function openSlotModal(studentId, currentDay, currentTime) {
-        let student = db.students.find(s => s.id === studentId);
-        if (!student) return;
-
-        let slot = (student.schedules || []).find(s => s.day === currentDay && s.time === currentTime);
-        let currentOffset = slot?.offset || 0;
-        let currentStatus = slot?.status || 0;
-
-        let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${dayNamesMap[d]}</option>`).join('');
-
-        document.getElementById('editFields').innerHTML = `
-            <h3>Edit Session Slot ⏰</h3>
-            <label>Student Name</label>
-            <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
-            
-            <label>Day</label>
-            <select id="editSlotDay">${daysOptions}</select>
-
-            <label>Time</label>
-            <select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
-
-            <label>Attendance Status</label>
-            <select id="editSlotStatus">
-                <option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
-                <option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
-                <option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
-                <option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
-            </select>
-
-            <label>Horizontal Offset (px)</label>
-            <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
-
-            <button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
-            <button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
-        `;
-
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    function updateSlot(studentId, oldDay, oldTime) {
-        let newDay = document.getElementById('editSlotDay').value;
-        let newTime = document.getElementById('editSlotTime').value;
-        let newStatus = Number(document.getElementById('editSlotStatus').value);
-        let newOffset = Number(document.getElementById('editSlotOffset').value) || 0;
-
-        commitChange();
-        let student = db.students.find(s => s.id === studentId);
-        if (student && student.schedules) {
-            let slot = student.schedules.find(s => s.day === oldDay && s.time === oldTime);
-            if (slot) {
-                slot.day = newDay;
-                slot.time = newTime;
-                slot.status = newStatus;
-                slot.offset = newOffset;
-                save();
-            }
-        }
-        closeAll();
-    }
-
-    function deleteSlot(studentId, day, time) {
-        commitChange();
-        let student = db.students.find(s => s.id === studentId);
-        if (student && student.schedules) {
-            student.schedules = student.schedules.filter(s => !(s.day === day && s.time === time));
-            save();
-        }
-        closeAll();
-    }
-
-    function th(i) { 
-        commitChange(); 
-        if(!db.holidays) db.holidays = [];
-        let idx = db.holidays.indexOf(i); 
-        if(idx > -1) db.holidays.splice(idx,1); 
-        else db.holidays.push(i); 
-        save(); 
-    }
-
-    function st(id, i) { 
-        commitChange(); 
-        let s = db.students.find(x => x.id === id); 
-        if(s) {
-            if(!s.financialMap) s.financialMap = {}; 
-            s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 3; 
-            save(); 
-        }
-    }
-
-    function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
-    function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
-    
-    function initColors(id, radioName, sel = PALETTE[0]) { 
-        const target = document.getElementById(id);
-        if(!target) return;
-        target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`; 
-    }
-    
-    function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
-    
-    function addStudent() { 
-        let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
-        if(!n) return; commitChange(); 
-        if(!db.students) db.students = [];
-        db.students.push({ 
-            id: Date.now(), 
-            name: n, 
-            color: col, 
-            financialMap: {}, 
-            schedules: [], 
-            periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }] 
-        }); 
-        save(); closeAll();
-    }
-    
-    function addSchedule() { 
-        let id = Number(document.getElementById('sSelect').value);
-        let d = document.getElementById('cDay').value;
-        let t = document.getElementById('cTime').value; 
-        if(!id) return; 
-        commitChange(); 
-        let student = db.students.find(x => x.id === id);
-        if(student) {
-            if(!student.schedules) student.schedules = [];
-            student.schedules.push({ day: d, time: t, offset: 0, status: 0 }); 
-            save(); 
-        }
-        closeAll(); 
-    }
-
-    function openEdit(id) {
-        const s = db.students.find(x => x.id === id);
-        if(!s) return;
-        let phtml = (s.periods || []).map((p, idx) => `
-            <div class="period-card">
-                <label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
-                <label>Price</label><input type="number" class="p-price" value="${p.price}">
-                <label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="${p.cycle}">
-                ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
-            </div>`).join('');
-
-        document.getElementById('editFields').innerHTML = `
-            <h3>Edit Student</h3>
-            <label>Name</label><input id="en" value="${s.name}">
-            <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
-            <hr>
-            <h4>Billing Periods</h4>
-            <div id="editPeriods">${phtml}</div>
-            <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
-            
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
-                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
-                    <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
-                </label>
-            </div>
-
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">📸 Save Image</button>
-            </div>
-
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
-        `;
-        initColors('ecg', 'eColor', s.color);
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    function addNewPeriod() {
-        const div = document.createElement('div');
-        div.className = 'period-card';
-        let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Every 4 Weeks / كل ٤ أسابيع (Cycle)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
-        document.getElementById('editPeriods').appendChild(div);
-    }
-
-    function up(id) {
-        commitChange();
-        let s = db.students.find(x => x.id === id);
-        if(s) {
-            s.name = document.getElementById('en').value;
-            s.color = document.getElementById('hidden_ecg').value;
-            let newPeriods = [];
-            document.querySelectorAll('.period-card').forEach(card => {
-                newPeriods.push({
-                    startDate: card.querySelector('.p-date').value,
-                    price: Number(card.querySelector('.p-price').value || 0),
-                    cycle: Number(card.querySelector('.p-cycle').value || 4)
-                });
-            });
-            s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
-            save(); 
-        }
-        closeAll();
-    }
-
-    function del(id) { 
-        if(confirm('Delete student and all their records?')) { 
-            commitChange(); 
-            db.students = db.students.filter(x => x.id !== id); 
-            save(); 
-            closeAll(); 
-        } 
-    }
-
-    async function loadPhoto() { 
-        try {
-            let d = await openPhotoDB(); 
-            let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); 
-            req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; 
-        } catch(e) {}
-    }
-
-    function openPhotoDB() { 
-        return new Promise((res) => { 
-            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
-            req.onsuccess = (e) => res(e.target.result); 
-            req.onerror = () => res(null);
-        }); 
-    }
-
-    function handleImageUpload(input) { 
-        if (input.files && input.files[0]) { 
-            const reader = new FileReader(); 
-            reader.onload = (e) => { 
-                const img = new Image(); 
-                img.onload = async () => { 
-                    const canvas = document.createElement('canvas'); 
-                    canvas.width = 150; canvas.height = 150; 
-                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
-                    const url = canvas.toDataURL('image/jpeg', 0.7); 
-                    document.getElementById('teacherImg').src = url; 
-                    let d = await openPhotoDB(); 
-                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
-                }; 
-                img.src = e.target.result; 
-            }; 
-            reader.readAsDataURL(input.files[0]); 
-        } 
-    }
-
-    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+    window.onload = function() {
+        initColorPicker();
+        initLessonTimes();
+        render();
+    };
 </script>
 </body>
 </html>
