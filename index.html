@@ -376,8 +376,9 @@
         return clean.join(', ');
     }
 
-    async function photonSearch(query, limit = 8) {
-        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}&lang=en`;
+    async function photonSearch(query, limit = 8, biasLat = null, biasLon = null) {
+        let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}`;
+        if (biasLat != null && biasLon != null) url += `&lat=${biasLat}&lon=${biasLon}&location_bias_scale=0.9`;
         const res = await fetch(url);
         const data = await res.json();
         if (!data || !data.features) return [];
@@ -388,21 +389,47 @@
         }));
     }
 
-    async function nominatimSearch(query, limit = 8) {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(query)}`;
+    async function nominatimSearch(query, limit = 8, biasLat = null, biasLon = null) {
+        let url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(query)}`;
+        if (biasLat != null && biasLon != null) {
+            // Soft bounding box (bounded=0) around the current map center - nudges ranking
+            // toward nearby results without excluding matches further away.
+            const d = 0.6;
+            url += `&viewbox=${biasLon - d},${biasLat + d},${biasLon + d},${biasLat - d}&bounded=0`;
+        }
         const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
         const data = await res.json();
         if (!data) return [];
         return data.map(r => ({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), display_name: r.display_name }));
     }
 
-    async function placesSearch(query, limit = 8) {
+    async function placesSearch(query, limit = 8, biasLat = null, biasLon = null) {
         // Merge results from both providers so uncommon POIs (only in one index) still show up.
-        let results = [];
-        try { results = results.concat(await photonSearch(query, limit)); } catch (e) { /* offline or blocked */ }
-        if (results.length < 3) {
-            try { results = results.concat(await nominatimSearch(query, limit)); } catch (e) { /* offline or blocked */ }
+        async function oneAttempt(q) {
+            let results = [];
+            try { results = results.concat(await photonSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
+            try { results = results.concat(await nominatimSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
+            return results;
         }
+
+        let results = await oneAttempt(query);
+
+        // Neither OpenStreetMap-based provider indexes every small business by name (unlike
+        // Google's proprietary places database). If the exact phrase finds nothing, retry with
+        // shorter fragments of the query - this often still locates the right street/area even
+        // when the specific shop name isn't mapped.
+        if (results.length === 0) {
+            const words = query.trim().split(/\s+/);
+            if (words.length > 1) {
+                const attempts = [words.slice(1).join(' '), words.slice(0, -1).join(' ')];
+                for (const attempt of attempts) {
+                    if (!attempt) continue;
+                    results = await oneAttempt(attempt);
+                    if (results.length) break;
+                }
+            }
+        }
+
         // De-duplicate near-identical coordinates
         const out = [];
         for (const r of results) {
@@ -411,9 +438,10 @@
         return out.slice(0, limit);
     }
 
-    async function geocodeAddress(address) {
+    async function geocodeAddress(address, biasLat = null, biasLon = null) {
         if (!address || !address.trim()) return null;
-        const results = await placesSearch(address, 1);
+        if (biasLat == null && db.teacherLat != null) { biasLat = db.teacherLat; biasLon = db.teacherLng; }
+        const results = await placesSearch(address, 1, biasLat, biasLon);
         if (results.length) return { lat: results[0].lat, lng: results[0].lon };
         return null;
     }
@@ -515,18 +543,31 @@
         resultsEl.style.display = 'block';
         resultsEl.innerHTML = '<div class="map-search-item">⏳ Searching...</div>';
         try {
-            const results = await placesSearch(q, 8);
+            let biasLat = null, biasLon = null;
+            if (pickerMapInstance) {
+                const c = pickerMapInstance.getCenter();
+                biasLat = c.lat; biasLon = c.lng;
+            }
+            const results = await placesSearch(q, 8, biasLat, biasLon);
             mapSearchResultsData = results;
             if (mapSearchResultsData.length) {
                 resultsEl.innerHTML = mapSearchResultsData.map((r, i) =>
                     `<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
-                ).join('');
+                ).join('') + googleFallbackItemHTML(q);
             } else {
-                resultsEl.innerHTML = '<div class="map-search-item">No results found, try different keywords</div>';
+                resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". Try a nearby street or area name instead, or look it up below.</div>` + googleFallbackItemHTML(q);
             }
         } catch (e) {
-            resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>';
+            resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>' + googleFallbackItemHTML(q);
         }
+    }
+
+    function googleFallbackItemHTML(q) {
+        // Our map search runs on free OpenStreetMap-based data, which doesn't have the same
+        // depth of small-business listings as Google Maps. This gives an escape hatch: open
+        // Google Maps in a new tab to visually find the place, then come back and drop the pin
+        // on the same spot here (satellite view helps line it up).
+        return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">🔎 Not found here? Search "${q}" on Google Maps, then drop the pin on the same spot below</div>`;
     }
 
     function selectSearchResult(idx) {
