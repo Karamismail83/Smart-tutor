@@ -200,6 +200,16 @@
         "Fri": "Fri"
     };
 
+    const dayNamesArabic = {
+        "Sat": "السبت",
+        "Sun": "الأحد",
+        "Mon": "الاثنين",
+        "Tue": "الثلاثاء",
+        "Wed": "الأربعاء",
+        "Thu": "الخميس",
+        "Fri": "الجمعة"
+    };
+
     let db;
     try {
         db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
@@ -264,13 +274,13 @@
         window.print();
     }
 
-    function generateStudentReportHTML(student, includeFinancials = false) {
+    function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
         let teacherName = db.teacherName || 'Teacher';
-        let teacherPhone = db.teacherPhone ? `<br><span style="font-size:11px; color:#94a3b8; font-weight:normal;">📞 ${db.teacherPhone}</span>` : '';
+        let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:2px;">📱 ${db.teacherPhone}</div>` : '';
         let schedulesHTML = '';
 
         if(!student.schedules || student.schedules.length === 0) {
-            schedulesHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
+            schedulesHTML = `<tr><td colspan="2" style="padding: 8px 10px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
         } else {
             let sortedSchedules = [...student.schedules].sort((a, b) => {
                 let dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
@@ -280,10 +290,11 @@
             
             sortedSchedules.forEach(sc => {
                 let bilingualDay = dayNamesMap[sc.day] || sc.day;
+                let arabicDay = dayNamesArabic[sc.day] || '';
                 schedulesHTML += `
                     <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">${bilingualDay}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
+                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${bilingualDay} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(${arabicDay})</span></td>
+                        <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left; direction: ltr;">${sc.time}</td>
                     </tr>
                 `;
             });
@@ -293,7 +304,7 @@
         if (includeFinancials) {
             let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
             financialsHTML = `
-                <div style="background: #1e293b; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
+                <div style="background: #1e293b; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; direction: ltr;">
                     <div style="text-align: right;">
                         <span style="font-size: 12px; color: #94a3b8; display: block;">المبلغ المستحق:</span>
                         <strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
@@ -307,51 +318,57 @@
         }
 
         return `
-            <div style="max-width: 600px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 30px; border-radius: 12px; border: 2px solid #facc15; font-family: Arial, sans-serif;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 16px; border-radius: 14px; border: 2px solid #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden; box-shadow: 0 0 0 1px rgba(250,204,21,0.15) inset;">
+
+                <div style="position:absolute; top:0; left:0; right:0; height:5px; background: repeating-linear-gradient(90deg, #facc15 0 14px, #0f172a 14px 20px);"></div>
+                <div style="position:absolute; bottom:0; left:0; right:0; height:5px; background: repeating-linear-gradient(90deg, #facc15 0 14px, #0f172a 14px 20px);"></div>
+                <div style="position:absolute; top:-40px; right:-40px; width:120px; height:120px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.18) 0%, rgba(250,204,21,0) 70%);"></div>
+                <div style="position:absolute; bottom:-50px; left:-50px; width:140px; height:140px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.14) 0%, rgba(56,189,248,0) 70%);"></div>
+
+                <div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 8px; margin-bottom: 10px;">
                     <div>
-                        <h2 style="margin: 0; color: #ffffff; font-size: 22px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
-                        <p style="margin: 3px 0 0; color: #94a3b8; font-size: 12px;">Official Weekly Schedule</p>
+                        <h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
+                        <p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">Official Weekly Schedule</p>
                     </div>
                     <div style="text-align: right;">
-                        <span style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; color: #ffffff; border: 1px solid #334155; display: inline-block;">Teacher: ${teacherName} ${teacherPhone}</span>
+                        <span style="background: #1e293b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; display: inline-block; text-align: right;">${teacherName}${teacherPhone}</span>
                     </div>
                 </div>
-                <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${student.color || '#3b82f6'}; border: 1px solid #334155;">
-                    <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #ffffff;">Student Name: ${student.name}</h3>
-                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Here are the assigned weekly session times:</p>
+                <div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${student.color || '#3b82f6'};">
+                    <h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Student Name: ${student.name}</h3>
+                    <p style="margin: 0; font-size: 11px; color: #94a3b8;">Here are the assigned weekly session times:</p>
                 </div>
                 ${financialsHTML}
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
+                <table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
                     <thead>
                         <tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
-                            <th style="padding: 12px 15px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
+                            <th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Day / اليوم</th>
+                            <th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
                         </tr>
                     </thead>
                     <tbody>${schedulesHTML}</tbody>
                 </table>
-                <div style="text-align: center; border-top: 1px dashed #334155; padding-top: 15px; color: #64748b; font-size: 11px;">
-                    Thank you for trusting us with your education.
+                <div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
+                    ✦ Thank you for trusting us with your education ✦
                 </div>
             </div>
         `;
     }
 
-    function printSingleStudent(studentId, includeFinancials = false) {
+    function printSingleStudent(studentId, includeFinancials = false, includePhone = false) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
-        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials);
+        document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
         document.body.classList.add('print-single-student');
         window.print();
     }
 
-    function downloadStudentImage(studentId, includeFinancials = false) {
+    function downloadStudentImage(studentId, includeFinancials = false, includePhone = false) {
         let student = db.students.find(s => s.id === studentId);
         if(!student) return;
         let tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-        tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials);
+        tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
         document.body.appendChild(tempDiv);
         html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
             let link = document.createElement('a');
@@ -771,14 +788,17 @@
             <button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
             
             <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
-                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a; margin-bottom:8px;">
                     <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
+                    <input type="checkbox" id="includePhoneCheckbox" style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
                 </label>
             </div>
 
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked)">📸 Save Image</button>
+                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
             </div>
 
             <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
