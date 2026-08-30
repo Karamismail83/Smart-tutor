@@ -925,26 +925,54 @@
 
         let entries = [];
         withPrefs.forEach(s => {
-            const dist = s.distanceKm != null ? s.distanceKm : Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
             const fullPref = getStudentPrefSchedule(s);
             const selectedPref = selectStudentScheduleDays(s, fullPref);
             const durationMinutes = Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES;
             selectedPref.forEach(p => {
                 entries.push({
-                    studentId: s.id, name: s.name, color: s.color, day: p.day, dist, durationMinutes,
+                    studentId: s.id, name: s.name, color: s.color, day: p.day, durationMinutes,
+                    lat: s.lat, lng: s.lng,
                     from: p.from || '4:00 PM', to: p.to || '8:00 PM', mandatory: !!p.mandatory
                 });
             });
         });
 
+        // Picks the closest remaining candidate to (fromLat, fromLng) out of `pool`, removes it
+        // from the pool, and returns it with `dist` set to that travel distance (in km).
+        function popNearest(pool, fromLat, fromLng) {
+            if (!pool.length) return null;
+            let bestIdx = 0, bestDist = Infinity;
+            pool.forEach((e, idx) => {
+                let d = haversineKm(fromLat, fromLng, e.lat, e.lng);
+                if (d < bestDist) { bestDist = d; bestIdx = idx; }
+            });
+            let [chosen] = pool.splice(bestIdx, 1);
+            chosen.dist = Math.round(bestDist * 10) / 10;
+            return chosen;
+        }
+
         let suggestions = {};
         daysOrder.forEach(day => {
-            // Mandatory entries go first so they always get first pick of an open time slot
-            // on their day, before the rest of that day's candidates are placed by distance.
-            let dayEntries = entries.filter(e => e.day === day).sort((a, b) => {
-                if (a.mandatory !== b.mandatory) return a.mandatory ? -1 : 1;
-                return a.dist - b.dist;
-            });
+            // Build each day's visiting order as an actual route: the first stop's distance is
+            // measured from the teacher's home, and every stop after that is measured from
+            // wherever the PREVIOUS stop that day was - not from home again. Mandatory students
+            // still get priority (they're routed first), but within each priority group the
+            // route always continues from the last-placed student's location.
+            let mandatoryPool = entries.filter(e => e.day === day && e.mandatory);
+            let optionalPool = entries.filter(e => e.day === day && !e.mandatory);
+
+            let dayEntries = [];
+            let curLat = db.teacherLat, curLng = db.teacherLng;
+            let next;
+            while ((next = popNearest(mandatoryPool, curLat, curLng))) {
+                dayEntries.push(next);
+                curLat = next.lat; curLng = next.lng;
+            }
+            while ((next = popNearest(optionalPool, curLat, curLng))) {
+                dayEntries.push(next);
+                curLat = next.lat; curLng = next.lng;
+            }
+
             // Track actual [start, end) intervals rather than bare start times, since each
             // student can have their own session duration - a 30-minute session and a
             // 90-minute session need very different amounts of room to avoid overlapping.
@@ -968,7 +996,8 @@
                 }
                 if (!placed) dayResult.push({ ...e, minutes: null, timeLabel: 'No available time in preferred range', conflict: true });
             });
-            dayResult.sort((a, b) => (a.minutes ?? 9999) - (b.minutes ?? 9999));
+            // Keep the route order (distance-from-previous-stop order) for display, rather than
+            // re-sorting by clock time, so the "km" badges read as a coherent trip from home.
             if (dayResult.length) suggestions[day] = dayResult;
         });
 
@@ -978,7 +1007,7 @@
 
     function renderSuggestionModal(suggestions) {
         let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Sorted by distance from your home and each student's preferences, using each student's own session duration. Days marked ★Mandatory are placed first since they're required for that student. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+            <p style="font-size:11px; color:#64748b;">Each day is routed as a trip: the first student is measured from your home, and every student after that is measured from the previous student's location - not from home again. Days marked ★Mandatory are routed first. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
