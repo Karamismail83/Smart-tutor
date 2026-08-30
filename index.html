@@ -919,8 +919,26 @@
         return `${hh}:${m.toString().padStart(2, '0')} ${ampm}`;
     }
 
-    // ---- Suggested schedule generator ----
+    // ---- Suggested schedule generator (constraint-aware, always logically consistent) ----
+    // Key fix versus the old version: sessions are now placed and ordered strictly by CLOCK
+    // TIME within each day (a teacher can only be in one place at a time - the visiting order
+    // and the time order must always match, otherwise the "route" is physically impossible).
+    // Distance/km is only ever used for reporting travel between consecutive real appointments,
+    // never to decide which time slot someone gets.
     let lastSuggestion = null;
+    let suggestionAttempt = 0; // cycles strategies each click, so "Re-suggest" gives a genuinely
+                                // different, still fully valid arrangement instead of repeating
+                                // the exact same result.
+
+    // Counts how many distinct 15-minute starting points fit inside [fromMin,toMin] for a
+    // session of `duration` minutes. Lower = more constrained = should be placed FIRST, so a
+    // tightly-boxed-in student doesn't lose their only workable slot to someone with a wide-open
+    // window that could easily go elsewhere instead.
+    function slotOptionsCount(fromMin, toMin, duration) {
+        let n = 0;
+        for (let slot = fromMin; slot + duration <= toMin; slot += 15) n++;
+        return n;
+    }
 
     function generateSuggestedSchedule() {
         if (db.teacherLat == null) {
@@ -934,118 +952,155 @@
             return;
         }
 
-        let entries = [];
-        withPrefs.forEach(s => {
+        // 3 strategies, cycled on every click of "Re-suggest":
+        //   0: earliest-fit within each window
+        //   1: latest-fit within each window (packs sessions toward the end of the window)
+        //   2: earliest-fit with randomized tie-breaking among equally-constrained students
+        const strategy = suggestionAttempt % 3;
+        suggestionAttempt++;
+
+        // Build each student's full candidate day list (not just the weeklyDaysCount-trimmed
+        // set) so that if their "usual" day can't fit, we can automatically try their next
+        // preferred day instead of giving up and inventing an unavailable session.
+        let studentCandidates = withPrefs.map(s => {
             const fullPref = getStudentPrefSchedule(s);
-            const selectedPref = selectStudentScheduleDays(s, fullPref);
-            const durationMinutes = Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES;
-            selectedPref.forEach(p => {
-                entries.push({
-                    studentId: s.id, name: s.name, color: s.color, day: p.day, durationMinutes,
-                    lat: s.lat, lng: s.lng,
-                    from: p.from || '4:00 PM', to: p.to || '8:00 PM', mandatory: !!p.mandatory
-                });
-            });
+            const mandatoryDays = fullPref.filter(p => p.mandatory);
+            const optionalDays = fullPref.filter(p => !p.mandatory);
+            const targetCount = s.weeklyDaysCount ? Math.max(Number(s.weeklyDaysCount) || 0, mandatoryDays.length) : fullPref.length;
+            return { student: s, duration: Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES, mandatoryDays, optionalDays, targetCount };
         });
 
-        // Picks the closest remaining candidate to (fromLat, fromLng) out of `pool`, removes it
-        // from the pool, and returns it with `dist` set to that travel distance (in km).
-        function popNearest(pool, fromLat, fromLng) {
-            if (!pool.length) return null;
-            let bestIdx = 0, bestDist = Infinity;
-            pool.forEach((e, idx) => {
-                let d = haversineKm(fromLat, fromLng, e.lat, e.lng);
-                if (d < bestDist) { bestDist = d; bestIdx = idx; }
-            });
-            let [chosen] = pool.splice(bestIdx, 1);
-            chosen.dist = Math.round(bestDist * 10) / 10;
-            return chosen;
+        let dayState = {};
+        daysOrder.forEach(day => {
+            let floor = getDayFloorTime(day);
+            dayState[day] = { intervals: [], floorMin: floor ? timeToMinutes(floor) : 0, placed: [] };
+        });
+
+        let unresolved = [];
+
+        // Tries to fit ONE candidate (day/from/to/duration) into that day's already-placed
+        // timeline without overlapping anything. Never places outside [from,to] and never
+        // before that day's fixed floor - so a rejected candidate is simply left unplaced
+        // rather than shown as a fake/unavailable session.
+        function tryPlaceOnDay(day, fromRaw, toRaw, duration, entryMeta) {
+            let st = dayState[day];
+            let fromMin = Math.max(timeToMinutes(fromRaw), st.floorMin);
+            let toMin = timeToMinutes(toRaw);
+            if (toMin - fromMin < duration) return null;
+
+            let candidateStarts = [];
+            for (let slot = fromMin; slot + duration <= toMin; slot += 15) candidateStarts.push(slot);
+            if (!candidateStarts.length) return null;
+            if (strategy === 1) candidateStarts.reverse();
+
+            for (const slot of candidateStarts) {
+                let slotEnd = slot + duration;
+                let overlaps = st.intervals.some(iv => slot < iv.end && slotEnd > iv.start);
+                if (!overlaps) {
+                    st.intervals.push({ start: slot, end: slotEnd });
+                    let placedEntry = { ...entryMeta, day, minutes: slot, timeLabel: minutesToTimeLabel(slot), endTimeLabel: minutesToTimeLabel(slotEnd) };
+                    st.placed.push(placedEntry);
+                    return placedEntry;
+                }
+            }
+            return null;
         }
 
+        // ---- Phase 1: mandatory sessions get first claim, most-constrained first ----
+        let mandatoryQueue = [];
+        studentCandidates.forEach(sc => {
+            sc.mandatoryDays.forEach(p => {
+                let st = dayState[p.day];
+                let fromMin = Math.max(timeToMinutes(p.from), st.floorMin);
+                mandatoryQueue.push({ sc, p, tightness: slotOptionsCount(fromMin, timeToMinutes(p.to), sc.duration) });
+            });
+        });
+        mandatoryQueue.sort((a, b) => a.tightness - b.tightness);
+        if (strategy === 2) {
+            for (let i = mandatoryQueue.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                if (mandatoryQueue[i].tightness === mandatoryQueue[j].tightness) [mandatoryQueue[i], mandatoryQueue[j]] = [mandatoryQueue[j], mandatoryQueue[i]];
+            }
+        }
+        mandatoryQueue.forEach(({ sc, p }) => {
+            let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: true };
+            let placed = tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta);
+            if (!placed) unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: p.day, reason: 'mandatory-conflict' });
+        });
+
+        // ---- Phase 2: optional sessions, most-constrained-first, trying every preferred day
+        // for a student before accepting a shortfall for that student ----
+        let optionalQueue = studentCandidates.map(sc => {
+            let stillNeeded = Math.max(0, sc.targetCount - sc.mandatoryDays.length);
+            let tightnessValues = sc.optionalDays.map(p => {
+                let st = dayState[p.day];
+                return slotOptionsCount(Math.max(timeToMinutes(p.from), st.floorMin), timeToMinutes(p.to), sc.duration);
+            });
+            let bestTightness = tightnessValues.length ? Math.min(...tightnessValues) : Infinity;
+            return { sc, stillNeeded, bestTightness };
+        }).filter(q => q.stillNeeded > 0 && q.sc.optionalDays.length);
+
+        optionalQueue.sort((a, b) => a.bestTightness - b.bestTightness);
+        if (strategy === 2) {
+            for (let i = optionalQueue.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                if (optionalQueue[i].bestTightness === optionalQueue[j].bestTightness) [optionalQueue[i], optionalQueue[j]] = [optionalQueue[j], optionalQueue[i]];
+            }
+        }
+
+        optionalQueue.forEach(({ sc, stillNeeded }) => {
+            let candidateDays = sc.optionalDays.slice().sort((a, b) => {
+                let stA = dayState[a.day], stB = dayState[b.day];
+                let fA = Math.max(timeToMinutes(a.from), stA.floorMin), fB = Math.max(timeToMinutes(b.from), stB.floorMin);
+                return slotOptionsCount(fA, timeToMinutes(a.to), sc.duration) - slotOptionsCount(fB, timeToMinutes(b.to), sc.duration);
+            });
+            let placedCount = 0;
+            for (const p of candidateDays) {
+                if (placedCount >= stillNeeded) break;
+                let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: false };
+                if (tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta)) placedCount++;
+            }
+            if (placedCount < stillNeeded) {
+                unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: null, reason: 'not-enough-room', missing: stillNeeded - placedCount, wanted: stillNeeded });
+            }
+        });
+
+        // ---- Travel distance: computed strictly in the order the teacher will actually visit
+        // people that day (chronological), chained from the previous stop or home ----
         let suggestions = {};
         daysOrder.forEach(day => {
-            // Build each day's visiting order as an actual route: the first stop's distance is
-            // measured from the teacher's home, and every stop after that is measured from
-            // wherever the PREVIOUS stop that day was - not from home again. Mandatory students
-            // still get priority (they're routed first), but within each priority group the
-            // route always continues from the last-placed student's location.
-            let mandatoryPool = entries.filter(e => e.day === day && e.mandatory);
-            let optionalPool = entries.filter(e => e.day === day && !e.mandatory);
-
-            let dayEntries = [];
+            let list = dayState[day].placed.slice().sort((a, b) => a.minutes - b.minutes);
+            if (!list.length) return;
             let curLat = db.teacherLat, curLng = db.teacherLng;
-            let next;
-            while ((next = popNearest(mandatoryPool, curLat, curLng))) {
-                dayEntries.push(next);
-                curLat = next.lat; curLng = next.lng;
-            }
-            while ((next = popNearest(optionalPool, curLat, curLng))) {
-                dayEntries.push(next);
-                curLat = next.lat; curLng = next.lng;
-            }
-
-            // Track actual [start, end) intervals rather than bare start times, since each
-            // student can have their own session duration - a 30-minute session and a
-            // 90-minute session need very different amounts of room to avoid overlapping.
-            let usedIntervals = [];
-            let dayResult = [];
-            let dayFloor = getDayFloorTime(day);
-            let dayFloorMin = dayFloor ? timeToMinutes(dayFloor) : 0;
-            dayEntries.forEach(e => {
-                // Never start earlier than that day's fixed floor (Sat 11:00 AM, Sun-Thu 2:00 PM),
-                // even if this particular student's own preferred "from" time is earlier.
-                let fromMin = Math.max(timeToMinutes(e.from), dayFloorMin);
-                let toMin = timeToMinutes(e.to);
-                let duration = e.durationMinutes || DEFAULT_SESSION_MINUTES;
-                let slot = fromMin, placed = false;
-                while (slot + duration <= toMin) {
-                    let slotEnd = slot + duration;
-                    let overlaps = usedIntervals.some(iv => slot < iv.end && slotEnd > iv.start);
-                    if (!overlaps) {
-                        usedIntervals.push({ start: slot, end: slotEnd });
-                        dayResult.push({ ...e, minutes: slot, timeLabel: minutesToTimeLabel(slot), endTimeLabel: minutesToTimeLabel(slotEnd), conflict: false });
-                        placed = true;
-                        break;
-                    }
-                    slot += 30;
-                }
-                if (!placed) dayResult.push({ ...e, minutes: null, timeLabel: 'No available time in preferred range', conflict: true });
+            list.forEach(e => {
+                e.dist = Math.round(haversineKm(curLat, curLng, e.lat, e.lng) * 10) / 10;
+                curLat = e.lat; curLng = e.lng;
             });
-            // Keep the route order (distance-from-previous-stop order) for display, rather than
-            // re-sorting by clock time, so the "km" badges read as a coherent trip from home.
-            if (dayResult.length) suggestions[day] = dayResult;
+            suggestions[day] = list;
         });
 
         lastSuggestion = suggestions;
-        renderSuggestionModal(suggestions);
+        renderSuggestionModal(suggestions, unresolved, strategy);
     }
 
-    function renderSuggestionModal(suggestions) {
-        let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Each day is routed as a trip: the first student is measured from your home, and every student after that is measured from the previous student's location - not from home again. Sessions never start before 11:00 AM on Saturday or 2:00 PM on Sunday-Thursday. Days marked ★Mandatory are routed first. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+    function renderSuggestionModal(suggestions, unresolved, strategy) {
+        const strategyLabel = ['⏱️ Earliest-first', '🌙 Latest-first', '🎲 Alternate mix'][strategy] || '';
+        let html = `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
+                <h3 style="margin:0;">🧭 Suggested Schedule</h3>
+                <button class="action-btn" style="background:#0ea5e9; color:white; margin:0; flex-shrink:0;" onclick="generateSuggestedSchedule()" title="Try another valid arrangement">🔄</button>
+            </div>
+            <p style="font-size:10.5px; color:#64748b; margin:0 0 8px;">Strategy: ${strategyLabel} — every session respects each student's own window and time never overlaps. Nothing starts before 11:00 AM Saturday or 2:00 PM Sun-Thu. ★Mandatory sessions are locked in first, most time-constrained students get priority for real slots (no invented/unavailable sessions).</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
-            html += `<p>No suggestions are possible right now.</p>`;
+            html += `<p>No sessions could be placed yet — check that at least one student has a saved location and preferred day/time.</p>`;
         } else {
             dayKeys.forEach(day => {
                 html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
-                // Display sessions in chronological (clock-time) order rather than route order,
-                // so the list reads top-to-bottom the way the day actually unfolds. Conflicts
-                // (no placed time) are pushed to the end since they have no time to sort by.
-                // This is purely a display sort - the underlying route/distance data used for
-                // "Apply" is untouched.
-                let displayOrder = [...suggestions[day]].sort((a, b) => {
-                    if (a.conflict && b.conflict) return 0;
-                    if (a.conflict) return 1;
-                    if (b.conflict) return -1;
-                    return a.minutes - b.minutes;
-                });
-                displayOrder.forEach(e => {
-                    let timeDisplay = e.conflict ? e.timeLabel : `${e.timeLabel} - ${e.endTimeLabel}`;
-                    html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
+                suggestions[day].forEach(e => {
+                    html += `<div class="suggest-row">
                         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
-                        <span>${timeDisplay}</span>
+                        <span>${e.timeLabel} - ${e.endTimeLabel}</span>
                         <span class="distance-badge">${e.dist} km</span>
                     </div>`;
                 });
@@ -1053,6 +1108,18 @@
             });
             html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ Apply Suggested Schedule</button>`;
         }
+
+        if (unresolved && unresolved.length) {
+            html += `<div class="suggest-day-block" style="border-color:#ef4444; background:#fef2f2;"><b style="color:#b91c1c;">⚠️ Could not fully schedule</b>`;
+            unresolved.forEach(u => {
+                let msg = u.reason === 'mandatory-conflict'
+                    ? `${u.name}: mandatory time on ${dayNamesFull[u.day] || u.day} clashes with another mandatory session — adjust one of their times.`
+                    : `${u.name}: only fit ${u.wanted - u.missing} of ${u.wanted} requested session(s) this week — try widening their preferred windows or adding another preferred day.`;
+                html += `<div class="suggest-row conflict"><span>${msg}</span></div>`;
+            });
+            html += `</div>`;
+        }
+
         html += `<button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-top:8px;" onclick="generateSuggestedSchedule()">🔄 Re-suggest</button>`;
         html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">Close</button>`;
 
@@ -1067,7 +1134,6 @@
         commitChange();
         Object.keys(lastSuggestion).forEach(day => {
             lastSuggestion[day].forEach(e => {
-                if (e.conflict) return;
                 let student = db.students.find(s => s.id === e.studentId);
                 if (!student) return;
                 if (!student.schedules) student.schedules = [];
@@ -1685,127 +1751,4 @@
 
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
                 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
-            </div>
-
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
-        `;
-        initColors('ecg', 'eColor', s.color);
-        buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    async function recomputeStudentDistance(id) {
-        let s = db.students.find(x => x.id === id);
-        if (!s) return;
-        let address = document.getElementById('eAddress').value.trim();
-        if (!address) { alert('Please enter the student\'s address first'); return; }
-        if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
-        const loc = await geocodeAddress(address);
-        if (loc) {
-            commitChange();
-            s.address = address;
-            s.lat = loc.lat; s.lng = loc.lng;
-            s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
-            save();
-            openEdit(id);
-        } else {
-            alert('Could not locate this address, try writing it more clearly or use the map');
-        }
-    }
-
-    function addNewPeriod() {
-        const div = document.createElement('div');
-        div.className = 'period-card';
-        let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
-        document.getElementById('editPeriods').appendChild(div);
-    }
-
-    function up(id) {
-        commitChange();
-        let s = db.students.find(x => x.id === id);
-        if(s) {
-            s.name = document.getElementById('en').value;
-            s.color = document.getElementById('hidden_ecg').value;
-            let newAddress = document.getElementById('eAddress')?.value.trim() || '';
-            if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
-            s.address = newAddress;
-            s.preferredSchedule = getPrefSchedule('ePrefDays');
-            s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
-            s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
-            let newPeriods = [];
-            document.querySelectorAll('.period-card').forEach(card => {
-                newPeriods.push({
-                    startDate: card.querySelector('.p-date').value,
-                    price: Number(card.querySelector('.p-price').value || 0),
-                    cycle: Number(card.querySelector('.p-cycle').value || 4)
-                });
-            });
-            s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
-            save(); 
-            if (s.address && s.lat == null && db.teacherLat != null) {
-                geocodeAddress(s.address).then(loc => {
-                    if (loc) {
-                        s.lat = loc.lat; s.lng = loc.lng;
-                        s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
-                        save();
-                    }
-                });
-            }
-        }
-        closeAll();
-    }
-
-    function del(id) { 
-        if(confirm('Delete student and all their records?')) { 
-            commitChange(); 
-            db.students = db.students.filter(x => x.id !== id); 
-            save(); 
-            closeAll(); 
-        } 
-    }
-
-    async function loadPhoto() { 
-        try {
-            let d = await openPhotoDB(); 
-            let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); 
-            req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; 
-        } catch(e) {}
-    }
-
-    function openPhotoDB() { 
-        return new Promise((res) => { 
-            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
-            req.onsuccess = (e) => res(e.target.result); 
-            req.onerror = () => res(null);
-        }); 
-    }
-
-    function handleImageUpload(input) { 
-        if (input.files && input.files[0]) { 
-            const reader = new FileReader(); 
-            reader.onload = (e) => { 
-                const img = new Image(); 
-                img.onload = async () => { 
-                    const canvas = document.createElement('canvas'); 
-                    canvas.width = 150; canvas.height = 150; 
-                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
-                    const url = canvas.toDataURL('image/jpeg', 0.7); 
-                    document.getElementById('teacherImg').src = url; 
-                    let d = await openPhotoDB(); 
-                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
-                }; 
-                img.src = e.target.result; 
-            }; 
-            reader.readAsDataURL(input.files[0]); 
-        } 
-    }
-
-    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
-</script>
-</body>
-</html>
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneChe
