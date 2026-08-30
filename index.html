@@ -279,15 +279,6 @@
     // if start + <that student's session duration> still fits at or before "to".
     const DEFAULT_SESSION_MINUTES = 60;
 
-    // Earliest time each day's schedule is allowed to start: Saturday opens earlier (11:00 AM),
-    // every other day (Sunday-Friday) can't start before 2:00 PM. This is used both as the
-    // default "from" time when a new preferred day is added for a student, and as a hard floor
-    // enforced by "Suggest Schedule" - no session is ever placed earlier than this on that day,
-    // even if a student's own preferred "from" time is earlier.
-    function getDayFloorTime(day) {
-        return day === 'Sat' ? '11:00 AM' : '2:00 PM';
-    }
-
     // Default map center: Al-Ahsa oasis (Al-Hofuf / Al-Mubarraz area), so the map and search
     // both default to this region instead of a generic world view.
     const DEFAULT_REGION_LAT = 25.3838;
@@ -426,7 +417,7 @@
         const checkedDays = Array.from(document.querySelectorAll(`#${containerId}_pills input:checked`)).map(cb => cb.value);
         const orderedDays = daysOrder.filter(d => checkedDays.includes(d));
         timesEl.innerHTML = orderedDays.map(d => {
-            const vals = existing[d] || { from: getDayFloorTime(d), to: '8:00 PM', mandatory: false };
+            const vals = existing[d] || { from: '4:00 PM', to: '8:00 PM', mandatory: false };
             return `<div class="pref-time-row" data-day="${d}" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
                         <span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
                         <select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
@@ -988,10 +979,7 @@
             let usedIntervals = [];
             let dayResult = [];
             dayEntries.forEach(e => {
-                // Never start earlier than that day's fixed floor, even if this particular
-                // student's own preferred "from" time is earlier.
-                let dayFloorMin = timeToMinutes(getDayFloorTime(day));
-                let fromMin = Math.max(timeToMinutes(e.from), dayFloorMin);
+                let fromMin = timeToMinutes(e.from);
                 let toMin = timeToMinutes(e.to);
                 let duration = e.durationMinutes || DEFAULT_SESSION_MINUTES;
                 let slot = fromMin, placed = false;
@@ -1019,7 +1007,7 @@
 
     function renderSuggestionModal(suggestions) {
         let html = `<h3>🧭 Suggested Schedule</h3>
-            <p style="font-size:11px; color:#64748b;">Each day is routed as a trip: the first student is measured from your home, and every student after that is measured from the previous student's location - not from home again. Sessions never start before 11:00 AM on Saturday or 2:00 PM on other days. Days marked ★Mandatory are routed first. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
+            <p style="font-size:11px; color:#64748b;">Each day is routed as a trip: the first student is measured from your home, and every student after that is measured from the previous student's location - not from home again. Days marked ★Mandatory are routed first. Review any conflicts (highlighted in red) and adjust manually after applying if needed.</p>`;
 
         const dayKeys = Object.keys(suggestions);
         if (!dayKeys.length) {
@@ -1782,4 +1770,16 @@
                     canvas.getContext('2d').drawImage(img,0,0,150,150); 
                     const url = canvas.toDataURL('image/jpeg', 0.7); 
                     document.getElementById('teacherImg').src = url; 
-                   
+                    let d = await openPhotoDB(); 
+                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                }; 
+                img.src = e.target.result; 
+            }; 
+            reader.readAsDataURL(input.files[0]); 
+        } 
+    }
+
+    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+</script>
+</body>
+</html>
