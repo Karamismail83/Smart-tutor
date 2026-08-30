@@ -1751,4 +1751,127 @@
 
             <div style="display: flex; gap: 5px; margin-bottom: 8px;">
                 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneChe
+                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
+            </div>
+
+            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
+            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+        `;
+        initColors('ecg', 'eColor', s.color);
+        buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+
+    async function recomputeStudentDistance(id) {
+        let s = db.students.find(x => x.id === id);
+        if (!s) return;
+        let address = document.getElementById('eAddress').value.trim();
+        if (!address) { alert('Please enter the student\'s address first'); return; }
+        if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
+        const loc = await geocodeAddress(address);
+        if (loc) {
+            commitChange();
+            s.address = address;
+            s.lat = loc.lat; s.lng = loc.lng;
+            s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+            save();
+            openEdit(id);
+        } else {
+            alert('Could not locate this address, try writing it more clearly or use the map');
+        }
+    }
+
+    function addNewPeriod() {
+        const div = document.createElement('div');
+        div.className = 'period-card';
+        let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
+        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+        document.getElementById('editPeriods').appendChild(div);
+    }
+
+    function up(id) {
+        commitChange();
+        let s = db.students.find(x => x.id === id);
+        if(s) {
+            s.name = document.getElementById('en').value;
+            s.color = document.getElementById('hidden_ecg').value;
+            let newAddress = document.getElementById('eAddress')?.value.trim() || '';
+            if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
+            s.address = newAddress;
+            s.preferredSchedule = getPrefSchedule('ePrefDays');
+            s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
+            s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
+            let newPeriods = [];
+            document.querySelectorAll('.period-card').forEach(card => {
+                newPeriods.push({
+                    startDate: card.querySelector('.p-date').value,
+                    price: Number(card.querySelector('.p-price').value || 0),
+                    cycle: Number(card.querySelector('.p-cycle').value || 4)
+                });
+            });
+            s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+            save(); 
+            if (s.address && s.lat == null && db.teacherLat != null) {
+                geocodeAddress(s.address).then(loc => {
+                    if (loc) {
+                        s.lat = loc.lat; s.lng = loc.lng;
+                        s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+                        save();
+                    }
+                });
+            }
+        }
+        closeAll();
+    }
+
+    function del(id) { 
+        if(confirm('Delete student and all their records?')) { 
+            commitChange(); 
+            db.students = db.students.filter(x => x.id !== id); 
+            save(); 
+            closeAll(); 
+        } 
+    }
+
+    async function loadPhoto() { 
+        try {
+            let d = await openPhotoDB(); 
+            let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); 
+            req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; 
+        } catch(e) {}
+    }
+
+    function openPhotoDB() { 
+        return new Promise((res) => { 
+            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
+            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
+            req.onsuccess = (e) => res(e.target.result); 
+            req.onerror = () => res(null);
+        }); 
+    }
+
+    function handleImageUpload(input) { 
+        if (input.files && input.files[0]) { 
+            const reader = new FileReader(); 
+            reader.onload = (e) => { 
+                const img = new Image(); 
+                img.onload = async () => { 
+                    const canvas = document.createElement('canvas'); 
+                    canvas.width = 150; canvas.height = 150; 
+                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
+                    const url = canvas.toDataURL('image/jpeg', 0.7); 
+                    document.getElementById('teacherImg').src = url; 
+                    let d = await openPhotoDB(); 
+                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                }; 
+                img.src = e.target.result; 
+            }; 
+            reader.readAsDataURL(input.files[0]); 
+        } 
+    }
+
+    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+</script>
+</body>
+</html>
