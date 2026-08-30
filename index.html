@@ -1782,4 +1782,19 @@
                 img.onload = async () => { 
                     const canvas = document.createElement('canvas'); 
                     canvas.width = 150; canvas.height = 150; 
-                    canvas.getContext('2d').drawImage(img
+                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
+                    const url = canvas.toDataURL('image/jpeg', 0.7); 
+                    document.getElementById('teacherImg').src = url; 
+                    let d = await openPhotoDB(); 
+                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
+                }; 
+                img.src = e.target.result; 
+            }; 
+            reader.readAsDataURL(input.files[0]); 
+        } 
+    }
+
+    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+</script>
+</body>
+</html>
