@@ -1030,7 +1030,18 @@
         } else {
             dayKeys.forEach(day => {
                 html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
-                suggestions[day].forEach(e => {
+                // Display sessions in chronological (clock-time) order rather than route order,
+                // so the list reads top-to-bottom the way the day actually unfolds. Conflicts
+                // (no placed time) are pushed to the end since they have no time to sort by.
+                // This is purely a display sort - the underlying route/distance data used for
+                // "Apply" is untouched.
+                let displayOrder = [...suggestions[day]].sort((a, b) => {
+                    if (a.conflict && b.conflict) return 0;
+                    if (a.conflict) return 1;
+                    if (b.conflict) return -1;
+                    return a.minutes - b.minutes;
+                });
+                displayOrder.forEach(e => {
                     let timeDisplay = e.conflict ? e.timeLabel : `${e.timeLabel} - ${e.endTimeLabel}`;
                     html += `<div class="suggest-row ${e.conflict ? 'conflict' : ''}">
                         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
