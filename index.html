@@ -52,6 +52,8 @@
             cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
+        .sub-price { font-size: 9px; font-weight: bold; opacity: 0.95; margin-top: 1px; }
+
         .box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
         .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
         .status-paid { background: #d1fae5 !important; color: #047857; }
@@ -67,8 +69,9 @@
         
         input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
         .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
-        .color-circle { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
-        .color-circle.selected { border-color: #000; transform: scale(1.1); }
+        /* Larger, round color swatches so the (now 24) colors are easy to tell apart and tap */
+        .color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+        .color-circle.selected { border-color: #000; transform: scale(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000; }
 
         .day-pills-row { display:flex; flex-wrap:nowrap; gap:3px; }
         .day-pill { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:5px 2px; font-size:9.5px; font-weight:bold; cursor:pointer; color:#1E293B; user-select:none; flex:1 1 0; min-width:0; }
@@ -131,6 +134,7 @@
             .acc-table th { background: #1E293B !important; color: #ffffff !important; font-size: 7.5px !important; padding: 3px 2px !important; border: 1px solid #334155 !important; }
             .acc-table td { border: 1px solid #334155 !important; padding: 2px !important; background: #1E293B !important; color: #ffffff !important; }
             .sticky-name { color: #ffffff !important; border-right: 2px solid #FACC15 !important; font-size: 8.5px !important; padding-left: 6px !important; width: 90px !important; }
+            .sub-price { font-size: 7px !important; color: #ffffff !important; }
             .box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #cbd5e1 !important; background: #ffffff !important; color: #000000 !important; }
             .is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
             .status-paid { background: #d1fae5 !important; color: #047857 !important; }
@@ -269,7 +273,14 @@
 </div>
 
 <script>
-    const PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#D946EF', '#EC4899', '#64748B', '#22C55E'];
+    // 24 clearly distinct colors, ordered around the color wheel and then neutrals.
+    // All are dark/medium enough that the white text on slots and name cells stays readable,
+    // and none is close to the app's own gold (#FACC15) or dark background colors.
+    const PALETTE = [
+        '#DC2626', '#F97316', '#D97706', '#A16207', '#65A30D', '#16A34A', '#047857', '#0D9488',
+        '#06B6D4', '#0284C7', '#2563EB', '#1E3A8A', '#4F46E5', '#7C3AED', '#A855F7', '#C026D3',
+        '#EC4899', '#E11D48', '#9F1239', '#78350F', '#3F6212', '#701A75', '#6B7280', '#A8875A'
+    ];
     const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 
     // Fallback length of one session, used only for the "Suggest Schedule" placement logic
@@ -1512,7 +1523,9 @@
         if (db.students && Array.isArray(db.students)) {
             db.students.forEach((s) => {
                 if(!s.financialMap) s.financialMap = {};
-                let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}</td>`;
+                let currentPeriod = s.periods && s.periods.length ? s.periods[s.periods.length - 1] : null;
+                let subPrice = currentPeriod ? (currentPeriod.price || 0) : 0;
+                let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}<div class="sub-price">${subPrice}</div></td>`;
                 dates.forEach((d, i) => {
                     let isHol = (db.holidays || []).includes(i), isPay = false;
                     let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
@@ -1743,135 +1756,4 @@
             <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
                 <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a; margin-bottom:8px;">
                     <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
-                    <input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
-                </label>
-            </div>
-
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
-                <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
-            </div>
-
-            <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
-            <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
-        `;
-        initColors('ecg', 'eColor', s.color);
-        buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-    }
-
-    async function recomputeStudentDistance(id) {
-        let s = db.students.find(x => x.id === id);
-        if (!s) return;
-        let address = document.getElementById('eAddress').value.trim();
-        if (!address) { alert('Please enter the student\'s address first'); return; }
-        if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
-        const loc = await geocodeAddress(address);
-        if (loc) {
-            commitChange();
-            s.address = address;
-            s.lat = loc.lat; s.lng = loc.lng;
-            s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
-            save();
-            openEdit(id);
-        } else {
-            alert('Could not locate this address, try writing it more clearly or use the map');
-        }
-    }
-
-    function addNewPeriod() {
-        const div = document.createElement('div');
-        div.className = 'period-card';
-        let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
-        div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
-        document.getElementById('editPeriods').appendChild(div);
-    }
-
-    function up(id) {
-        commitChange();
-        let s = db.students.find(x => x.id === id);
-        if(s) {
-            s.name = document.getElementById('en').value;
-            s.color = document.getElementById('hidden_ecg').value;
-            let newAddress = document.getElementById('eAddress')?.value.trim() || '';
-            if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
-            s.address = newAddress;
-            s.preferredSchedule = getPrefSchedule('ePrefDays');
-            s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
-            s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
-            let newPeriods = [];
-            document.querySelectorAll('.period-card').forEach(card => {
-                newPeriods.push({
-                    startDate: card.querySelector('.p-date').value,
-                    price: Number(card.querySelector('.p-price').value || 0),
-                    cycle: Number(card.querySelector('.p-cycle').value || 4)
-                });
-            });
-            s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
-            save(); 
-            if (s.address && s.lat == null && db.teacherLat != null) {
-                geocodeAddress(s.address).then(loc => {
-                    if (loc) {
-                        s.lat = loc.lat; s.lng = loc.lng;
-                        s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
-                        save();
-                    }
-                });
-            }
-        }
-        closeAll();
-    }
-
-    function del(id) { 
-        if(confirm('Delete student and all their records?')) { 
-            commitChange(); 
-            db.students = db.students.filter(x => x.id !== id); 
-            save(); 
-            closeAll(); 
-        } 
-    }
-
-    async function loadPhoto() { 
-        try {
-            let d = await openPhotoDB(); 
-            let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg"); 
-            req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; }; 
-        } catch(e) {}
-    }
-
-    function openPhotoDB() { 
-        return new Promise((res) => { 
-            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
-            req.onsuccess = (e) => res(e.target.result); 
-            req.onerror = () => res(null);
-        }); 
-    }
-
-    function handleImageUpload(input) { 
-        if (input.files && input.files[0]) { 
-            const reader = new FileReader(); 
-            reader.onload = (e) => { 
-                const img = new Image(); 
-                img.onload = async () => { 
-                    const canvas = document.createElement('canvas'); 
-                    canvas.width = 150; canvas.height = 150; 
-                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
-                    const url = canvas.toDataURL('image/jpeg', 0.7); 
-                    document.getElementById('teacherImg').src = url; 
-                    let d = await openPhotoDB(); 
-                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
-                }; 
-                img.src = e.target.result; 
-            }; 
-            reader.readAsDataURL(input.files[0]); 
-        } 
-    }
-
-    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
-</script>
-</body>
-</html>
+           
