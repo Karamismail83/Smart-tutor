@@ -1,33 +1,1599 @@
-    function openPhotoDB() { 
-        return new Promise((res) => { 
-            let req = indexedDB.open("SmartTutorPhotoDB", 1); 
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos"); 
-            req.onsuccess = (e) => res(e.target.result); 
-            req.onerror = () => res(null);
-        }); 
-    }
-
-    function handleImageUpload(input) { 
-        if (input.files && input.files[0]) { 
-            const reader = new FileReader(); 
-            reader.onload = (e) => { 
-                const img = new Image(); 
-                img.onload = async () => { 
-                    const canvas = document.createElement('canvas'); 
-                    canvas.width = 150; canvas.height = 150; 
-                    canvas.getContext('2d').drawImage(img,0,0,150,150); 
-                    const url = canvas.toDataURL('image/jpeg', 0.7); 
-                    document.getElementById('teacherImg').src = url; 
-                    let d = await openPhotoDB(); 
-                    if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg"); 
-                }; 
-                img.src = e.target.result; 
-            }; 
-            reader.readAsDataURL(input.files[0]); 
-        } 
-    }
-
-    window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Smart Tutor - Professional Print Schedule</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root {
+--bg-dark: #0F172A; --gold: #FACC15; --slate: #1E293B;
+--name-w: 120px; --box-s: 24px; --primary: #6366f1;
+--holiday-purple: #312E81; --holiday-bg: rgba(49, 46, 129, 0.4);
+}
+body { margin: 0; background: var(--bg-dark); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; overflow-x: hidden; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--slate); border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
+.action-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+.container { padding: 10px; }
+.teacher-box { display: flex; align-items: center; gap: 10px; background: var(--slate); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(250,204,21,0.2); }
+.profile-img-container { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--gold); background: #334155; overflow: hidden; cursor: pointer; }
+.profile-img { width: 100%; height: 100%; object-fit: cover; }
+#teacherName { background:transparent; color: var(--gold); border:none; border-bottom:1px solid #444; font-size:16px; width:100%; font-weight:900; outline:none; }
+.day-row { display: flex; background: rgba(255,255,255,0.05); margin-bottom: 4px; border-radius: 6px; min-height: 48px; align-items: stretch; }
+.day-label { width: 55px; background: var(--gold); color: #000; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; font-size: 11px; text-align: center; }
+.slots { flex: 1; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 5px 6px; align-items: center; transition: background 0.2s; min-height: 48px; box-sizing: border-box; position: relative; }
+.slots.drag-over { background: rgba(250, 204, 21, 0.25); border-radius: 4px; }
+.slot { flex: 0 0 auto; min-width: 48px; background: var(--slate); padding: 3px 2px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 10px; cursor: grab; user-select: none; position: relative; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s ease, box-shadow 0.2s; }
+.slot:active { cursor: grabbing; }
+.slot.dragging { opacity: 0.4; transform: scale(0.95); }
+.slot.wide-slot { min-width: 62px; }
+.slot-status-indicator { font-size: 9px; margin-top: 1px; font-weight: bold; }
+.acc-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 10px; margin-top: 15px; }
+.acc-table { border-collapse: collapse; width: auto; color: #1E293B; }
+.acc-table th, .acc-table td { border: 1px solid #e2e8f0; text-align: center; padding: 4px 2px; min-width: 32px; }
+.acc-table th { background: #1E293B; color: white; font-size: 8px; cursor: pointer; }
+.total-row { background: var(--gold) !important; color: #000 !important; font-weight: 900 !important; }
+.grand-total-cell { background: #000 !important; color: var(--gold) !important; font-size: 11px !important; }
+.sticky-name {
+position: sticky; left: 0; z-index: 100; width: var(--name-w);
+font-weight: 900; border-right: 2px solid #ddd !important;
+text-align: left !important; padding: 4px 6px !important;
+color: white !important; box-sizing: border-box;
+cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sub-price { font-size: 9px; font-weight: bold; opacity: 0.95; margin-top: 1px; }
+.box { width: var(--box-s); height: var(--box-s); border-radius: 4px; border: 1px solid #cbd5e1; background: white; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: black; cursor: pointer; }
+.is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+.status-paid { background: #d1fae5 !important; color: #047857; }
+.status-notpaid { background: #fee2e2 !important; color: #b91c1c; }
+.status-disabled { background: #374151 !important; color: #ffffff !important; border-color: #1f2937 !important; }
+.is-holiday-col { background: var(--holiday-purple) !important; color: white !important; }
+.is-holiday-cell { background: var(--holiday-bg) !important; }
+.sidebar, .modal { position: fixed; top: 0; left: -110%; width: 320px; height: 100%; background: white; z-index: 3000; transition: 0.3s; color: #1E293B; padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+.active { left: 0 !important; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2500; }
+.overlay.active { display: block; }
+input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 12px; box-sizing: border-box; }
+.period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
+.color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+.color-circle.selected { border-color: #000; transform: scale(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000; }
+.day-pills-row { display:flex; flex-wrap:nowrap; gap:3px; }
+.day-pill { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:5px 2px; font-size:9.5px; font-weight:bold; cursor:pointer; color:#1E293B; user-select:none; flex:1 1 0; min-width:0; }
+.day-pill input { display:none; }
+.day-pill.checked { background:#facc15; border-color:#b45309; }
+.distance-badge { display:inline-block; background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px; margin-top:4px; }
+.suggest-day-block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; margin-bottom:8px; }
+.suggest-row { display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px; margin-bottom:4px; font-size:11px; }
+.suggest-row.conflict { border-color:#ef4444; background:#fef2f2; }
+.addr-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+.addr-row input { margin:0; }
+.loc-icon-btn {
+flex-shrink:0; width:38px; height:38px; min-width:38px; border-radius:50%;
+background:#0ea5e9; color:#fff; border:none; display:flex; align-items:center;
+justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.25);
+}
+.loc-icon-btn:active { background:#0284c7; }
+#mapModal { display:none; top:0; left:0; width:100%; height:100%; z-index:5000; padding:0; box-shadow:none; transition:none; flex-direction:column; }
+#mapModal.active { display:flex; }
+.map-top-bar { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #e2e8f0; background:#fff; position:relative; z-index:5002; flex-shrink:0; }
+.map-icon-btn { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:50%; width:36px; height:36px; min-width:36px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; flex-shrink:0; }
+#mapSearchInput { flex:1; margin:0; padding:8px 10px; font-size:12px; }
+#mapSearchResults { position:absolute; top:56px; left:12px; right:12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); z-index:5003; max-height:240px; overflow-y:auto; display:none; }
+.map-search-item { padding:10px 12px; font-size:11.5px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
+.map-search-item:last-child { border-bottom:none; }
+.map-search-item:hover { background:#f8fafc; }
+#pickerMap { width:100%; flex:1; min-height:0; }
+.map-fab-stack { position:fixed; right:14px; bottom:96px; display:flex; flex-direction:column; gap:10px; z-index:5002; }
+.locate-fab { background:#fff; border:1px solid #cbd5e1; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.28); }
+.map-bottom-bar { padding:10px 14px 14px; border-top:1px solid #e2e8f0; background:#fff; flex-shrink:0; position:relative; z-index:5002; }
+.map-status { font-size:11px; color:#64748b; margin: 0 0 8px; min-height:14px; text-align:center; }
+#studentPrintContainer { display: none; }
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+#toast.show { transform: translateX(-50%) translateY(0); }
+@media print {
+@page { size: A4 landscape; margin: 5mm; }
+html, body { background: #0F172A !important; color: #FFFFFF !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
+body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; background: #0F172A !important; color: #FFFFFF !important; }
+body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
+body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
+.teacher-box { background: #1E293B !important; border: 2px solid #FACC15 !important; border-radius: 8px !important; padding: 8px 14px !important; margin-bottom: 10px !important; box-shadow: none !important; }
+#teacherName { color: #FACC15 !important; border-bottom: 1px solid #444 !important; font-size: 16px !important; font-weight: bold !important; background: transparent !important; }
+.day-row { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.15) !important; margin-bottom: 4px !important; min-height: 40px !important; align-items: center !important; page-break-inside: avoid; }
+.day-label { background: #FACC15 !important; color: #000000 !important; font-size: 10px !important; width: 55px !important; font-weight: bold; }
+.slots { padding: 3px 5px !important; gap: 4px !important; min-height: 38px !important; align-items: center !important; }
+.slot { border: 1px solid rgba(255,255,255,0.2) !important; background: #1E293B !important; color: #ffffff !important; font-size: 9px !important; padding: 3px 3px !important; min-width: 48px !important; box-shadow: none !important; }
+.slot.wide-slot { min-width: 62px !important; }
+.acc-table-wrapper { background: #1E293B !important; box-shadow: none !important; border: 1px solid #FACC15 !important; margin-top: 10px !important; overflow: visible !important; page-break-inside: avoid; border-radius: 10px; }
+.acc-table { width: 100% !important; table-layout: fixed !important; color: #ffffff !important; }
+.acc-table th { background: #1E293B !important; color: #ffffff !important; font-size: 7.5px !important; padding: 3px 2px !important; border: 1px solid #334155 !important; }
+.acc-table td { border: 1px solid #334155 !important; padding: 2px !important; background: #1E293B !important; color: #ffffff !important; }
+.sticky-name { color: #ffffff !important; border-right: 2px solid #FACC15 !important; font-size: 8.5px !important; padding-left: 6px !important; width: 90px !important; }
+.sub-price { font-size: 7px !important; color: #ffffff !important; }
+.box { width: 18px !important; height: 18px !important; font-size: 10px !important; border: 1px solid #cbd5e1 !important; background: #ffffff !important; color: #000000 !important; }
+.is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
+.status-paid { background: #d1fae5 !important; color: #047857 !important; }
+.status-notpaid { background: #fee2e2 !important; color: #b91c1c !important; }
+.status-disabled { background: #4b5563 !important; color: #ffffff !important; }
+.total-row { background: #FACC15 !important; color: #000000 !important; font-size: 8px !important; }
+.total-row td { color: #000000 !important; background: #FACC15 !important; font-weight: 900 !important; }
+.grand-total-cell { background: #000000 !important; color: #FACC15 !important; font-size: 9px !important; }
+}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="modal" id="editModal"><div id="editFields"></div></div>
+<div class="modal" id="mapModal">
+<div class="map-top-bar">
+<div class="map-icon-btn" onclick="closeAll()">✕</div>
+<input id="mapSearchInput" placeholder="Search, or paste coordinates / a Google Maps link..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
+<div class="map-icon-btn" onclick="searchMapLocation()">🔍</div>
+<div id="mapSearchResults"></div>
+</div>
+<div id="pickerMap"></div>
+<div class="map-fab-stack">
+<div class="locate-fab" id="satelliteToggleBtn" title="Satellite view" onclick="toggleSatellite()">🛰️</div>
+<div class="locate-fab" title="Use my current location" onclick="useMyLocationInPicker()">🎯</div>
+</div>
+<div class="map-bottom-bar">
+<div class="map-status" id="mapPickerStatus"></div>
+<button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">✅ Confirm This Location</button>
+</div>
+</div>
+<div id="studentPrintContainer"></div>
+<div id="toast"></div>
+<div class="sidebar" id="sidebar">
+<h2 style="margin-top:0">Settings ⚙️</h2>
+<div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+<h3 style="margin-top:0;">Teacher Phone 📱</h3>
+<label style="font-size:11px; color:#64748b;">Phone number to display under teacher name in student reports:</label>
+<input id="teacherPhoneInput" type="text" placeholder="e.g. +1 555 0100" oninput="db.teacherPhone=this.value; save();">
+</div>
+<div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+<h3 style="margin-top:0;">🏠 Your Home Address (for distance calculations)</h3>
+<label style="font-size:11px; color:#64748b;">Enter your address (area/street/city), or just tap the pin to set it precisely on the map:</label>
+<div class="addr-row">
+<input id="teacherAddressInput" type="text" placeholder="e.g. Downtown, Springfield" oninput="db.teacherAddress=this.value;">
+<button type="button" class="loc-icon-btn" onclick="openMapPicker('teacher')" title="Set location on map">📍</button>
+</div>
+<div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:-6px;"></div>
+</div>
+<div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+<h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+<label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
+<input id="courseBaseDate" type="date">
+<button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+</div>
+<div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+<h3 style="margin-top:0;">Backup & Restore 💾</h3>
+<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
+<button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
+<input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
+</div>
+<hr style="margin:15px 0; opacity:0.1">
+<h3>Add Student</h3>
+<input id="sName" placeholder="Name">
+<div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridAdd"></div>
+<input id="sPrice" type="number" placeholder="Price">
+<input id="sDate" type="date">
+<input id="sCycle" type="number" value="4">
+<label style="font-size:11px; color:#64748b;">📍 Student Address/Area (for distance)</label>
+<div class="addr-row">
+<input id="sAddress" placeholder="e.g. Uptown, Springfield">
+<button type="button" class="loc-icon-btn" onclick="openMapPicker('newStudent')" title="Set location on map">📍</button>
+</div>
+<div class="map-status" id="newStudentGeoStatus"></div>
+<label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
+<input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+<input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+<div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
+<div id="sPrefDays_times" style="margin-bottom:12px;"></div>
+<button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
+<hr style="margin:20px 0; opacity:0.1">
+<h3>Add Slot (Session)</h3>
+<select id="sSelect"></select>
+<select id="cDay">
+<option value="Sat">Sat</option>
+<option value="Sun">Sun</option>
+<option value="Mon">Mon</option>
+<option value="Tue">Tue</option>
+<option value="Wed">Wed</option>
+<option value="Thu">Thu</option>
+<option value="Fri">Fri</option>
+</select>
+<select id="cTime"></select>
+<button class="action-btn" style="width:100%; background:var(--primary); color:white" onclick="addSchedule()">Save Slot</button>
+</div>
+<header>
+<div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
+<div style="display: flex; gap: 5px;">
+<button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
+<button class="action-btn" style="background:#0ea5e9; color:white;" onclick="generateSuggestedSchedule()">🧭 Suggest Schedule</button>
+<button class="action-btn" onclick="undo()">↩️ UNDO</button>
+<button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
+</div>
+</header>
+<div class="container">
+<div class="teacher-box">
+<div class="profile-img-container" onclick="document.getElementById('tFile').click()">
+<img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+</div>
+<input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
+<input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
+</div>
+<div id="scheduleGrid"></div>
+<div class="acc-table-wrapper">
+<table class="acc-table">
+<thead><tr id="accHeader"></tr></thead>
+<thead id="accTotalHeader"></thead>
+<tbody id="accBody"></tbody>
+</table>
+</div>
+</div>
+<script>
+const PALETTE = [
+'#DC2626', '#F97316', '#D97706', '#A16207', '#65A30D', '#16A34A', '#047857', '#0D9488',
+'#06B6D4', '#0284C7', '#2563EB', '#1E3A8A', '#4F46E5', '#7C3AED', '#A855F7', '#C026D3',
+'#EC4899', '#E11D48', '#9F1239', '#78350F', '#3F6212', '#701A75', '#6B7280', '#A8875A'
+];
+const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+const DEFAULT_SESSION_MINUTES = 60;
+function getDayFloorTime(day) {
+if (day === 'Sat') return '11:00 AM';
+if (day === 'Fri') return null;
+return '2:00 PM';
+}
+const DEFAULT_REGION_LAT = 25.3838;
+const DEFAULT_REGION_LNG = 49.5922;
+const DEFAULT_REGION_ZOOM = 11; // wide enough to see Al-Hofuf, Al-Mubarraz and surrounding villages together
+const dayNamesMap = {
+"Sat": "Sat",
+"Sun": "Sun",
+"Mon": "Mon",
+"Tue": "Tue",
+"Wed": "Wed",
+"Thu": "Thu",
+"Fri": "Fri"
+};
+const dayNamesFull = {
+"Sat": "Saturday",
+"Sun": "Sunday",
+"Mon": "Monday",
+"Tue": "Tuesday",
+"Wed": "Wednesday",
+"Thu": "Thursday",
+"Fri": "Friday"
+};
+let db;
+try {
+db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
+} catch(e) {
+db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
+}
+let historyStack = [];
+let draggedData = null;
+function showToast(message) {
+let toast = document.getElementById('toast');
+toast.innerText = message;
+toast.classList.add('show');
+setTimeout(() => { toast.classList.remove('show'); }, 2500);
+}
+function getTimeOptionsHTML(selectedTime = '') {
+let html = '';
+for(let h = 10; h <= 22; h++){
+for(let m of [0, 15, 30, 45]){
+if(h === 22 && m > 0) continue;
+let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+let mm = m.toString().padStart(2, '0');
+let ampm = h < 12 ? 'AM' : 'PM';
+let t = `${hh}:${mm} ${ampm}`;
+let isSel = (t === selectedTime) ? 'selected' : '';
+html += `<option value="${t}" ${isSel}>${t}</option>`;
+}
+}
+return html;
+}
+function initLessonTimes() {
+const sel = document.getElementById('cTime');
+if (sel) sel.innerHTML = getTimeOptionsHTML();
+buildDayPrefUI('sPrefDays', []);
+}
+function buildDayPills(containerId, selectedDays, prefix = '') {
+const el = document.getElementById(containerId);
+if (!el) return;
+el.classList.add('day-pills-row');
+el.innerHTML = daysOrder.map(d => {
+const isChecked = selectedDays.includes(d);
+return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPill(this)">
+<input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked');">
+${dayNamesMap[d]}
+</label>`;
+}).join('');
+}
+function toggleDayPill(label) {
+const cb = label.querySelector('input');
+cb.checked = !cb.checked;
+label.classList.toggle('checked', cb.checked);
+}
+function getSelectedDays(containerId) {
+return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
+}
+function buildDayPrefUI(containerId, prefSchedule) {
+prefSchedule = prefSchedule || [];
+const pillsEl = document.getElementById(containerId + '_pills');
+if (!pillsEl) return;
+const selectedDays = prefSchedule.map(p => p.day);
+pillsEl.classList.add('day-pills-row');
+pillsEl.innerHTML = daysOrder.map(d => {
+const isChecked = selectedDays.includes(d);
+return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}">
+<input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onchange="handleDayPrefToggle(this, '${containerId}')">
+${dayNamesMap[d]}
+</label>`;
+}).join('');
+renderDayPrefTimes(containerId, prefSchedule);
+}
+function handleDayPrefToggle(cb, containerId) {
+cb.parentElement.classList.toggle('checked', cb.checked);
+renderDayPrefTimes(containerId);
+}
+function renderDayPrefTimes(containerId, initialSchedule) {
+const timesEl = document.getElementById(containerId + '_times');
+if (!timesEl) return;
+const existing = {};
+timesEl.querySelectorAll('.pref-time-row').forEach(row => {
+const day = row.getAttribute('data-day');
+existing[day] = {
+from: row.querySelector('.pref-from').value,
+to: row.querySelector('.pref-to').value,
+mandatory: row.querySelector('.pref-mandatory')?.checked || false
+};
+});
+if (initialSchedule) {
+initialSchedule.forEach(p => { if (!existing[p.day]) existing[p.day] = { from: p.from, to: p.to, mandatory: !!p.mandatory }; });
+}
+const checkedDays = Array.from(document.querySelectorAll(`#${containerId}_pills input:checked`)).map(cb => cb.value);
+const orderedDays = daysOrder.filter(d => checkedDays.includes(d));
+timesEl.innerHTML = orderedDays.map(d => {
+const vals = existing[d] || { from: (getDayFloorTime(d) || '4:00 PM'), to: '8:00 PM', mandatory: false };
+return `<div class="pref-time-row" data-day="${d}" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+<span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
+<select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
+<span style="font-size:10px; flex-shrink:0;">-</span>
+<select class="pref-to" style="margin:0;" title="End time of the last session that day">${getTimeOptionsHTML(vals.to)}</select>
+<label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="Mandatory day for this student">
+<input type="checkbox" class="pref-mandatory" style="width:14px;height:14px;margin:0;" ${vals.mandatory ? 'checked' : ''}>
+Mandatory
+</label>
+</div>`;
+}).join('');
+}
+function getPrefSchedule(containerId) {
+const timesEl = document.getElementById(containerId + '_times');
+if (!timesEl) return [];
+return Array.from(timesEl.querySelectorAll('.pref-time-row')).map(row => ({
+day: row.getAttribute('data-day'),
+from: row.querySelector('.pref-from').value,
+to: row.querySelector('.pref-to').value,
+mandatory: row.querySelector('.pref-mandatory')?.checked || false
+}));
+}
+function getStudentPrefSchedule(s) {
+if (s.preferredSchedule && s.preferredSchedule.length) return s.preferredSchedule;
+if (s.preferredDays && s.preferredDays.length) {
+return s.preferredDays.map(d => ({ day: d, from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM', mandatory: false }));
+}
+return [];
+}
+function selectStudentScheduleDays(s, fullPref) {
+if (!fullPref || !fullPref.length) return [];
+if (!s.weeklyDaysCount) return fullPref;
+const mandatory = fullPref.filter(p => p.mandatory);
+const optional = fullPref.filter(p => !p.mandatory);
+let count = Math.max(Number(s.weeklyDaysCount) || 0, mandatory.length);
+let remaining = Math.max(0, count - mandatory.length);
+let chosenOptional = optional
+.slice()
+.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day))
+.slice(0, remaining);
+let combined = mandatory.concat(chosenOptional);
+combined.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+return combined;
+}
+function formatPhotonName(p) {
+if (!p) return '';
+const parts = [p.name, p.street, p.city || p.county, p.state, p.country].filter(Boolean);
+const seen = new Set();
+const clean = parts.filter(x => {
+const k = x.toLowerCase();
+if (seen.has(k)) return false;
+seen.add(k);
+return true;
+});
+return clean.join(', ');
+}
+async function photonSearch(query, limit = 8, biasLat = null, biasLon = null) {
+let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}`;
+if (biasLat != null && biasLon != null) url += `&lat=${biasLat}&lon=${biasLon}&location_bias_scale=0.9`;
+const res = await fetch(url);
+const data = await res.json();
+if (!data || !data.features) return [];
+return data.features.map(f => ({
+lat: f.geometry.coordinates[1],
+lon: f.geometry.coordinates[0],
+display_name: formatPhotonName(f.properties) || query
+}));
+}
+async function nominatimSearch(query, limit = 8, biasLat = null, biasLon = null) {
+let url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(query)}`;
+if (biasLat != null && biasLon != null) {
+const d = 0.6;
+url += `&viewbox=${biasLon - d},${biasLat + d},${biasLon + d},${biasLat - d}&bounded=0`;
+}
+const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+const data = await res.json();
+if (!data) return [];
+return data.map(r => ({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), display_name: r.display_name }));
+}
+async function placesSearch(query, limit = 8, biasLat = null, biasLon = null) {
+async function oneAttempt(q) {
+let results = [];
+try { results = results.concat(await photonSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
+try { results = results.concat(await nominatimSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
+return results;
+}
+let results = await oneAttempt(query);
+if (results.length === 0) {
+const candidates = [];
+if (query.includes(',')) {
+const segs = query.split(',')
+.map(s => s.trim().replace(/\s*\d{4,6}\s*$/, '').trim())
+.filter(s => s && !/^\d+$/.test(s));
+if (segs.length) {
+candidates.push(segs.join(', '));      // all place-name segments together
+candidates.push(segs[segs.length - 1]); // last segment (often the city)
+candidates.push(segs[0]);               // first segment (often the district)
+segs.forEach(s => {
+if (/\band\b/i.test(s)) {
+s.split(/\band\b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
+}
+});
+}
+}
+const words = query.trim().split(/\s+/);
+if (words.length > 1) {
+candidates.push(words.slice(1).join(' '));
+candidates.push(words.slice(0, -1).join(' '));
+}
+for (const candidate of candidates) {
+if (!candidate) continue;
+results = await oneAttempt(candidate);
+if (results.length) break;
+}
+}
+const out = [];
+for (const r of results) {
+if (!out.some(o => Math.abs(o.lat - r.lat) < 0.0005 && Math.abs(o.lon - r.lon) < 0.0005)) out.push(r);
+}
+return out.slice(0, limit);
+}
+async function geocodeAddress(address, biasLat = null, biasLon = null) {
+if (!address || !address.trim()) return null;
+if (biasLat == null) {
+biasLat = db.teacherLat != null ? db.teacherLat : DEFAULT_REGION_LAT;
+biasLon = db.teacherLat != null ? db.teacherLng : DEFAULT_REGION_LNG;
+}
+const results = await placesSearch(address, 1, biasLat, biasLon);
+if (results.length) return { lat: results[0].lat, lng: results[0].lon };
+return null;
+}
+async function reverseGeocode(lat, lng) {
+try {
+const url = `https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`;
+const res = await fetch(url);
+const data = await res.json();
+if (data && data.features && data.features[0]) {
+const name = formatPhotonName(data.features[0].properties);
+if (name) return name;
+}
+} catch (e) { /* offline or blocked - ignore */ }
+try {
+const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`;
+const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+const data = await res.json();
+if (data && data.display_name) return data.display_name;
+} catch (e) { /* offline or blocked - ignore */ }
+return null;
+}
+function haversineKm(lat1, lon1, lat2, lon2) {
+const R = 6371;
+const dLat = (lat2 - lat1) * Math.PI / 180;
+const dLon = (lon2 - lon1) * Math.PI / 180;
+const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+let pickerMapInstance = null;
+let pickerMarker = null;
+let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
+let pickerStreetLayer = null;
+let pickerSatelliteLayer = null;
+let pickerIsSatellite = false;
+let mapSearchResultsData = [];
+function ensurePickerMap(initialLat, initialLng) {
+const lat = initialLat != null ? initialLat : DEFAULT_REGION_LAT;
+const lng = initialLng != null ? initialLng : DEFAULT_REGION_LNG;
+if (!pickerMapInstance) {
+pickerMapInstance = L.map('pickerMap', { zoomControl: true }).setView([lat, lng], initialLat != null ? 16 : DEFAULT_REGION_ZOOM);
+pickerStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+maxZoom: 19,
+attribution: '© OpenStreetMap'
+}).addTo(pickerMapInstance);
+pickerSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+maxZoom: 19,
+attribution: 'Esri World Imagery'
+});
+pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMapInstance);
+pickerMarker.on('dragend', () => updatePickerStatus());
+pickerMapInstance.on('click', (e) => {
+pickerMarker.setLatLng(e.latlng);
+updatePickerStatus();
+});
+} else {
+pickerMapInstance.setView([lat, lng], initialLat != null ? 16 : DEFAULT_REGION_ZOOM);
+pickerMarker.setLatLng([lat, lng]);
+}
+setTimeout(() => pickerMapInstance.invalidateSize(), 200);
+updatePickerStatus();
+}
+function toggleSatellite() {
+if (!pickerMapInstance) return;
+pickerIsSatellite = !pickerIsSatellite;
+if (pickerIsSatellite) {
+pickerMapInstance.removeLayer(pickerStreetLayer);
+pickerSatelliteLayer.addTo(pickerMapInstance);
+} else {
+pickerMapInstance.removeLayer(pickerSatelliteLayer);
+pickerStreetLayer.addTo(pickerMapInstance);
+}
+let btn = document.getElementById('satelliteToggleBtn');
+if (btn) btn.innerText = pickerIsSatellite ? '🗺️' : '🛰️';
+}
+async function updatePickerStatus() {
+const statusEl = document.getElementById('mapPickerStatus');
+if (!statusEl || !pickerMarker) return;
+const ll = pickerMarker.getLatLng();
+statusEl.innerText = `Coordinates: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+}
+function extractLatLngFromInput(q) {
+q = q.trim();
+let m = q.match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+if (m) {
+const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
+}
+m = q.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+m = q.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+m = q.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+return null;
+}
+function isShortGoogleLink(q) {
+return /(maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(q);
+}
+async function searchMapLocation() {
+const q = document.getElementById('mapSearchInput').value.trim();
+const resultsEl = document.getElementById('mapSearchResults');
+if (!q) { resultsEl.style.display = 'none'; return; }
+resultsEl.style.display = 'block';
+const coords = extractLatLngFromInput(q);
+if (coords) {
+pickerMarker.setLatLng([coords.lat, coords.lng]);
+pickerMapInstance.setView([coords.lat, coords.lng], 17);
+updatePickerStatus();
+resultsEl.innerHTML = `<div class="map-search-item">✅ Jumped to the exact pasted location</div>`;
+setTimeout(() => { resultsEl.style.display = 'none'; }, 1200);
+return;
+}
+if (isShortGoogleLink(q)) {
+resultsEl.innerHTML = `<div class="map-search-item">This is a shortened Google Maps link and can't be read directly here. Open it once in your browser, then paste the full address-bar link (it will contain @lat,lng) - or in Google Maps, long-press the spot to drop a pin and paste the coordinates shown at the bottom.</div>`;
+return;
+}
+resultsEl.innerHTML = '<div class="map-search-item">⏳ Searching...</div>';
+try {
+let biasLat = null, biasLon = null;
+if (pickerMapInstance) {
+const c = pickerMapInstance.getCenter();
+biasLat = c.lat; biasLon = c.lng;
+}
+const results = await placesSearch(q, 8, biasLat, biasLon);
+mapSearchResultsData = results;
+if (mapSearchResultsData.length) {
+resultsEl.innerHTML = mapSearchResultsData.map((r, i) =>
+`<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
+).join('') + googleFallbackItemHTML(q);
+} else {
+resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". If this includes a building/unit number, free map data won't have that level of detail - try just the district or city name, or use the option below for exact accuracy.</div>` + googleFallbackItemHTML(q);
+}
+} catch (e) {
+resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>' + googleFallbackItemHTML(q);
+}
+}
+function googleFallbackItemHTML(q) {
+return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">🔎 Not found here? Open "${q}" on Google Maps, long-press it to get coordinates, then paste them back here</div>`;
+}
+function selectSearchResult(idx) {
+const r = mapSearchResultsData[idx];
+if (!r || !pickerMapInstance) return;
+const lat = r.lat, lng = r.lon;
+pickerMarker.setLatLng([lat, lng]);
+pickerMapInstance.setView([lat, lng], 16);
+document.getElementById('mapSearchInput').value = r.display_name;
+document.getElementById('mapSearchResults').style.display = 'none';
+updatePickerStatus();
+}
+function openMapPicker(context) {
+pickerContext = context;
+let initLat = null, initLng = null;
+let placeholder = 'Search, or paste coordinates / a Google Maps link...';
+let typedAddress = '';
+if (context === 'teacher') {
+placeholder = 'Search your home, or paste coordinates / a Maps link...';
+typedAddress = document.getElementById('teacherAddressInput')?.value.trim() || '';
+if (db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
+} else if (context === 'newStudent') {
+placeholder = 'Search, or paste coordinates / a Maps link...';
+typedAddress = document.getElementById('sAddress')?.value.trim() || '';
+} else if (context && context.type === 'edit') {
+placeholder = 'Search, or paste coordinates / a Maps link...';
+let s = db.students.find(x => x.id === context.id);
+typedAddress = document.getElementById('eAddress')?.value.trim() || (s ? (s.address || '') : '');
+if (s && s.lat != null) { initLat = s.lat; initLng = s.lng; }
+}
+if (initLat == null && db.teacherLat != null) { initLat = db.teacherLat; initLng = db.teacherLng; }
+let searchInput = document.getElementById('mapSearchInput');
+searchInput.placeholder = placeholder;
+searchInput.value = typedAddress;
+document.getElementById('mapSearchResults').style.display = 'none';
+document.getElementById('mapModal').classList.add('active');
+setTimeout(() => {
+ensurePickerMap(initLat, initLng);
+if (initLat == null) {
+if (typedAddress) {
+searchMapLocation();
+} else {
+useMyLocationInPicker(true);
+}
+}
+}, 50);
+}
+function useMyLocationInPicker(silent) {
+const statusEl = document.getElementById('mapPickerStatus');
+if (!navigator.geolocation) {
+if (!silent) alert("This browser doesn't support location detection");
+return;
+}
+if (statusEl) statusEl.innerText = '⏳ Finding your current location...';
+navigator.geolocation.getCurrentPosition((pos) => {
+const lat = pos.coords.latitude, lng = pos.coords.longitude;
+ensurePickerMap(lat, lng);
+if (pickerMapInstance) pickerMapInstance.setView([lat, lng], 16);
+}, (err) => {
+if (statusEl) statusEl.innerText = silent ? '' : '⚠️ Could not access your location, drag the pin manually';
+}, { enableHighAccuracy: true, timeout: 10000 });
+}
+async function confirmMapPicker() {
+if (!pickerMarker) { closeAll(); return; }
+const ll = pickerMarker.getLatLng();
+const statusEl = document.getElementById('mapPickerStatus');
+if (statusEl) statusEl.innerText = '⏳ Saving location...';
+const addr = await reverseGeocode(ll.lat, ll.lng);
+if (pickerContext === 'teacher') {
+commitChange();
+db.teacherLat = ll.lat;
+db.teacherLng = ll.lng;
+if (addr) db.teacherAddress = addr;
+save();
+let tAddrInput = document.getElementById('teacherAddressInput');
+if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
+let tGeoStatus = document.getElementById('teacherGeoStatus');
+if (tGeoStatus) tGeoStatus.innerText = '✅ Location set from the map';
+recalcAllDistances();
+showToast('Home location saved ✅');
+} else if (pickerContext === 'newStudent') {
+window.__pendingStudentLoc = { lat: ll.lat, lng: ll.lng };
+if (addr) document.getElementById('sAddress').value = addr;
+let ns = document.getElementById('newStudentGeoStatus');
+if (ns) ns.innerText = '✅ Location set, will be saved with the student';
+showToast('Student location set ✅');
+} else if (pickerContext && pickerContext.type === 'edit') {
+let s = db.students.find(x => x.id === pickerContext.id);
+if (s) {
+commitChange();
+s.lat = ll.lat; s.lng = ll.lng;
+if (addr) s.address = addr;
+if (db.teacherLat != null) {
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, ll.lat, ll.lng) * 10) / 10;
+}
+save();
+showToast('Student location updated ✅');
+openEdit(s.id);
+}
+}
+closeAll();
+}
+async function geocodeTeacherAddress() {
+const addr = document.getElementById('teacherAddressInput').value.trim();
+const statusEl = document.getElementById('teacherGeoStatus');
+if (!addr) { alert('Please enter your address first'); return; }
+statusEl.innerText = '⏳ Locating...';
+const loc = await geocodeAddress(addr);
+if (loc) {
+commitChange();
+db.teacherAddress = addr;
+db.teacherLat = loc.lat;
+db.teacherLng = loc.lng;
+save();
+statusEl.innerText = '✅ Location set successfully';
+recalcAllDistances();
+} else {
+statusEl.innerText = '⚠️ Could not locate this address, try a clearer address or use the map';
+}
+}
+async function recalcAllDistances() {
+if (db.teacherLat == null || !db.students) return;
+for (const s of db.students) {
+if (s.address) {
+if (s.lat == null) {
+const loc = await geocodeAddress(s.address);
+if (loc) { s.lat = loc.lat; s.lng = loc.lng; }
+await new Promise(r => setTimeout(r, 1000));
+}
+if (s.lat != null) {
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
+}
+}
+}
+save();
+}
+function minutesToTimeLabel(mins) {
+let h = Math.floor(mins / 60), m = mins % 60;
+let ampm = h < 12 ? 'AM' : 'PM';
+let hh = h % 12 === 0 ? 12 : h % 12;
+return `${hh}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+let lastSuggestion = null;
+let suggestionAttempt = 0; // cycles strategies each click, so "Re-suggest" gives a genuinely
+function slotOptionsCount(fromMin, toMin, duration) {
+let n = 0;
+for (let slot = fromMin; slot + duration <= toMin; slot += 15) n++;
+return n;
+}
+function generateSuggestedSchedule() {
+if (db.teacherLat == null) {
+alert('Please set your home address first from ⚙️ Settings');
+toggleSidebar();
+return;
+}
+const withPrefs = (db.students || []).filter(s => getStudentPrefSchedule(s).length && s.lat != null);
+if (!withPrefs.length) {
+alert('You need at least one student with a computed location and preferred days set');
+return;
+}
+const strategy = suggestionAttempt % 3;
+suggestionAttempt++;
+let studentCandidates = withPrefs.map(s => {
+const fullPref = getStudentPrefSchedule(s);
+const mandatoryDays = fullPref.filter(p => p.mandatory);
+const optionalDays = fullPref.filter(p => !p.mandatory);
+const targetCount = s.weeklyDaysCount ? Math.max(Number(s.weeklyDaysCount) || 0, mandatoryDays.length) : fullPref.length;
+return { student: s, duration: Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES, mandatoryDays, optionalDays, targetCount };
+});
+let dayState = {};
+daysOrder.forEach(day => {
+let floor = getDayFloorTime(day);
+dayState[day] = { intervals: [], floorMin: floor ? timeToMinutes(floor) : 0, placed: [] };
+});
+let unresolved = [];
+function tryPlaceOnDay(day, fromRaw, toRaw, duration, entryMeta) {
+let st = dayState[day];
+let fromMin = Math.max(timeToMinutes(fromRaw), st.floorMin);
+let toMin = timeToMinutes(toRaw);
+if (toMin - fromMin < duration) return null;
+let candidateStarts = [];
+for (let slot = fromMin; slot + duration <= toMin; slot += 15) candidateStarts.push(slot);
+if (!candidateStarts.length) return null;
+if (strategy === 1) candidateStarts.reverse();
+for (const slot of candidateStarts) {
+let slotEnd = slot + duration;
+let overlaps = st.intervals.some(iv => slot < iv.end && slotEnd > iv.start);
+if (!overlaps) {
+st.intervals.push({ start: slot, end: slotEnd });
+let placedEntry = { ...entryMeta, day, minutes: slot, timeLabel: minutesToTimeLabel(slot), endTimeLabel: minutesToTimeLabel(slotEnd) };
+st.placed.push(placedEntry);
+return placedEntry;
+}
+}
+return null;
+}
+let mandatoryQueue = [];
+studentCandidates.forEach(sc => {
+sc.mandatoryDays.forEach(p => {
+let st = dayState[p.day];
+let fromMin = Math.max(timeToMinutes(p.from), st.floorMin);
+mandatoryQueue.push({ sc, p, tightness: slotOptionsCount(fromMin, timeToMinutes(p.to), sc.duration) });
+});
+});
+mandatoryQueue.sort((a, b) => a.tightness - b.tightness);
+if (strategy === 2) {
+for (let i = mandatoryQueue.length - 1; i > 0; i--) {
+let j = Math.floor(Math.random() * (i + 1));
+if (mandatoryQueue[i].tightness === mandatoryQueue[j].tightness) [mandatoryQueue[i], mandatoryQueue[j]] = [mandatoryQueue[j], mandatoryQueue[i]];
+}
+}
+mandatoryQueue.forEach(({ sc, p }) => {
+let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: true };
+let placed = tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta);
+if (!placed) unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: p.day, reason: 'mandatory-conflict' });
+});
+let optionalQueue = studentCandidates.map(sc => {
+let stillNeeded = Math.max(0, sc.targetCount - sc.mandatoryDays.length);
+let tightnessValues = sc.optionalDays.map(p => {
+let st = dayState[p.day];
+return slotOptionsCount(Math.max(timeToMinutes(p.from), st.floorMin), timeToMinutes(p.to), sc.duration);
+});
+let bestTightness = tightnessValues.length ? Math.min(...tightnessValues) : Infinity;
+return { sc, stillNeeded, bestTightness };
+}).filter(q => q.stillNeeded > 0 && q.sc.optionalDays.length);
+optionalQueue.sort((a, b) => a.bestTightness - b.bestTightness);
+if (strategy === 2) {
+for (let i = optionalQueue.length - 1; i > 0; i--) {
+let j = Math.floor(Math.random() * (i + 1));
+if (optionalQueue[i].bestTightness === optionalQueue[j].bestTightness) [optionalQueue[i], optionalQueue[j]] = [optionalQueue[j], optionalQueue[i]];
+}
+}
+optionalQueue.forEach(({ sc, stillNeeded }) => {
+let candidateDays = sc.optionalDays.slice().sort((a, b) => {
+let stA = dayState[a.day], stB = dayState[b.day];
+let fA = Math.max(timeToMinutes(a.from), stA.floorMin), fB = Math.max(timeToMinutes(b.from), stB.floorMin);
+return slotOptionsCount(fA, timeToMinutes(a.to), sc.duration) - slotOptionsCount(fB, timeToMinutes(b.to), sc.duration);
+});
+let placedCount = 0;
+for (const p of candidateDays) {
+if (placedCount >= stillNeeded) break;
+let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: false };
+if (tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta)) placedCount++;
+}
+if (placedCount < stillNeeded) {
+unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: null, reason: 'not-enough-room', missing: stillNeeded - placedCount, wanted: stillNeeded });
+}
+});
+let suggestions = {};
+daysOrder.forEach(day => {
+let list = dayState[day].placed.slice().sort((a, b) => a.minutes - b.minutes);
+if (!list.length) return;
+let curLat = db.teacherLat, curLng = db.teacherLng;
+list.forEach(e => {
+e.dist = Math.round(haversineKm(curLat, curLng, e.lat, e.lng) * 10) / 10;
+curLat = e.lat; curLng = e.lng;
+});
+suggestions[day] = list;
+});
+lastSuggestion = suggestions;
+renderSuggestionModal(suggestions, unresolved, strategy);
+}
+function renderSuggestionModal(suggestions, unresolved, strategy) {
+const strategyLabel = ['⏱️ Earliest-first', '🌙 Latest-first', '🎲 Alternate mix'][strategy] || '';
+let html = `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
+<h3 style="margin:0;">🧭 Suggested Schedule</h3>
+<button class="action-btn" style="background:#0ea5e9; color:white; margin:0; flex-shrink:0;" onclick="generateSuggestedSchedule()" title="Try another valid arrangement">🔄</button>
+</div>
+<p style="font-size:10.5px; color:#64748b; margin:0 0 8px;">Strategy: ${strategyLabel} — every session respects each student's own window and time never overlaps. Nothing starts before 11:00 AM Saturday or 2:00 PM Sun-Thu. ★Mandatory sessions are locked in first, most time-constrained students get priority for real slots (no invented/unavailable sessions).</p>`;
+const dayKeys = Object.keys(suggestions);
+if (!dayKeys.length) {
+html += `<p>No sessions could be placed yet — check that at least one student has a saved location and preferred day/time.</p>`;
+} else {
+dayKeys.forEach(day => {
+html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
+suggestions[day].forEach(e => {
+html += `<div class="suggest-row">
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
+<span>${e.timeLabel} - ${e.endTimeLabel}</span>
+<span class="distance-badge">${e.dist} km</span>
+</div>`;
+});
+html += `</div>`;
+});
+html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ Apply Suggested Schedule</button>`;
+}
+if (unresolved && unresolved.length) {
+html += `<div class="suggest-day-block" style="border-color:#ef4444; background:#fef2f2;"><b style="color:#b91c1c;">⚠️ Could not fully schedule</b>`;
+unresolved.forEach(u => {
+let msg = u.reason === 'mandatory-conflict'
+? `${u.name}: mandatory time on ${dayNamesFull[u.day] || u.day} clashes with another mandatory session — adjust one of their times.`
+: `${u.name}: only fit ${u.wanted - u.missing} of ${u.wanted} requested session(s) this week — try widening their preferred windows or adding another preferred day.`;
+html += `<div class="suggest-row conflict"><span>${msg}</span></div>`;
+});
+html += `</div>`;
+}
+html += `<button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-top:8px;" onclick="generateSuggestedSchedule()">🔄 Re-suggest</button>`;
+html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">Close</button>`;
+document.getElementById('editFields').innerHTML = html;
+document.getElementById('editModal').classList.add('active');
+document.getElementById('overlay').classList.add('active');
+}
+function applySuggestedSchedule() {
+if (!lastSuggestion) return;
+if (!confirm('This will replace the schedule for students who have a suggestion with the new times. Continue?')) return;
+commitChange();
+Object.keys(lastSuggestion).forEach(day => {
+lastSuggestion[day].forEach(e => {
+let student = db.students.find(s => s.id === e.studentId);
+if (!student) return;
+if (!student.schedules) student.schedules = [];
+student.schedules = student.schedules.filter(sc => sc.day !== day);
+student.schedules.push({ day, time: e.timeLabel, offset: 0, status: 0 });
+});
+});
+save();
+closeAll();
+showToast('Suggested schedule applied ✅');
+}
+function timeToMinutes(t) {
+if (!t) return 0;
+let parts = t.split(' ');
+if(parts.length < 2) return 0;
+let [time, ampm] = parts;
+let timeParts = time.split(':');
+if(timeParts.length < 2) return 0;
+let hrs = Number(timeParts[0]);
+let mins = Number(timeParts[1]);
+if (ampm === 'PM' && hrs !== 12) hrs += 12;
+if (ampm === 'AM' && hrs === 12) hrs = 0;
+return hrs * 60 + mins;
+}
+function save() {
+try { localStorage.setItem('tutor_v390', JSON.stringify(db)); } catch(e) {}
+render();
+}
+function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
+function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
+function printFullSchedule() {
+document.body.classList.remove('print-single-student');
+window.print();
+}
+function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
+let teacherName = db.teacherName || 'Teacher';
+let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${db.teacherPhone}</div>` : '';
+let schedulesHTML = '';
+if(!student.schedules || student.schedules.length === 0) {
+schedulesHTML = `<tr><td colspan="2" style="padding: 8px 10px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
+} else {
+let sortedSchedules = [...student.schedules].sort((a, b) => {
+let dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+if (dayDiff !== 0) return dayDiff;
+return timeToMinutes(a.time) - timeToMinutes(b.time);
+});
+sortedSchedules.forEach(sc => {
+let fullDay = dayNamesFull[sc.day] || sc.day;
+schedulesHTML += `
+<tr>
+<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${fullDay}</td>
+<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left;">${sc.time}</td>
+</tr>
+`;
+});
+}
+let financialsHTML = '';
+if (includeFinancials) {
+let lastPeriod = student.periods && student.periods.length ? student.periods[student.periods.length - 1] : { price: 0, cycle: 4 };
+financialsHTML = `
+<div style="background: #1e293b; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center;">
+<div>
+<span style="font-size: 12px; color: #94a3b8; display: block;">Amount Due:</span>
+<strong style="font-size: 16px; color: #34d399;">${lastPeriod.price || 0}</strong>
+</div>
+<div style="text-align: right;">
+<span style="font-size: 12px; color: #94a3b8; display: block;">Billing Cycle:</span>
+<strong style="font-size: 14px; color: #ffffff;">Every ${lastPeriod.cycle || 4} Weeks</strong>
+</div>
+</div>
+`;
+}
+return `
+<div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 18px; border-radius: 14px; border: 3px double #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden;">
+<div style="position:absolute; top:8px; left:8px; width:14px; height:14px; border-top:2px solid #facc15; border-left:2px solid #facc15; border-radius:3px 0 0 0;"></div>
+<div style="position:absolute; top:8px; right:8px; width:14px; height:14px; border-top:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 3px 0 0;"></div>
+<div style="position:absolute; bottom:8px; left:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-left:2px solid #facc15; border-radius:0 0 0 3px;"></div>
+<div style="position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 0 3px 0;"></div>
+<div style="position:absolute; top:-60px; right:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.10) 0%, rgba(250,204,21,0) 70%); pointer-events:none;"></div>
+<div style="position:absolute; bottom:-60px; left:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0) 70%); pointer-events:none;"></div>
+<div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 9px; margin-bottom: 10px;">
+<div>
+<h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
+<p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">Official Weekly Schedule</p>
+</div>
+<div style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; text-align: right; line-height:1.3;">
+<div>${teacherName}</div>
+${teacherPhone}
+</div>
+</div>
+<div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${student.color || '#3b82f6'};">
+<h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Name: ${student.name}</h3>
+<p style="margin: 0; font-size: 11px; color: #94a3b8;">Here are the assigned weekly session times:</p>
+</div>
+${financialsHTML}
+<table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
+<thead>
+<tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
+<th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
+<th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
+</tr>
+</thead>
+<tbody>${schedulesHTML}</tbody>
+</table>
+<div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
+✦ Thank you for trusting us with your education ✦
+</div>
+</div>
+`;
+}
+function printSingleStudent(studentId, includeFinancials = false, includePhone = false) {
+let student = db.students.find(s => s.id === studentId);
+if(!student) return;
+document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
+document.body.classList.add('print-single-student');
+window.print();
+}
+function downloadStudentImage(studentId, includeFinancials = false, includePhone = false) {
+let student = db.students.find(s => s.id === studentId);
+if(!student) return;
+let tempDiv = document.createElement('div');
+tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
+tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
+document.body.appendChild(tempDiv);
+html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
+let link = document.createElement('a');
+link.download = `Student_Report_${student.name}.png`;
+link.href = canvas.toDataURL('image/png');
+link.click();
+document.body.removeChild(tempDiv);
+}).catch(() => { document.body.removeChild(tempDiv); });
+}
+function resetAllStudentsStartDate() {
+let newDate = document.getElementById('courseBaseDate').value;
+if(!newDate) { alert('Please select a valid date first'); return; }
+if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
+commitChange();
+db.courseStartDate = newDate;
+db.students.forEach(student => {
+if(student.periods && student.periods.length > 0) student.periods[0].startDate = newDate;
+});
+save();
+alert('Course start date reset for all students successfully!');
+closeAll();
+}
+}
+function exportBackup() {
+const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+const downloadAnchor = document.createElement('a');
+downloadAnchor.setAttribute("href", dataStr);
+downloadAnchor.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
+document.body.appendChild(downloadAnchor);
+downloadAnchor.click();
+downloadAnchor.remove();
+}
+function importBackup(input) {
+if (input.files && input.files[0]) {
+const reader = new FileReader();
+reader.onload = (e) => {
+try {
+const importedData = JSON.parse(e.target.result);
+if (confirm('Are you sure you want to restore this backup? Current data will be replaced.')) {
+commitChange();
+db = importedData;
+save();
+alert('Data restored successfully!');
+closeAll();
+}
+} catch (err) { alert('Invalid backup file!'); }
+};
+reader.readAsText(input.files[0]);
+}
+}
+function moveSlot(studentId, fromDay, time, targetDay) {
+commitChange();
+let student = db.students.find(s => s.id === studentId);
+if (!student) return;
+let idx = student.schedules.findIndex(s => s.day === fromDay && s.time === time);
+if (idx > -1) {
+student.schedules[idx].day = targetDay;
+}
+save();
+}
+function handleDragStart(e, studentId, day, time) {
+draggedData = { studentId, day, time };
+e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
+}
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function handleDrop(e, targetDay) {
+e.preventDefault();
+e.currentTarget.classList.remove('drag-over');
+if (!draggedData) return;
+moveSlot(draggedData.studentId, draggedData.day, draggedData.time, targetDay);
+draggedData = null;
+}
+function enableHorizontalDrag() {
+let isDraggingHorizontal = false;
+let startX = 0;
+let currentSlot = null;
+let initialOffset = 0;
+document.querySelectorAll('.slot').forEach(slot => {
+slot.addEventListener('mousedown', (e) => {
+if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+isDraggingHorizontal = true;
+currentSlot = slot;
+startX = e.clientX;
+initialOffset = parseFloat(slot.getAttribute('data-offset')) || 0;
+slot.style.zIndex = '100';
+});
+});
+window.addEventListener('mousemove', (e) => {
+if (!isDraggingHorizontal || !currentSlot) return;
+let diffX = e.clientX - startX;
+let newOffset = initialOffset + diffX;
+currentSlot.style.marginLeft = `${newOffset}px`;
+});
+window.addEventListener('mouseup', () => {
+if (isDraggingHorizontal && currentSlot) {
+let sId = Number(currentSlot.getAttribute('data-studentid'));
+let day = currentSlot.getAttribute('data-day');
+let time = currentSlot.getAttribute('data-time');
+let finalMarginLeft = parseFloat(currentSlot.style.marginLeft) || 0;
+let student = db.students.find(s => s.id === sId);
+if (student && student.schedules) {
+let targetSlot = student.schedules.find(s => s.day === day && s.time === time);
+if (targetSlot) {
+commitChange();
+targetSlot.offset = Math.round(finalMarginLeft);
+save();
+}
+}
+isDraggingHorizontal = false;
+currentSlot = null;
+}
+});
+}
+function render() {
+const grid = document.getElementById('scheduleGrid');
+const body = document.getElementById('accBody');
+const totalH = document.getElementById('accTotalHeader');
+const sSelect = document.getElementById('sSelect');
+if (!grid || !body || !totalH || !sSelect) return;
+grid.innerHTML = '';
+sSelect.innerHTML = '<option value="">Select Student</option>';
+document.getElementById('teacherName').value = db.teacherName || '';
+document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
+let tAddrInput = document.getElementById('teacherAddressInput');
+if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
+let tGeoStatus = document.getElementById('teacherGeoStatus');
+if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ Location saved' : '';
+document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
+document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
+const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+days.forEach(d => {
+let bilingualDayLabel = dayNamesMap[d] || d;
+grid.innerHTML += `
+<div class="day-row">
+<div class="day-label">${bilingualDayLabel}</div>
+<div class="slots" id="slot-${d}"
+ondragover="handleDragOver(event)"
+ondragleave="handleDragLeave(event)"
+ondrop="handleDrop(event, '${d}')">
+</div>
+</div>`;
+});
+let allSchedulesByDay = {};
+days.forEach(d => allSchedulesByDay[d] = []);
+if(db.students && Array.isArray(db.students)) {
+db.students.forEach(s => {
+sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+if(s.schedules && Array.isArray(s.schedules)) {
+s.schedules.forEach(sc => {
+if(allSchedulesByDay[sc.day]) {
+allSchedulesByDay[sc.day].push({ ...sc, studentName: s.name, studentColor: s.color, studentId: s.id, minutes: timeToMinutes(sc.time) });
+}
+});
+}
+});
+}
+days.forEach(d => {
+let daySlots = allSchedulesByDay[d];
+daySlots.sort((a, b) => a.minutes - b.minutes);
+daySlots.forEach((sc, index) => {
+let div = document.createElement('div');
+div.className = 'slot';
+div.style.background = sc.studentColor || '#3b82f6';
+div.setAttribute('data-studentid', sc.studentId);
+div.setAttribute('data-day', sc.day);
+div.setAttribute('data-time', sc.time);
+div.setAttribute('data-offset', sc.offset || 0);
+if (index < daySlots.length - 1) {
+let nextSc = daySlots[index + 1];
+let diffMinutes = nextSc.minutes - sc.minutes;
+if (diffMinutes > 60) {
+div.classList.add('wide-slot');
+}
+}
+if (sc.status === 1) div.style.border = '2px solid #22c55e';
+else if (sc.status === 2) { div.style.border = '2px solid #ef4444'; div.style.opacity = '0.7'; }
+else if (sc.status === 3) { div.style.border = '2px dashed #facc15'; div.style.opacity = '0.6'; }
+if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
+div.draggable = true;
+div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
+div.onclick = (e) => {
+if (!e.defaultPrevented) openSlotModal(sc.studentId, sc.day, sc.time);
+};
+let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
+div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
+document.getElementById(`slot-${sc.day}`)?.appendChild(div);
+});
+});
+enableHorizontalDrag();
+let dates = [];
+let startDateVal = db.courseStartDate || new Date().toISOString().slice(0,10);
+let dBase = new Date(startDateVal);
+for(let i=0; i<24; i++){
+let thu = new Date(dBase);
+thu.setDate(dBase.getDate()+5);
+dates.push(new Date(thu));
+dBase.setDate(dBase.getDate()+7);
+}
+let income = Array(dates.length).fill(0);
+let grandTotal = 0;
+if(db.students) {
+grandTotal = db.students.reduce((acc, s) => {
+let lastPeriod = s.periods && s.periods.length ? s.periods[s.periods.length-1] : { price: 0 };
+return acc + (lastPeriod.price || 0);
+}, 0);
+}
+let studentRowsHTML = '';
+if (db.students && Array.isArray(db.students)) {
+db.students.forEach((s) => {
+if(!s.financialMap) s.financialMap = {};
+let currentPeriod = s.periods && s.periods.length ? s.periods[s.periods.length - 1] : null;
+let subPrice = currentPeriod ? (currentPeriod.price || 0) : 0;
+let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}<div class="sub-price">${subPrice}</div></td>`;
+dates.forEach((d, i) => {
+let isHol = (db.holidays || []).includes(i), isPay = false;
+let st_val = s.financialMap[i] || 0;
+let isDis = st_val == 3; // disabled session for this student only
+let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+if (activeP && !isHol && !isDis) {
+let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
+let hCount = 0;
+for (let j = 0; j <= i; j++) {
+let skipped = (db.holidays || []).includes(j) || s.financialMap[j] == 3;
+if (skipped && dates[j] >= new Date(activeP.startDate)) hCount++;
+}
+let eff = totalWeeks - hCount;
+if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+}
+let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : (st_val == 3 ? '⏸' : ''));
+let stClass = st_val == 1 ? 'status-paid' : st_val == 2 ? 'status-notpaid' : st_val == 3 ? 'status-disabled' : '';
+row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${stClass}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
+});
+row += '</tr>';
+studentRowsHTML += row;
+});
+}
+body.innerHTML = studentRowsHTML;
+document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
+totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` + income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') + `</tr>`;
+initColors('colorGridAdd', 'sColor');
+}
+function openSlotModal(studentId, currentDay, currentTime) {
+let student = db.students.find(s => s.id === studentId);
+if (!student) return;
+let slot = (student.schedules || []).find(s => s.day === currentDay && s.time === currentTime);
+let currentOffset = slot?.offset || 0;
+let currentStatus = slot?.status || 0;
+let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${dayNamesMap[d]}</option>`).join('');
+document.getElementById('editFields').innerHTML = `
+<h3>Edit Session Slot ⏰</h3>
+<label>Student Name</label>
+<input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
+<label>Day</label>
+<select id="editSlotDay">${daysOptions}</select>
+<label>Time</label>
+<select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
+<label>Attendance Status</label>
+<select id="editSlotStatus">
+<option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
+<option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
+<option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
+<option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
+</select>
+<label>Horizontal Offset (px)</label>
+<input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
+<button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
+<button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+`;
+document.getElementById('editModal').classList.add('active');
+document.getElementById('overlay').classList.add('active');
+}
+function updateSlot(studentId, oldDay, oldTime) {
+let newDay = document.getElementById('editSlotDay').value;
+let newTime = document.getElementById('editSlotTime').value;
+let newStatus = Number(document.getElementById('editSlotStatus').value);
+let newOffset = Number(document.getElementById('editSlotOffset').value) || 0;
+commitChange();
+let student = db.students.find(s => s.id === studentId);
+if (student && student.schedules) {
+let slot = student.schedules.find(s => s.day === oldDay && s.time === oldTime);
+if (slot) {
+slot.day = newDay;
+slot.time = newTime;
+slot.status = newStatus;
+slot.offset = newOffset;
+save();
+}
+}
+closeAll();
+}
+function deleteSlot(studentId, day, time) {
+commitChange();
+let student = db.students.find(s => s.id === studentId);
+if (student && student.schedules) {
+student.schedules = student.schedules.filter(s => !(s.day === day && s.time === time));
+save();
+}
+closeAll();
+}
+function th(i) {
+commitChange();
+if(!db.holidays) db.holidays = [];
+let idx = db.holidays.indexOf(i);
+if(idx > -1) db.holidays.splice(idx,1);
+else db.holidays.push(i);
+save();
+}
+function st(id, i) {
+commitChange();
+let s = db.students.find(x => x.id === id);
+if(s) {
+if(!s.financialMap) s.financialMap = {};
+s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 4;
+save();
+}
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
+function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
+function initColors(id, radioName, sel = PALETTE[0]) {
+const target = document.getElementById(id);
+if(!target) return;
+target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`;
+}
+function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
+function addStudent() {
+let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
+if(!n) return; commitChange();
+if(!db.students) db.students = [];
+let address = document.getElementById('sAddress')?.value.trim() || '';
+let preferredSchedule = getPrefSchedule('sPrefDays');
+let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
+let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
+let pendingLoc = window.__pendingStudentLoc || null;
+let newStudent = {
+id: Date.now(),
+name: n,
+color: col,
+financialMap: {},
+schedules: [],
+address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
+lat: pendingLoc ? pendingLoc.lat : null,
+lng: pendingLoc ? pendingLoc.lng : null,
+distanceKm: null,
+periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }]
+};
+if (pendingLoc && db.teacherLat != null) {
+newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, pendingLoc.lat, pendingLoc.lng) * 10) / 10;
+}
+db.students.push(newStudent);
+save(); closeAll();
+document.getElementById('sAddress').value = '';
+document.getElementById('sWeeklyDays').value = '';
+document.getElementById('sSessionDuration').value = '';
+window.__pendingStudentLoc = null;
+let ns = document.getElementById('newStudentGeoStatus');
+if (ns) ns.innerText = '';
+buildDayPrefUI('sPrefDays', []);
+if (!pendingLoc && address && db.teacherLat != null) {
+geocodeAddress(address).then(loc => {
+if (loc) {
+newStudent.lat = loc.lat; newStudent.lng = loc.lng;
+newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+}
+});
+}
+}
+function addSchedule() {
+let id = Number(document.getElementById('sSelect').value);
+let d = document.getElementById('cDay').value;
+let t = document.getElementById('cTime').value;
+if(!id) return;
+commitChange();
+let student = db.students.find(x => x.id === id);
+if(student) {
+if(!student.schedules) student.schedules = [];
+student.schedules.push({ day: d, time: t, offset: 0, status: 0 });
+save();
+}
+closeAll();
+}
+function openEdit(id) {
+const s = db.students.find(x => x.id === id);
+if(!s) return;
+let phtml = (s.periods || []).map((p, idx) => `
+<div class="period-card">
+<label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
+<label>Price</label><input type="number" class="p-price" value="${p.price}">
+<label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="${p.cycle}">
+${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
+</div>`).join('');
+let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
+document.getElementById('editFields').innerHTML = `
+<h3>Edit Student</h3>
+<label>Name</label><input id="en" value="${s.name}">
+<div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+<label style="font-size:11px; color:#64748b;">📍 Student Address/Area</label>
+<div class="addr-row">
+<input id="eAddress" value="${s.address || ''}" placeholder="e.g. Uptown, Springfield">
+<button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">📍</button>
+</div>
+<div style="margin:-6px 0 12px;">${distHtml}</div>
+<label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
+<input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+<input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
+<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
+<hr>
+<h4>Billing Periods</h4>
+<div id="editPeriods">${phtml}</div>
+<button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
+<label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a; margin-bottom:8px;">
+<input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
+</label>
+<label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
+<input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
+</label>
+</div>
+<div style="display: flex; gap: 5px; margin-bottom: 8px;">
+<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
+<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
+</div>
+<button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
+<button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+`;
+initColors('ecg', 'eColor', s.color);
+buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
+document.getElementById('editModal').classList.add('active');
+document.getElementById('overlay').classList.add('active');
+}
+async function recomputeStudentDistance(id) {
+let s = db.students.find(x => x.id === id);
+if (!s) return;
+let address = document.getElementById('eAddress').value.trim();
+if (!address) { alert('Please enter the student\'s address first'); return; }
+if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
+const loc = await geocodeAddress(address);
+if (loc) {
+commitChange();
+s.address = address;
+s.lat = loc.lat; s.lng = loc.lng;
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+openEdit(id);
+} else {
+alert('Could not locate this address, try writing it more clearly or use the map');
+}
+}
+function addNewPeriod() {
+const div = document.createElement('div');
+div.className = 'period-card';
+let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
+div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+document.getElementById('editPeriods').appendChild(div);
+}
+function up(id) {
+commitChange();
+let s = db.students.find(x => x.id === id);
+if(s) {
+s.name = document.getElementById('en').value;
+s.color = document.getElementById('hidden_ecg').value;
+let newAddress = document.getElementById('eAddress')?.value.trim() || '';
+if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
+s.address = newAddress;
+s.preferredSchedule = getPrefSchedule('ePrefDays');
+s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
+s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
+let newPeriods = [];
+document.querySelectorAll('.period-card').forEach(card => {
+newPeriods.push({
+startDate: card.querySelector('.p-date').value,
+price: Number(card.querySelector('.p-price').value || 0),
+cycle: Number(card.querySelector('.p-cycle').value || 4)
+});
+});
+s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+save();
+if (s.address && s.lat == null && db.teacherLat != null) {
+geocodeAddress(s.address).then(loc => {
+if (loc) {
+s.lat = loc.lat; s.lng = loc.lng;
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+}
+});
+}
+}
+closeAll();
+}
+function del(id) {
+if(confirm('Delete student and all their records?')) {
+commitChange();
+db.students = db.students.filter(x => x.id !== id);
+save();
+closeAll();
+}
+}
+async function loadPhoto() {
+try {
+let d = await openPhotoDB();
+let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg");
+req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; };
+} catch(e) {}
+}
+function openPhotoDB() {
+return new Promise((res) => {
+let req = indexedDB.open("SmartTutorPhotoDB", 1);
+req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos");
+req.onsuccess = (e) => res(e.target.result);
+req.onerror = () => res(null);
+});
+}
+function handleImageUpload(input) {
+if (input.files && input.files[0]) {
+const reader = new FileReader();
+reader.onload = (e) => {
+const img = new Image();
+img.onload = async () => {
+const canvas = document.createElement('canvas');
+canvas.width = 150; canvas.height = 150;
+canvas.getContext('2d').drawImage(img,0,0,150,150);
+const url = canvas.toDataURL('image/jpeg', 0.7);
+document.getElementById('teacherImg').src = url;
+let d = await openPhotoDB();
+if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg");
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(input.files[0]);
+}
+}
+window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
 </script>
 </body>
 </html>
