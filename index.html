@@ -188,6 +188,11 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <div class="map-status" id="newStudentGeoStatus"></div>
 <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
 <input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+<input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+<div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
+<div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
 <hr style="margin:20px 0; opacity:0.1">
 <h3>Add Slot (Session)</h3>
@@ -296,6 +301,7 @@ return html;
 function initLessonTimes() {
 const sel = document.getElementById('cTime');
 if (sel) sel.innerHTML = getTimeOptionsHTML();
+buildDayPrefUI('sPrefDays', []);
 }
 function buildDayPills(containerId, selectedDays, prefix = '') {
 const el = document.getElementById(containerId);
@@ -1382,7 +1388,9 @@ let n = document.getElementById('sName').value, col = document.getElementById('h
 if(!n) return; commitChange();
 if(!db.students) db.students = [];
 let address = document.getElementById('sAddress')?.value.trim() || '';
+let preferredSchedule = getPrefSchedule('sPrefDays');
 let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
+let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
 let pendingLoc = window.__pendingStudentLoc || null;
 let newStudent = {
 id: Date.now(),
@@ -1390,7 +1398,7 @@ name: n,
 color: col,
 financialMap: {},
 schedules: [],
-address, weeklyDaysCount,
+address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
 lat: pendingLoc ? pendingLoc.lat : null,
 lng: pendingLoc ? pendingLoc.lng : null,
 distanceKm: null,
@@ -1403,9 +1411,11 @@ db.students.push(newStudent);
 save(); closeAll();
 document.getElementById('sAddress').value = '';
 document.getElementById('sWeeklyDays').value = '';
+document.getElementById('sSessionDuration').value = '';
 window.__pendingStudentLoc = null;
 let ns = document.getElementById('newStudentGeoStatus');
 if (ns) ns.innerText = '';
+buildDayPrefUI('sPrefDays', []);
 if (!pendingLoc && address && db.teacherLat != null) {
 geocodeAddress(address).then(loc => {
 if (loc) {
@@ -1453,6 +1463,11 @@ document.getElementById('editFields').innerHTML = `
 <div style="margin:-6px 0 12px;">${distHtml}</div>
 <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
 <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+<input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
+<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 <hr>
 <h4>Billing Periods</h4>
 <div id="editPeriods">${phtml}</div>
@@ -1473,6 +1488,7 @@ document.getElementById('editFields').innerHTML = `
 <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
 `;
 initColors('ecg', 'eColor', s.color);
+buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
 document.getElementById('editModal').classList.add('active');
 document.getElementById('overlay').classList.add('active');
 }
@@ -1510,7 +1526,9 @@ s.color = document.getElementById('hidden_ecg').value;
 let newAddress = document.getElementById('eAddress')?.value.trim() || '';
 if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
 s.address = newAddress;
+s.preferredSchedule = getPrefSchedule('ePrefDays');
 s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
+s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
 let newPeriods = [];
 document.querySelectorAll('.period-card').forEach(card => {
 newPeriods.push({
@@ -1578,4 +1596,4 @@ reader.readAsDataURL(input.files[0]);
 window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
 </script>
 </body>
-</html>
+</html>
