@@ -188,11 +188,6 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <div class="map-status" id="newStudentGeoStatus"></div>
 <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
 <input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
-<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
-<input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
-<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
-<div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
-<div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
 <hr style="margin:20px 0; opacity:0.1">
 <h3>Add Slot (Session)</h3>
@@ -301,7 +296,6 @@ return html;
 function initLessonTimes() {
 const sel = document.getElementById('cTime');
 if (sel) sel.innerHTML = getTimeOptionsHTML();
-buildDayPrefUI('sPrefDays', []);
 }
 function buildDayPills(containerId, selectedDays, prefix = '') {
 const el = document.getElementById(containerId);
@@ -1066,228 +1060,6 @@ link.click();
 document.body.removeChild(tempDiv);
 }).catch(() => { document.body.removeChild(tempDiv); });
 }
-/* ============ Parent Report: payment-period schedule (dates & times) ============ */
-const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const DAY_JS_INDEX = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
-function parseLocalDate(str) {
-  if (!str) return new Date();
-  const p = String(str).split('-').map(Number);
-  if (p.length < 3 || p.some(isNaN)) return new Date(str);
-  return new Date(p[0], p[1] - 1, p[2]);
-}
-function addDaysTo(date, n) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() + n);
-  return d;
-}
-function fmtReportDate(d, withYear = true) {
-  return d.getDate() + ' ' + MONTH_SHORT[d.getMonth()] + (withYear ? ' ' + d.getFullYear() : '');
-}
-// Splits the student's timeline into payment periods (every N weeks) using the same logic as the accounting table
-function getStudentBillingPeriods(student) {
-  const baseStr = db.courseStartDate || new Date().toISOString().slice(0, 10);
-  const base = parseLocalDate(baseStr);
-  const hols = db.holidays || [];
-  const fmap = student.financialMap || {};
-  const cols = [];
-  for (let i = 0; i < 24; i++) {
-    const weekStart = addDaysTo(base, i * 7);
-    const holiday = hols.includes(i);
-    const paused = fmap[i] == 3;
-    cols.push({ i, weekStart, thu: addDaysTo(weekStart, 5), holiday, paused, skipped: holiday || paused });
-  }
-  const plist = (student.periods && student.periods.length) ? [...student.periods] : [{ startDate: baseStr, price: 0, cycle: 4 }];
-  plist.sort((a, b) => parseLocalDate(a.startDate) - parseLocalDate(b.startDate));
-  const result = [];
-  plist.forEach((p, pi) => {
-    const pStart = parseLocalDate(p.startDate);
-    const nextStart = plist[pi + 1] ? parseLocalDate(plist[pi + 1].startDate) : null;
-    const cycle = Math.max(1, Number(p.cycle) || 4);
-    const active = cols.filter(c => !c.skipped && c.thu >= pStart && (!nextStart || c.thu < nextStart));
-    for (let k = 0; k < active.length; k += cycle) {
-      const chunk = active.slice(k, k + cycle);
-      const first = chunk[0], last = chunk[chunk.length - 1];
-      result.push({
-        number: result.length + 1,
-        price: Number(p.price) || 0,
-        cycle,
-        weeks: chunk.length,
-        startDate: first.weekStart,
-        endDate: addDaysTo(last.weekStart, 6),
-        cols: cols.filter(c => c.i >= first.i && c.i <= last.i)
-      });
-    }
-  });
-  return result;
-}
-// Builds the real calendar dates of every session inside one payment period
-function getBillingPeriodWeeks(student, bp) {
-  const sched = (student.schedules || [])
-    .filter(sc => DAY_JS_INDEX[sc.day] !== undefined)
-    .sort((a, b) => (daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day)) || (timeToMinutes(a.time) - timeToMinutes(b.time)));
-  let n = 0;
-  return bp.cols.map(c => {
-    const weekEnd = addDaysTo(c.weekStart, 6);
-    if (c.skipped) return { type: c.holiday ? 'holiday' : 'paused', weekStart: c.weekStart, weekEnd };
-    n++;
-    const lessons = sched.map(sc => {
-      const off = (DAY_JS_INDEX[sc.day] - c.weekStart.getDay() + 7) % 7;
-      return { day: sc.day, time: sc.time, date: addDaysTo(c.weekStart, off) };
-    }).sort((a, b) => (a.date - b.date) || (timeToMinutes(a.time) - timeToMinutes(b.time)));
-    return { type: 'week', num: n, weekStart: c.weekStart, weekEnd, lessons };
-  });
-}
-function generateBillingReportHTML(student, bp, includeFinancials = false, includePhone = false) {
-  const teacherName = db.teacherName || 'Teacher';
-  const teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${db.teacherPhone}</div>` : '';
-  const weeks = getBillingPeriodWeeks(student, bp);
-  let totalSessions = 0;
-  let rows = '';
-  weeks.forEach(w => {
-    if (w.type !== 'week') {
-      const label = w.type === 'holiday' ? 'Holiday – no sessions' : 'Paused – no sessions';
-      rows += `<tr><td colspan="3" style="padding: 6px 10px; background:#312e81; color:#c7d2fe; font-size:12px; font-weight:bold; text-align:center;">⏸ ${fmtReportDate(w.weekStart, false)} – ${fmtReportDate(w.weekEnd, false)} · ${label}</td></tr>`;
-      return;
-    }
-    rows += `<tr><td colspan="3" style="padding: 6px 10px; background:#0f172a; color:#facc15; font-size:12px; font-weight:bold; border-top:1px solid #334155;">Week ${w.num} · ${fmtReportDate(w.weekStart, false)} – ${fmtReportDate(w.weekEnd, false)}</td></tr>`;
-    if (!w.lessons.length) {
-      rows += `<tr><td colspan="3" style="padding: 7px 10px; text-align:center; color:#94a3b8; font-size:12px;">No sessions</td></tr>`;
-    }
-    w.lessons.forEach(l => {
-      totalSessions++;
-      rows += `<tr>
-<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${dayNamesFull[l.day] || l.day}</td>
-<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-size: 13px; color: #fde68a; font-weight:bold;">${fmtReportDate(l.date)}</td>
-<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left;">${l.time}</td>
-</tr>`;
-    });
-  });
-  if (!rows) rows = `<tr><td colspan="3" style="padding: 8px 10px; text-align: center; color: #94a3b8;">No scheduled slots found for this student.</td></tr>`;
-  const financialsHTML = includeFinancials ? `
-<div style="position:relative; background: #1e293b; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center;">
-<div>
-<span style="font-size: 12px; color: #94a3b8; display: block;">Amount Due:</span>
-<strong style="font-size: 16px; color: #34d399;">${bp.price}</strong>
-</div>
-<div style="text-align: right;">
-<span style="font-size: 12px; color: #94a3b8; display: block;">Billing Cycle:</span>
-<strong style="font-size: 14px; color: #ffffff;">Every ${bp.cycle} Weeks</strong>
-</div>
-</div>` : '';
-  return `
-<div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 18px; border-radius: 14px; border: 3px double #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden;">
-<div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 9px; margin-bottom: 10px;">
-<div>
-<h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
-<p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">Payment Period Schedule</p>
-</div>
-<div style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; text-align: right; line-height:1.3;">
-<div>${teacherName}</div>
-${teacherPhone}
-</div>
-</div>
-<div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${student.color || '#3b82f6'};">
-<h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Name: ${student.name}</h3>
-<p style="margin: 0; font-size: 12px; color: #facc15; font-weight:bold;">📅 Period ${bp.number}: ${fmtReportDate(bp.startDate)} → ${fmtReportDate(bp.endDate)}</p>
-<p style="margin: 3px 0 0; font-size: 11px; color: #94a3b8;">${bp.weeks} week${bp.weeks === 1 ? '' : 's'} · ${totalSessions} session${totalSessions === 1 ? '' : 's'}</p>
-</div>
-${financialsHTML}
-<table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">
-<thead>
-<tr style="background: #0f172a; color: #ffffff; border-bottom: 2px solid #facc15;">
-<th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Day</th>
-<th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Date</th>
-<th style="padding: 7px 10px; text-align: left; font-size: 13px; color: #facc15;">Time</th>
-</tr>
-</thead>
-<tbody>${rows}</tbody>
-</table>
-<div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
-✦ Thank you for trusting us with your education ✦
-</div>
-</div>
-`;
-}
-function getBillingReportParts(studentId, number) {
-  const student = db.students.find(s => s.id === studentId);
-  if (!student) return null;
-  const bp = getStudentBillingPeriods(student).find(b => b.number === Number(number));
-  if (!bp) return null;
-  return { student, bp };
-}
-function printBillingReport(studentId, number, includeFinancials = false, includePhone = false) {
-  const parts = getBillingReportParts(studentId, number);
-  if (!parts) { showToast('No payment period found'); return; }
-  document.getElementById('studentPrintContainer').innerHTML = generateBillingReportHTML(parts.student, parts.bp, includeFinancials, includePhone);
-  document.body.classList.add('print-single-student');
-  window.print();
-}
-function saveCanvasAsPng(canvas, filename) {
-  const link = document.createElement('a');
-  link.download = filename;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-}
-function captureBillingReport(studentId, number, includeFinancials = false, includePhone = false, share = false) {
-  const parts = getBillingReportParts(studentId, number);
-  if (!parts) { showToast('No payment period found'); return; }
-  const { student, bp } = parts;
-  const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
-  tempDiv.innerHTML = generateBillingReportHTML(student, bp, includeFinancials, includePhone);
-  document.body.appendChild(tempDiv);
-  const filename = `Schedule_${student.name}_Period${bp.number}.png`;
-  html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: null }).then(canvas => {
-    document.body.removeChild(tempDiv);
-    if (share && navigator.share && navigator.canShare) {
-      canvas.toBlob(async blob => {
-        try {
-          const file = new File([blob], filename, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: `${student.name} – Period ${bp.number} schedule` });
-            return;
-          }
-        } catch (e) {
-          if (e && e.name === 'AbortError') return;
-        }
-        saveCanvasAsPng(canvas, filename);
-        showToast('Sharing not supported here – image saved instead');
-      }, 'image/png');
-    } else {
-      saveCanvasAsPng(canvas, filename);
-      if (share) showToast('Sharing not supported here – image saved instead');
-    }
-  }).catch(() => { if (tempDiv.parentNode) document.body.removeChild(tempDiv); });
-}
-function billingAction(studentId, mode) {
-  const num = document.getElementById('billingPeriodSelect')?.value;
-  const fin = document.getElementById('includeFinancialsCheckbox')?.checked || false;
-  const ph = document.getElementById('includePhoneCheckbox')?.checked || false;
-  if (!num) { showToast('No payment period found'); return; }
-  if (mode === 'print') printBillingReport(studentId, num, fin, ph);
-  else captureBillingReport(studentId, num, fin, ph, mode === 'share');
-}
-function buildBillingReportBlock(s) {
-  const bps = getStudentBillingPeriods(s);
-  const boxStyle = 'background:#fff7ed; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #fdba74;';
-  if (!bps.length) return '';
-  if (!s.schedules || !s.schedules.length) {
-    return `<div style="${boxStyle}"><h4 style="margin:0 0 4px; color:#9a3412;">🧾 Parent Report – Payment Period</h4><div style="font-size:11px; color:#64748b;">Add session slots for this student first, then the period report will appear here.</div></div>`;
-  }
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const def = bps.find(b => b.endDate >= today) || bps[bps.length - 1];
-  const opts = bps.map(b => `<option value="${b.number}" ${b.number === def.number ? 'selected' : ''}>#${b.number} · ${fmtReportDate(b.startDate, false)} → ${fmtReportDate(b.endDate)} (${b.weeks} wk)</option>`).join('');
-  return `<div style="${boxStyle}">
-<h4 style="margin:0 0 6px; color:#9a3412;">🧾 Parent Report – Payment Period</h4>
-<label style="font-size:11px; color:#64748b;">Dates & times of all sessions in the selected payment period (uses the options above):</label>
-<select id="billingPeriodSelect">${opts}</select>
-<div style="display:flex; gap:5px;">
-<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center; margin-left:0;" onclick="billingAction(${s.id}, 'print')">🖨️ PDF</button>
-<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center; margin-left:0;" onclick="billingAction(${s.id}, 'image')">📸 Image</button>
-<button class="action-btn" style="flex:1; background:#25D366; color:white; justify-content:center; margin-left:0;" onclick="billingAction(${s.id}, 'share')">📤 Share</button>
-</div>
-</div>`;
-}
 function resetAllStudentsStartDate() {
 let newDate = document.getElementById('courseBaseDate').value;
 if(!newDate) { alert('Please select a valid date first'); return; }
@@ -1610,9 +1382,7 @@ let n = document.getElementById('sName').value, col = document.getElementById('h
 if(!n) return; commitChange();
 if(!db.students) db.students = [];
 let address = document.getElementById('sAddress')?.value.trim() || '';
-let preferredSchedule = getPrefSchedule('sPrefDays');
 let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
-let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
 let pendingLoc = window.__pendingStudentLoc || null;
 let newStudent = {
 id: Date.now(),
@@ -1620,7 +1390,7 @@ name: n,
 color: col,
 financialMap: {},
 schedules: [],
-address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
+address, weeklyDaysCount,
 lat: pendingLoc ? pendingLoc.lat : null,
 lng: pendingLoc ? pendingLoc.lng : null,
 distanceKm: null,
@@ -1633,11 +1403,9 @@ db.students.push(newStudent);
 save(); closeAll();
 document.getElementById('sAddress').value = '';
 document.getElementById('sWeeklyDays').value = '';
-document.getElementById('sSessionDuration').value = '';
 window.__pendingStudentLoc = null;
 let ns = document.getElementById('newStudentGeoStatus');
 if (ns) ns.innerText = '';
-buildDayPrefUI('sPrefDays', []);
 if (!pendingLoc && address && db.teacherLat != null) {
 geocodeAddress(address).then(loc => {
 if (loc) {
@@ -1685,11 +1453,6 @@ document.getElementById('editFields').innerHTML = `
 <div style="margin:-6px 0 12px;">${distHtml}</div>
 <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
 <input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
-<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
-<input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
-<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
-<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
-<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 <hr>
 <h4>Billing Periods</h4>
 <div id="editPeriods">${phtml}</div>
@@ -1706,12 +1469,10 @@ document.getElementById('editFields').innerHTML = `
 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
 </div>
-${buildBillingReportBlock(s)}
 <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
 <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
 `;
 initColors('ecg', 'eColor', s.color);
-buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
 document.getElementById('editModal').classList.add('active');
 document.getElementById('overlay').classList.add('active');
 }
@@ -1749,9 +1510,7 @@ s.color = document.getElementById('hidden_ecg').value;
 let newAddress = document.getElementById('eAddress')?.value.trim() || '';
 if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
 s.address = newAddress;
-s.preferredSchedule = getPrefSchedule('ePrefDays');
 s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
-s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
 let newPeriods = [];
 document.querySelectorAll('.period-card').forEach(card => {
 newPeriods.push({
