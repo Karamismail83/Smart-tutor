@@ -1593,6 +1593,51 @@ img.src = e.target.result;
 reader.readAsDataURL(input.files[0]);
 }
 }
+function fmtD(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function getPaymentPeriods(s) {
+  const startVal = db.courseStartDate || new Date().toISOString().slice(0,10);
+  const base = new Date(startVal);
+  const weekStarts = [], thursdays = [];
+  for (let i = 0; i < 24; i++) {
+    const w = new Date(base); w.setDate(base.getDate() + 7*i); weekStarts.push(w);
+    const t = new Date(w); t.setDate(w.getDate() + 5); thursdays.push(t);
+  }
+  const fm = s.financialMap || {};
+  const hol = db.holidays || [];
+  const skipped = j => hol.includes(j) || fm[j] == 3;
+  const payIdx = [];
+  thursdays.forEach((d, i) => {
+    if (skipped(i)) return;
+    const activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+    if (!activeP) return;
+    const totalWeeks = Math.round((d - new Date(activeP.startDate)) / 604800000);
+    let h = 0;
+    for (let j = 0; j <= i; j++) if (skipped(j) && thursdays[j] >= new Date(activeP.startDate)) h++;
+    const eff = totalWeeks - h;
+    if (eff >= 0 && eff % activeP.cycle === 0) payIdx.push({ i, price: Number(activeP.price || 0), cycle: Number(activeP.cycle || 4) });
+  });
+  return payIdx.map((p, k) => {
+    const end = k + 1 < payIdx.length ? payIdx[k+1].i : 24;
+    const weeks = []; let eff = 0;
+    for (let j = p.i; j < end && j < 24; j++) {
+      if (skipped(j)) { weeks.push({ j, holiday: true, start: weekStarts[j] }); continue; }
+      if (eff >= p.cycle) break;
+      eff++;
+      weeks.push({ j, holiday: false, start: weekStarts[j] });
+    }
+    const first = weeks[0].start, last = new Date(weeks[weeks.length-1].start);
+    last.setDate(last.getDate() + 6);
+    return { ...p, weeks, from: first, to: last };
+  });
+}
+
+function generatePeriodReportHTML(student, k, includeFinancials = false, includePhone = false) {
+  const per = getPaymentPeriods(student)[k];
+  if (!per) return '<div style="padding:20px;color:#fff;background:#0f172a;">No payment period found.</div>';
+  const teacherName = db.teacherName ||
 window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
 </script>
 </body>
