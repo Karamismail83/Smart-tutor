@@ -188,9 +188,9 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <div class="map-status" id="newStudentGeoStatus"></div>
 <label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
 <input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
-<label style="font-size:11px; color:#64748b;">⏱️️ Session Duration in minutes (used when suggesting a schedule)</label>
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
 <input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
-<label style="font-size:11px; color:#64748b;">📅 Preferred Days & Times</label>
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
 <div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
 <div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
@@ -250,12 +250,24 @@ return '2:00 PM';
 }
 const DEFAULT_REGION_LAT = 25.3838;
 const DEFAULT_REGION_LNG = 49.5922;
-const DEFAULT_REGION_ZOOM = 11;
+const DEFAULT_REGION_ZOOM = 11; // wide enough to see Al-Hofuf, Al-Mubarraz and surrounding villages together
 const dayNamesMap = {
-"Sat": "Sat", "Sun": "Sun", "Mon": "Mon", "Tue": "Tue", "Wed": "Wed", "Thu": "Thu", "Fri": "Fri"
+"Sat": "Sat",
+"Sun": "Sun",
+"Mon": "Mon",
+"Tue": "Tue",
+"Wed": "Wed",
+"Thu": "Thu",
+"Fri": "Fri"
 };
 const dayNamesFull = {
-"Sat": "Saturday", "Sun": "Sunday", "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday"
+"Sat": "Saturday",
+"Sun": "Sunday",
+"Mon": "Monday",
+"Tue": "Tuesday",
+"Wed": "Wednesday",
+"Thu": "Thursday",
+"Fri": "Friday"
 };
 let db;
 try {
@@ -265,8 +277,6 @@ db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStar
 }
 let historyStack = [];
 let draggedData = null;
-let selectedColorAdd = PALETTE[0];
-
 function showToast(message) {
 let toast = document.getElementById('toast');
 toast.innerText = message;
@@ -292,18 +302,6 @@ function initLessonTimes() {
 const sel = document.getElementById('cTime');
 if (sel) sel.innerHTML = getTimeOptionsHTML();
 buildDayPrefUI('sPrefDays', []);
-renderColorGrid('colorGridAdd', c => selectedColorAdd = c, selectedColorAdd);
-}
-function renderColorGrid(containerId, onSelect, activeColor) {
-let el = document.getElementById(containerId);
-if(!el) return;
-el.innerHTML = PALETTE.map(c => `
-<div class="color-circle ${c === activeColor ? 'selected' : ''}" style="background:${c}" onclick="selectColor('${containerId}', '${c}')"></div>
-`).join('');
-}
-function selectColor(containerId, color) {
-if(containerId === 'colorGridAdd') selectedColorAdd = color;
-renderColorGrid(containerId, null, color);
 }
 function buildDayPills(containerId, selectedDays, prefix = '') {
 const el = document.getElementById(containerId);
@@ -445,8 +443,8 @@ return data.map(r => ({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), display_
 async function placesSearch(query, limit = 8, biasLat = null, biasLon = null) {
 async function oneAttempt(q) {
 let results = [];
-try { results = results.concat(await photonSearch(q, limit, biasLat, biasLon)); } catch (e) {}
-try { results = results.concat(await nominatimSearch(q, limit, biasLat, biasLon)); } catch (e) {}
+try { results = results.concat(await photonSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
+try { results = results.concat(await nominatimSearch(q, limit, biasLat, biasLon)); } catch (e) { /* offline or blocked */ }
 return results;
 }
 let results = await oneAttempt(query);
@@ -457,9 +455,9 @@ const segs = query.split(',')
 .map(s => s.trim().replace(/\s*\d{4,6}\s*$/, '').trim())
 .filter(s => s && !/^\d+$/.test(s));
 if (segs.length) {
-candidates.push(segs.join(', '));
-candidates.push(segs[segs.length - 1]);
-candidates.push(segs[0]);
+candidates.push(segs.join(', '));      // all place-name segments together
+candidates.push(segs[segs.length - 1]); // last segment (often the city)
+candidates.push(segs[0]);               // first segment (often the district)
 segs.forEach(s => {
 if (/\band\b/i.test(s)) {
 s.split(/\band\b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
@@ -503,13 +501,13 @@ if (data && data.features && data.features[0]) {
 const name = formatPhotonName(data.features[0].properties);
 if (name) return name;
 }
-} catch (e) {}
+} catch (e) { /* offline or blocked - ignore */ }
 try {
 const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`;
 const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
 const data = await res.json();
 if (data && data.display_name) return data.display_name;
-} catch (e) {}
+} catch (e) { /* offline or blocked - ignore */ }
 return null;
 }
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -521,7 +519,7 @@ return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 let pickerMapInstance = null;
 let pickerMarker = null;
-let pickerContext = null;
+let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
 let pickerStreetLayer = null;
 let pickerSatelliteLayer = null;
 let pickerIsSatellite = false;
@@ -745,7 +743,7 @@ save();
 statusEl.innerText = '✅ Location set successfully';
 recalcAllDistances();
 } else {
-statusEl.innerText = '⚠️️ Could not locate this address, try a clearer address or use the map';
+statusEl.innerText = '⚠️ Could not locate this address, try a clearer address or use the map';
 }
 }
 async function recalcAllDistances() {
@@ -771,7 +769,7 @@ let hh = h % 12 === 0 ? 12 : h % 12;
 return `${hh}:${m.toString().padStart(2, '0')} ${ampm}`;
 }
 let lastSuggestion = null;
-let suggestionAttempt = 0;
+let suggestionAttempt = 0; // cycles strategies each click, so "Re-suggest" gives a genuinely
 function slotOptionsCount(fromMin, toMin, duration) {
 let n = 0;
 for (let slot = fromMin; slot + duration <= toMin; slot += 15) n++;
@@ -1173,204 +1171,24 @@ currentSlot = null;
 }
 });
 }
-
-function handleImageUpload(input) {
-if (input.files && input.files[0]) {
-let reader = new FileReader();
-reader.onload = function(e) {
-document.getElementById('teacherImg').src = e.target.result;
-db.teacherImage = e.target.result;
-save();
-};
-reader.readAsDataURL(input.files[0]);
-}
-}
-
-function toggleSidebar() {
-document.getElementById('sidebar').classList.toggle('active');
-document.getElementById('overlay').classList.toggle('active');
-}
-
-function closeAll() {
-document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active'));
-}
-
-async function addStudent() {
-let name = document.getElementById('sName').value.trim();
-let price = Number(document.getElementById('sPrice').value) || 0;
-let startDate = document.getElementById('sDate').value || db.courseStartDate || new Date().toISOString().slice(0,10);
-let cycle = Number(document.getElementById('sCycle').value) || 4;
-let address = document.getElementById('sAddress').value.trim();
-let weeklyDaysCount = Number(document.getElementById('sWeeklyDays').value) || 0;
-let sessionDurationMinutes = Number(document.getElementById('sSessionDuration').value) || DEFAULT_SESSION_MINUTES;
-let preferredSchedule = getPrefSchedule('sPrefDays');
-
-if(!name) { alert('Please enter student name'); return; }
-
-commitChange();
-let id = Date.now();
-let studentObj = {
-id,
-name,
-color: selectedColorAdd,
-address,
-lat: window.__pendingStudentLoc ? window.__pendingStudentLoc.lat : null,
-lng: window.__pendingStudentLoc ? window.__pendingStudentLoc.lng : null,
-weeklyDaysCount,
-sessionDurationMinutes,
-preferredSchedule,
-schedules: [],
-periods: [{ startDate, price, cycle }],
-attendance: {}
-};
-
-if(studentObj.address && studentObj.lat == null) {
-let loc = await geocodeAddress(studentObj.address);
-if(loc) { studentObj.lat = loc.lat; studentObj.lng = loc.lng; }
-}
-
-if(db.teacherLat != null && studentObj.lat != null) {
-studentObj.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, studentObj.lat, studentObj.lng) * 10) / 10;
-}
-
-db.students.push(studentObj);
-window.__pendingStudentLoc = null;
-document.getElementById('sName').value = '';
-document.getElementById('sPrice').value = '';
-document.getElementById('sAddress').value = '';
-document.getElementById('newStudentGeoStatus').innerText = '';
-save();
-closeAll();
-showToast('Student added successfully ✅');
-}
-
-function addSchedule() {
-let sId = Number(document.getElementById('sSelect').value);
-let day = document.getElementById('cDay').value;
-let time = document.getElementById('cTime').value;
-if(!sId) { alert('Please select a student'); return; }
-let student = db.students.find(s => s.id === sId);
-if(!student) return;
-commitChange();
-if(!student.schedules) student.schedules = [];
-student.schedules.push({ day, time, offset: 0, status: 0 });
-save();
-closeAll();
-showToast('Slot added ✅');
-}
-
-function openEdit(studentId) {
-let s = db.students.find(x => x.id === studentId);
-if(!s) return;
-let html = `
-<h3>Edit Student: ${s.name}</h3>
-<label>Name</label>
-<input id="eName" value="${s.name}">
-<label>Color</label>
-<div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px" id="colorGridEdit"></div>
-<label>Address / Area</label>
-<div class="addr-row">
-<input id="eAddress" value="${s.address || ''}">
-<button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})">📍</button>
-</div>
-<label>Weekly Session Days</label>
-<input id="eWeeklyDays" type="number" value="${s.weeklyDaysCount || ''}">
-<label>Session Duration (Minutes)</label>
-<input id="eSessionDuration" type="number" value="${s.sessionDurationMinutes || DEFAULT_SESSION_MINUTES}">
-<label>Preferred Days & Times</label>
-<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
-<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
-<button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="saveStudentEdit(${s.id})">Save Changes</button>
-<button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-top:5px;" onclick="printSingleStudent(${s.id}, true, true)">🖨️ Print Student Report</button>
-<button class="action-btn" style="width:100%; background:#8b5cf6; color:white; margin-top:5px;" onclick="downloadStudentImage(${s.id}, true, true)">🖼️ Save Report as PNG</button>
-<button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="deleteStudent(${s.id})">🗑️ Delete Student</button>
-`;
-document.getElementById('editFields').innerHTML = html;
-let activeColor = s.color || PALETTE[0];
-renderColorGrid('colorGridEdit', c => activeColor = c, activeColor);
-buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
-document.getElementById('editModal').classList.add('active');
-document.getElementById('overlay').classList.add('active');
-}
-
-async function saveStudentEdit(studentId) {
-let s = db.students.find(x => x.id === studentId);
-if(!s) return;
-commitChange();
-s.name = document.getElementById('eName').value.trim();
-s.address = document.getElementById('eAddress').value.trim();
-s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays').value) || 0;
-s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration').value) || DEFAULT_SESSION_MINUTES;
-s.preferredSchedule = getPrefSchedule('ePrefDays');
-
-let selectedColor = document.querySelector('#colorGridEdit .color-circle.selected');
-if(selectedColor) s.color = selectedColor.style.backgroundColor;
-
-if(s.address) {
-let loc = await geocodeAddress(s.address);
-if(loc) { s.lat = loc.lat; s.lng = loc.lng; }
-}
-
-if(db.teacherLat != null && s.lat != null) {
-s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng) * 10) / 10;
-}
-
-save();
-closeAll();
-showToast('Student updated ✅');
-}
-
-function deleteStudent(studentId) {
-if(confirm('Are you sure you want to delete this student?')) {
-commitChange();
-db.students = db.students.filter(s => s.id !== studentId);
-save();
-closeAll();
-showToast('Student deleted');
-}
-}
-
-function removeSlot(studentId, day, time) {
-commitChange();
-let s = db.students.find(x => x.id === studentId);
-if(s && s.schedules) {
-s.schedules = s.schedules.filter(sc => !(sc.day === day && sc.time === time));
-}
-save();
-}
-
-function toggleAttendance(studentId, weekIndex) {
-commitChange();
-let s = db.students.find(x => x.id === studentId);
-if(!s) return;
-if(!s.attendance) s.attendance = {};
-let current = s.attendance[weekIndex] || 0;
-s.attendance[weekIndex] = (current + 1) % 3; // 0: Unset, 1: Paid, 2: Not Paid
-save();
-}
-
 function render() {
 const grid = document.getElementById('scheduleGrid');
 const body = document.getElementById('accBody');
 const totalH = document.getElementById('accTotalHeader');
-const accHeader = document.getElementById('accHeader');
 const sSelect = document.getElementById('sSelect');
-if (!grid || !body || !totalH || !accHeader || !sSelect) return;
-
+if (!grid || !body || !totalH || !sSelect) return;
 grid.innerHTML = '';
 sSelect.innerHTML = '<option value="">Select Student</option>';
 document.getElementById('teacherName').value = db.teacherName || '';
 document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
-if(db.teacherImage) document.getElementById('teacherImg').src = db.teacherImage;
-
 let tAddrInput = document.getElementById('teacherAddressInput');
 if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
 let tGeoStatus = document.getElementById('teacherGeoStatus');
 if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ Location saved' : '';
 document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
 document.getElementById('sDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
-
-daysOrder.forEach(d => {
+const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+days.forEach(d => {
 let bilingualDayLabel = dayNamesMap[d] || d;
 grid.innerHTML += `
 <div class="day-row">
@@ -1382,9 +1200,8 @@ ondrop="handleDrop(event, '${d}')">
 </div>
 </div>`;
 });
-
 let allSchedulesByDay = {};
-daysOrder.forEach(d => allSchedulesByDay[d] = []);
+days.forEach(d => allSchedulesByDay[d] = []);
 if(db.students && Array.isArray(db.students)) {
 db.students.forEach(s => {
 sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
@@ -1397,13 +1214,9 @@ allSchedulesByDay[sc.day].push({ ...sc, studentName: s.name, studentColor: s.col
 }
 });
 }
-
-daysOrder.forEach(d => {
+days.forEach(d => {
 let daySlots = allSchedulesByDay[d];
 daySlots.sort((a, b) => a.minutes - b.minutes);
-let slotContainer = document.getElementById(`slot-${d}`);
-if(!slotContainer) return;
-
 daySlots.forEach((sc, index) => {
 let div = document.createElement('div');
 div.className = 'slot';
@@ -1412,89 +1225,375 @@ div.setAttribute('data-studentid', sc.studentId);
 div.setAttribute('data-day', sc.day);
 div.setAttribute('data-time', sc.time);
 div.setAttribute('data-offset', sc.offset || 0);
-div.style.marginLeft = `${sc.offset || 0}px`;
-div.draggable = true;
-
 if (index < daySlots.length - 1) {
 let nextSc = daySlots[index + 1];
 let diffMinutes = nextSc.minutes - sc.minutes;
 if (diffMinutes > 60) {
-div.style.marginRight = '12px';
+div.classList.add('wide-slot');
 }
 }
-
+if (sc.status === 1) div.style.border = '2px solid #22c55e';
+else if (sc.status === 2) { div.style.border = '2px solid #ef4444'; div.style.opacity = '0.7'; }
+else if (sc.status === 3) { div.style.border = '2px dashed #facc15'; div.style.opacity = '0.6'; }
+if (sc.offset) div.style.marginLeft = `${sc.offset}px`;
+div.draggable = true;
 div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
-div.innerHTML = `
-<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:2px; margin-bottom:2px;">
-<strong onclick="openEdit(${sc.studentId})" style="cursor:pointer; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:40px;">${sc.studentName}</strong>
-<span onclick="removeSlot(${sc.studentId}, '${sc.day}', '${sc.time}')" style="cursor:pointer; color:#fca5a5; font-size:9px;">✕</span>
-</div>
-<div>${sc.time}</div>
-`;
-slotContainer.appendChild(div);
+div.onclick = (e) => {
+if (!e.defaultPrevented) openSlotModal(sc.studentId, sc.day, sc.time);
+};
+let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
+div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
+document.getElementById(`slot-${sc.day}`)?.appendChild(div);
 });
 });
-
-renderAccountingTable();
 enableHorizontalDrag();
+let dates = [];
+let startDateVal = db.courseStartDate || new Date().toISOString().slice(0,10);
+let dBase = new Date(startDateVal);
+for(let i=0; i<24; i++){
+let thu = new Date(dBase);
+thu.setDate(dBase.getDate()+5);
+dates.push(new Date(thu));
+dBase.setDate(dBase.getDate()+7);
 }
-
-function renderAccountingTable() {
-const accHeader = document.getElementById('accHeader');
-const totalH = document.getElementById('accTotalHeader');
-const body = document.getElementById('accBody');
-if(!accHeader || !totalH || !body) return;
-
-let numWeeks = 16;
-let headerHTML = `<th class="sticky-name">Student</th>`;
-for(let w = 1; w <= numWeeks; w++) headerHTML += `<th>W${w}</th>`;
-accHeader.innerHTML = headerHTML;
-
-let weeklyTotals = new Array(numWeeks).fill(0);
-let totalRevenue = 0;
-
-let bodyHTML = '';
-if(db.students && Array.isArray(db.students)) {
-db.students.forEach(s => {
-let period = s.periods && s.periods.length ? s.periods[s.periods.length - 1] : { price: 0, cycle: 4 };
-let price = period.price || 0;
-let cycle = period.cycle || 4;
-
-bodyHTML += `<tr><td class="sticky-name" style="background:${s.color || '#1E293B'}" onclick="openEdit(${s.id})">${s.name}<div class="sub-price">${price}</div></td>`;
-
-for(let w = 1; w <= numWeeks; w++) {
-let isPayWeek = (w % cycle === 1 || cycle === 1);
-let status = (s.attendance && s.attendance[w]) || 0;
-let statusClass = status === 1 ? 'status-paid' : (status === 2 ? 'status-notpaid' : '');
-let symbol = status === 1 ? '✓' : (status === 2 ? '✕' : '');
-
-if(status === 1) {
-weeklyTotals[w - 1] += price;
-totalRevenue += price;
+let income = Array(dates.length).fill(0);
+let grandTotal = 0;
+if(db.students) {
+grandTotal = db.students.reduce((acc, s) => {
+let lastPeriod = s.periods && s.periods.length ? s.periods[s.periods.length-1] : { price: 0 };
+return acc + (lastPeriod.price || 0);
+}, 0);
 }
-
-bodyHTML += `
-<td class="${isPayWeek ? 'is-pay-week' : ''}">
-<div class="box ${statusClass}" onclick="toggleAttendance(${s.id}, ${w})">${symbol}</div>
-</td>`;
+let studentRowsHTML = '';
+if (db.students && Array.isArray(db.students)) {
+db.students.forEach((s) => {
+if(!s.financialMap) s.financialMap = {};
+let currentPeriod = s.periods && s.periods.length ? s.periods[s.periods.length - 1] : null;
+let subPrice = currentPeriod ? (currentPeriod.price || 0) : 0;
+let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'} !important;" onclick="openEdit(${s.id})" title="${s.name}">${s.name}<div class="sub-price">${subPrice}</div></td>`;
+dates.forEach((d, i) => {
+let isHol = (db.holidays || []).includes(i), isPay = false;
+let st_val = s.financialMap[i] || 0;
+let isDis = st_val == 3; // disabled session for this student only
+let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
+if (activeP && !isHol && !isDis) {
+let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
+let hCount = 0;
+for (let j = 0; j <= i; j++) {
+let skipped = (db.holidays || []).includes(j) || s.financialMap[j] == 3;
+if (skipped && dates[j] >= new Date(activeP.startDate)) hCount++;
 }
-bodyHTML += `</tr>`;
+let eff = totalWeeks - hCount;
+if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+}
+let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : (st_val == 3 ? '⏸' : ''));
+let stClass = st_val == 1 ? 'status-paid' : st_val == 2 ? 'status-notpaid' : st_val == 3 ? 'status-disabled' : '';
+row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${stClass}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
+});
+row += '</tr>';
+studentRowsHTML += row;
 });
 }
-body.innerHTML = bodyHTML;
-
-let totalHTML = `<tr class="total-row"><td class="sticky-name grand-total-cell">TOTAL: ${totalRevenue}</td>`;
-for(let w = 0; w < numWeeks; w++) {
-totalHTML += `<td>${weeklyTotals[w]}</td>`;
+body.innerHTML = studentRowsHTML;
+document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
+totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` + income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') + `</tr>`;
+initColors('colorGridAdd', 'sColor');
 }
-totalHTML += `</tr>`;
-totalH.innerHTML = totalHTML;
+function openSlotModal(studentId, currentDay, currentTime) {
+let student = db.students.find(s => s.id === studentId);
+if (!student) return;
+let slot = (student.schedules || []).find(s => s.day === currentDay && s.time === currentTime);
+let currentOffset = slot?.offset || 0;
+let currentStatus = slot?.status || 0;
+let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${dayNamesMap[d]}</option>`).join('');
+document.getElementById('editFields').innerHTML = `
+<h3>Edit Session Slot ⏰</h3>
+<label>Student Name</label>
+<input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
+<label>Day</label>
+<select id="editSlotDay">${daysOptions}</select>
+<label>Time</label>
+<select id="editSlotTime">${getTimeOptionsHTML(currentTime)}</select>
+<label>Attendance Status</label>
+<select id="editSlotStatus">
+<option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
+<option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
+<option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
+<option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
+</select>
+<label>Horizontal Offset (px)</label>
+<input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
+<button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
+<button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+`;
+document.getElementById('editModal').classList.add('active');
+document.getElementById('overlay').classList.add('active');
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-initLessonTimes();
-render();
+function updateSlot(studentId, oldDay, oldTime) {
+let newDay = document.getElementById('editSlotDay').value;
+let newTime = document.getElementById('editSlotTime').value;
+let newStatus = Number(document.getElementById('editSlotStatus').value);
+let newOffset = Number(document.getElementById('editSlotOffset').value) || 0;
+commitChange();
+let student = db.students.find(s => s.id === studentId);
+if (student && student.schedules) {
+let slot = student.schedules.find(s => s.day === oldDay && s.time === oldTime);
+if (slot) {
+slot.day = newDay;
+slot.time = newTime;
+slot.status = newStatus;
+slot.offset = newOffset;
+save();
+}
+}
+closeAll();
+}
+function deleteSlot(studentId, day, time) {
+commitChange();
+let student = db.students.find(s => s.id === studentId);
+if (student && student.schedules) {
+student.schedules = student.schedules.filter(s => !(s.day === day && s.time === time));
+save();
+}
+closeAll();
+}
+function th(i) {
+commitChange();
+if(!db.holidays) db.holidays = [];
+let idx = db.holidays.indexOf(i);
+if(idx > -1) db.holidays.splice(idx,1);
+else db.holidays.push(i);
+save();
+}
+function st(id, i) {
+commitChange();
+let s = db.students.find(x => x.id === id);
+if(s) {
+if(!s.financialMap) s.financialMap = {};
+s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 4;
+save();
+}
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('overlay').classList.add('active'); }
+function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').forEach(el => el.classList.remove('active')); }
+function initColors(id, radioName, sel = PALETTE[0]) {
+const target = document.getElementById(id);
+if(!target) return;
+target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`;
+}
+function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
+function addStudent() {
+let n = document.getElementById('sName').value, col = document.getElementById('hidden_colorGridAdd').value;
+if(!n) return; commitChange();
+if(!db.students) db.students = [];
+let address = document.getElementById('sAddress')?.value.trim() || '';
+let preferredSchedule = getPrefSchedule('sPrefDays');
+let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
+let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
+let pendingLoc = window.__pendingStudentLoc || null;
+let newStudent = {
+id: Date.now(),
+name: n,
+color: col,
+financialMap: {},
+schedules: [],
+address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
+lat: pendingLoc ? pendingLoc.lat : null,
+lng: pendingLoc ? pendingLoc.lng : null,
+distanceKm: null,
+periods: [{ startDate: document.getElementById('sDate').value, price: Number(document.getElementById('sPrice').value || 0), cycle: Number(document.getElementById('sCycle').value || 4) }]
+};
+if (pendingLoc && db.teacherLat != null) {
+newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, pendingLoc.lat, pendingLoc.lng) * 10) / 10;
+}
+db.students.push(newStudent);
+save(); closeAll();
+document.getElementById('sAddress').value = '';
+document.getElementById('sWeeklyDays').value = '';
+document.getElementById('sSessionDuration').value = '';
+window.__pendingStudentLoc = null;
+let ns = document.getElementById('newStudentGeoStatus');
+if (ns) ns.innerText = '';
+buildDayPrefUI('sPrefDays', []);
+if (!pendingLoc && address && db.teacherLat != null) {
+geocodeAddress(address).then(loc => {
+if (loc) {
+newStudent.lat = loc.lat; newStudent.lng = loc.lng;
+newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+}
 });
+}
+}
+function addSchedule() {
+let id = Number(document.getElementById('sSelect').value);
+let d = document.getElementById('cDay').value;
+let t = document.getElementById('cTime').value;
+if(!id) return;
+commitChange();
+let student = db.students.find(x => x.id === id);
+if(student) {
+if(!student.schedules) student.schedules = [];
+student.schedules.push({ day: d, time: t, offset: 0, status: 0 });
+save();
+}
+closeAll();
+}
+function openEdit(id) {
+const s = db.students.find(x => x.id === id);
+if(!s) return;
+let phtml = (s.periods || []).map((p, idx) => `
+<div class="period-card">
+<label>Start Date</label><input type="date" class="p-date" value="${p.startDate}">
+<label>Price</label><input type="number" class="p-price" value="${p.price}">
+<label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="${p.cycle}">
+${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
+</div>`).join('');
+let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
+document.getElementById('editFields').innerHTML = `
+<h3>Edit Student</h3>
+<label>Name</label><input id="en" value="${s.name}">
+<div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+<label style="font-size:11px; color:#64748b;">📍 Student Address/Area</label>
+<div class="addr-row">
+<input id="eAddress" value="${s.address || ''}" placeholder="e.g. Uptown, Springfield">
+<button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">📍</button>
+</div>
+<div style="margin:-6px 0 12px;">${distHtml}</div>
+<label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
+<input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
+<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
+<input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
+<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
+<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
+<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
+<hr>
+<h4>Billing Periods</h4>
+<div id="editPeriods">${phtml}</div>
+<button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
+<label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a; margin-bottom:8px;">
+<input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
+</label>
+<label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
+<input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
+</label>
+</div>
+<div style="display: flex; gap: 5px; margin-bottom: 8px;">
+<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
+<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
+</div>
+<button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
+<button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
+`;
+initColors('ecg', 'eColor', s.color);
+buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
+document.getElementById('editModal').classList.add('active');
+document.getElementById('overlay').classList.add('active');
+}
+async function recomputeStudentDistance(id) {
+let s = db.students.find(x => x.id === id);
+if (!s) return;
+let address = document.getElementById('eAddress').value.trim();
+if (!address) { alert('Please enter the student\'s address first'); return; }
+if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
+const loc = await geocodeAddress(address);
+if (loc) {
+commitChange();
+s.address = address;
+s.lat = loc.lat; s.lng = loc.lng;
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+openEdit(id);
+} else {
+alert('Could not locate this address, try writing it more clearly or use the map');
+}
+}
+function addNewPeriod() {
+const div = document.createElement('div');
+div.className = 'period-card';
+let defaultDate = db.courseStartDate || new Date().toISOString().slice(0,10);
+div.innerHTML = `<label>Start Date</label><input type="date" class="p-date" value="${defaultDate}"><label>Price</label><input type="number" class="p-price" value="0"><label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="4"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>`;
+document.getElementById('editPeriods').appendChild(div);
+}
+function up(id) {
+commitChange();
+let s = db.students.find(x => x.id === id);
+if(s) {
+s.name = document.getElementById('en').value;
+s.color = document.getElementById('hidden_ecg').value;
+let newAddress = document.getElementById('eAddress')?.value.trim() || '';
+if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
+s.address = newAddress;
+s.preferredSchedule = getPrefSchedule('ePrefDays');
+s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
+s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
+let newPeriods = [];
+document.querySelectorAll('.period-card').forEach(card => {
+newPeriods.push({
+startDate: card.querySelector('.p-date').value,
+price: Number(card.querySelector('.p-price').value || 0),
+cycle: Number(card.querySelector('.p-cycle').value || 4)
+});
+});
+s.periods = newPeriods.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+save();
+if (s.address && s.lat == null && db.teacherLat != null) {
+geocodeAddress(s.address).then(loc => {
+if (loc) {
+s.lat = loc.lat; s.lng = loc.lng;
+s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, loc.lat, loc.lng) * 10) / 10;
+save();
+}
+});
+}
+}
+closeAll();
+}
+function del(id) {
+if(confirm('Delete student and all their records?')) {
+commitChange();
+db.students = db.students.filter(x => x.id !== id);
+save();
+closeAll();
+}
+}
+async function loadPhoto() {
+try {
+let d = await openPhotoDB();
+let req = d.transaction("photos", "readonly").objectStore("photos").get("teacherImg");
+req.onsuccess = () => { if(req.result) document.getElementById('teacherImg').src = req.result; };
+} catch(e) {}
+}
+function openPhotoDB() {
+return new Promise((res) => {
+let req = indexedDB.open("SmartTutorPhotoDB", 1);
+req.onupgradeneeded = (e) => e.target.result.createObjectStore("photos");
+req.onsuccess = (e) => res(e.target.result);
+req.onerror = () => res(null);
+});
+}
+function handleImageUpload(input) {
+if (input.files && input.files[0]) {
+const reader = new FileReader();
+reader.onload = (e) => {
+const img = new Image();
+img.onload = async () => {
+const canvas = document.createElement('canvas');
+canvas.width = 150; canvas.height = 150;
+canvas.getContext('2d').drawImage(img,0,0,150,150);
+const url = canvas.toDataURL('image/jpeg', 0.7);
+document.getElementById('teacherImg').src = url;
+let d = await openPhotoDB();
+if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg");
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(input.files[0]);
+}
+}
+window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
 </script>
 </body>
 </html>
