@@ -59,14 +59,7 @@ input, select { width: 100%; padding: 8px; margin: 5px 0 12px; border: 1px solid
 .period-card { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cbd5e1; position: relative; }
 .color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
 .color-circle.selected { border-color: #000; transform: scale(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000; }
-.day-pills-row { display:flex; flex-wrap:nowrap; gap:3px; }
-.day-pill { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:5px 2px; font-size:9.5px; font-weight:bold; cursor:pointer; color:#1E293B; user-select:none; flex:1 1 0; min-width:0; }
-.day-pill input { display:none; }
-.day-pill.checked { background:#facc15; border-color:#b45309; }
 .distance-badge { display:inline-block; background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:10px; margin-top:4px; }
-.suggest-day-block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; margin-bottom:8px; }
-.suggest-row { display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px; margin-bottom:4px; font-size:11px; }
-.suggest-row.conflict { border-color:#ef4444; background:#fef2f2; }
 .addr-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
 .addr-row input { margin:0; }
 .loc-icon-btn {
@@ -186,13 +179,6 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <button type="button" class="loc-icon-btn" onclick="openMapPicker('newStudent')" title="Set location on map">📍</button>
 </div>
 <div class="map-status" id="newStudentGeoStatus"></div>
-<label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
-<input id="sWeeklyDays" type="number" min="1" placeholder="e.g. 2">
-<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
-<input id="sSessionDuration" type="number" min="15" step="15" placeholder="e.g. 60">
-<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
-<div id="sPrefDays_pills" style="margin-bottom:6px;"></div>
-<div id="sPrefDays_times" style="margin-bottom:12px;"></div>
 <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
 <hr style="margin:20px 0; opacity:0.1">
 <h3>Add Slot (Session)</h3>
@@ -213,7 +199,6 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
 <div style="display: flex; gap: 5px;">
 <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
-<button class="action-btn" style="background:#0ea5e9; color:white;" onclick="generateSuggestedSchedule()">🧭 Suggest Schedule</button>
 <button class="action-btn" onclick="undo()">↩️ UNDO</button>
 <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
 </div>
@@ -242,12 +227,6 @@ const PALETTE = [
 '#EC4899', '#E11D48', '#9F1239', '#78350F', '#3F6212', '#701A75', '#6B7280', '#A8875A'
 ];
 const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-const DEFAULT_SESSION_MINUTES = 60;
-function getDayFloorTime(day) {
-if (day === 'Sat') return '11:00 AM';
-if (day === 'Fri') return null;
-return '2:00 PM';
-}
 const DEFAULT_REGION_LAT = 25.3838;
 const DEFAULT_REGION_LNG = 49.5922;
 const DEFAULT_REGION_ZOOM = 11; // wide enough to see Al-Hofuf, Al-Mubarraz and surrounding villages together
@@ -301,109 +280,6 @@ return html;
 function initLessonTimes() {
 const sel = document.getElementById('cTime');
 if (sel) sel.innerHTML = getTimeOptionsHTML();
-buildDayPrefUI('sPrefDays', []);
-}
-function buildDayPills(containerId, selectedDays, prefix = '') {
-const el = document.getElementById(containerId);
-if (!el) return;
-el.classList.add('day-pills-row');
-el.innerHTML = daysOrder.map(d => {
-const isChecked = selectedDays.includes(d);
-return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}" onclick="toggleDayPill(this)">
-<input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); this.parentElement.classList.toggle('checked');">
-${dayNamesMap[d]}
-</label>`;
-}).join('');
-}
-function toggleDayPill(label) {
-const cb = label.querySelector('input');
-cb.checked = !cb.checked;
-label.classList.toggle('checked', cb.checked);
-}
-function getSelectedDays(containerId) {
-return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(cb => cb.value);
-}
-function buildDayPrefUI(containerId, prefSchedule) {
-prefSchedule = prefSchedule || [];
-const pillsEl = document.getElementById(containerId + '_pills');
-if (!pillsEl) return;
-const selectedDays = prefSchedule.map(p => p.day);
-pillsEl.classList.add('day-pills-row');
-pillsEl.innerHTML = daysOrder.map(d => {
-const isChecked = selectedDays.includes(d);
-return `<label class="day-pill ${isChecked ? 'checked' : ''}" data-day="${d}">
-<input type="checkbox" value="${d}" ${isChecked ? 'checked' : ''} onchange="handleDayPrefToggle(this, '${containerId}')">
-${dayNamesMap[d]}
-</label>`;
-}).join('');
-renderDayPrefTimes(containerId, prefSchedule);
-}
-function handleDayPrefToggle(cb, containerId) {
-cb.parentElement.classList.toggle('checked', cb.checked);
-renderDayPrefTimes(containerId);
-}
-function renderDayPrefTimes(containerId, initialSchedule) {
-const timesEl = document.getElementById(containerId + '_times');
-if (!timesEl) return;
-const existing = {};
-timesEl.querySelectorAll('.pref-time-row').forEach(row => {
-const day = row.getAttribute('data-day');
-existing[day] = {
-from: row.querySelector('.pref-from').value,
-to: row.querySelector('.pref-to').value,
-mandatory: row.querySelector('.pref-mandatory')?.checked || false
-};
-});
-if (initialSchedule) {
-initialSchedule.forEach(p => { if (!existing[p.day]) existing[p.day] = { from: p.from, to: p.to, mandatory: !!p.mandatory }; });
-}
-const checkedDays = Array.from(document.querySelectorAll(`#${containerId}_pills input:checked`)).map(cb => cb.value);
-const orderedDays = daysOrder.filter(d => checkedDays.includes(d));
-timesEl.innerHTML = orderedDays.map(d => {
-const vals = existing[d] || { from: (getDayFloorTime(d) || '4:00 PM'), to: '8:00 PM', mandatory: false };
-return `<div class="pref-time-row" data-day="${d}" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-<span style="width:32px; font-size:10px; font-weight:bold; color:#1E293B; flex-shrink:0;">${dayNamesMap[d]}</span>
-<select class="pref-from" style="margin:0;">${getTimeOptionsHTML(vals.from)}</select>
-<span style="font-size:10px; flex-shrink:0;">-</span>
-<select class="pref-to" style="margin:0;" title="End time of the last session that day">${getTimeOptionsHTML(vals.to)}</select>
-<label style="display:flex; flex-direction:column; align-items:center; gap:0; font-size:8.5px; font-weight:bold; color:#b91c1c; flex-shrink:0; cursor:pointer; width:34px;" title="Mandatory day for this student">
-<input type="checkbox" class="pref-mandatory" style="width:14px;height:14px;margin:0;" ${vals.mandatory ? 'checked' : ''}>
-Mandatory
-</label>
-</div>`;
-}).join('');
-}
-function getPrefSchedule(containerId) {
-const timesEl = document.getElementById(containerId + '_times');
-if (!timesEl) return [];
-return Array.from(timesEl.querySelectorAll('.pref-time-row')).map(row => ({
-day: row.getAttribute('data-day'),
-from: row.querySelector('.pref-from').value,
-to: row.querySelector('.pref-to').value,
-mandatory: row.querySelector('.pref-mandatory')?.checked || false
-}));
-}
-function getStudentPrefSchedule(s) {
-if (s.preferredSchedule && s.preferredSchedule.length) return s.preferredSchedule;
-if (s.preferredDays && s.preferredDays.length) {
-return s.preferredDays.map(d => ({ day: d, from: s.preferredFrom || '4:00 PM', to: s.preferredTo || '8:00 PM', mandatory: false }));
-}
-return [];
-}
-function selectStudentScheduleDays(s, fullPref) {
-if (!fullPref || !fullPref.length) return [];
-if (!s.weeklyDaysCount) return fullPref;
-const mandatory = fullPref.filter(p => p.mandatory);
-const optional = fullPref.filter(p => !p.mandatory);
-let count = Math.max(Number(s.weeklyDaysCount) || 0, mandatory.length);
-let remaining = Math.max(0, count - mandatory.length);
-let chosenOptional = optional
-.slice()
-.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day))
-.slice(0, remaining);
-let combined = mandatory.concat(chosenOptional);
-combined.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
-return combined;
 }
 function formatPhotonName(p) {
 if (!p) return '';
@@ -762,189 +638,6 @@ s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, s.lat, s.lng
 }
 save();
 }
-function minutesToTimeLabel(mins) {
-let h = Math.floor(mins / 60), m = mins % 60;
-let ampm = h < 12 ? 'AM' : 'PM';
-let hh = h % 12 === 0 ? 12 : h % 12;
-return `${hh}:${m.toString().padStart(2, '0')} ${ampm}`;
-}
-let lastSuggestion = null;
-let suggestionAttempt = 0; // cycles strategies each click, so "Re-suggest" gives a genuinely
-function slotOptionsCount(fromMin, toMin, duration) {
-let n = 0;
-for (let slot = fromMin; slot + duration <= toMin; slot += 15) n++;
-return n;
-}
-function generateSuggestedSchedule() {
-if (db.teacherLat == null) {
-alert('Please set your home address first from ⚙️ Settings');
-toggleSidebar();
-return;
-}
-const withPrefs = (db.students || []).filter(s => getStudentPrefSchedule(s).length && s.lat != null);
-if (!withPrefs.length) {
-alert('You need at least one student with a computed location and preferred days set');
-return;
-}
-const strategy = suggestionAttempt % 3;
-suggestionAttempt++;
-let studentCandidates = withPrefs.map(s => {
-const fullPref = getStudentPrefSchedule(s);
-const mandatoryDays = fullPref.filter(p => p.mandatory);
-const optionalDays = fullPref.filter(p => !p.mandatory);
-const targetCount = s.weeklyDaysCount ? Math.max(Number(s.weeklyDaysCount) || 0, mandatoryDays.length) : fullPref.length;
-return { student: s, duration: Number(s.sessionDurationMinutes) || DEFAULT_SESSION_MINUTES, mandatoryDays, optionalDays, targetCount };
-});
-let dayState = {};
-daysOrder.forEach(day => {
-let floor = getDayFloorTime(day);
-dayState[day] = { intervals: [], floorMin: floor ? timeToMinutes(floor) : 0, placed: [] };
-});
-let unresolved = [];
-function tryPlaceOnDay(day, fromRaw, toRaw, duration, entryMeta) {
-let st = dayState[day];
-let fromMin = Math.max(timeToMinutes(fromRaw), st.floorMin);
-let toMin = timeToMinutes(toRaw);
-if (toMin - fromMin < duration) return null;
-let candidateStarts = [];
-for (let slot = fromMin; slot + duration <= toMin; slot += 15) candidateStarts.push(slot);
-if (!candidateStarts.length) return null;
-if (strategy === 1) candidateStarts.reverse();
-for (const slot of candidateStarts) {
-let slotEnd = slot + duration;
-let overlaps = st.intervals.some(iv => slot < iv.end && slotEnd > iv.start);
-if (!overlaps) {
-st.intervals.push({ start: slot, end: slotEnd });
-let placedEntry = { ...entryMeta, day, minutes: slot, timeLabel: minutesToTimeLabel(slot), endTimeLabel: minutesToTimeLabel(slotEnd) };
-st.placed.push(placedEntry);
-return placedEntry;
-}
-}
-return null;
-}
-let mandatoryQueue = [];
-studentCandidates.forEach(sc => {
-sc.mandatoryDays.forEach(p => {
-let st = dayState[p.day];
-let fromMin = Math.max(timeToMinutes(p.from), st.floorMin);
-mandatoryQueue.push({ sc, p, tightness: slotOptionsCount(fromMin, timeToMinutes(p.to), sc.duration) });
-});
-});
-mandatoryQueue.sort((a, b) => a.tightness - b.tightness);
-if (strategy === 2) {
-for (let i = mandatoryQueue.length - 1; i > 0; i--) {
-let j = Math.floor(Math.random() * (i + 1));
-if (mandatoryQueue[i].tightness === mandatoryQueue[j].tightness) [mandatoryQueue[i], mandatoryQueue[j]] = [mandatoryQueue[j], mandatoryQueue[i]];
-}
-}
-mandatoryQueue.forEach(({ sc, p }) => {
-let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: true };
-let placed = tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta);
-if (!placed) unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: p.day, reason: 'mandatory-conflict' });
-});
-let optionalQueue = studentCandidates.map(sc => {
-let stillNeeded = Math.max(0, sc.targetCount - sc.mandatoryDays.length);
-let tightnessValues = sc.optionalDays.map(p => {
-let st = dayState[p.day];
-return slotOptionsCount(Math.max(timeToMinutes(p.from), st.floorMin), timeToMinutes(p.to), sc.duration);
-});
-let bestTightness = tightnessValues.length ? Math.min(...tightnessValues) : Infinity;
-return { sc, stillNeeded, bestTightness };
-}).filter(q => q.stillNeeded > 0 && q.sc.optionalDays.length);
-optionalQueue.sort((a, b) => a.bestTightness - b.bestTightness);
-if (strategy === 2) {
-for (let i = optionalQueue.length - 1; i > 0; i--) {
-let j = Math.floor(Math.random() * (i + 1));
-if (optionalQueue[i].bestTightness === optionalQueue[j].bestTightness) [optionalQueue[i], optionalQueue[j]] = [optionalQueue[j], optionalQueue[i]];
-}
-}
-optionalQueue.forEach(({ sc, stillNeeded }) => {
-let candidateDays = sc.optionalDays.slice().sort((a, b) => {
-let stA = dayState[a.day], stB = dayState[b.day];
-let fA = Math.max(timeToMinutes(a.from), stA.floorMin), fB = Math.max(timeToMinutes(b.from), stB.floorMin);
-return slotOptionsCount(fA, timeToMinutes(a.to), sc.duration) - slotOptionsCount(fB, timeToMinutes(b.to), sc.duration);
-});
-let placedCount = 0;
-for (const p of candidateDays) {
-if (placedCount >= stillNeeded) break;
-let entryMeta = { studentId: sc.student.id, name: sc.student.name, color: sc.student.color, lat: sc.student.lat, lng: sc.student.lng, mandatory: false };
-if (tryPlaceOnDay(p.day, p.from, p.to, sc.duration, entryMeta)) placedCount++;
-}
-if (placedCount < stillNeeded) {
-unresolved.push({ studentId: sc.student.id, name: sc.student.name, day: null, reason: 'not-enough-room', missing: stillNeeded - placedCount, wanted: stillNeeded });
-}
-});
-let suggestions = {};
-daysOrder.forEach(day => {
-let list = dayState[day].placed.slice().sort((a, b) => a.minutes - b.minutes);
-if (!list.length) return;
-let curLat = db.teacherLat, curLng = db.teacherLng;
-list.forEach(e => {
-e.dist = Math.round(haversineKm(curLat, curLng, e.lat, e.lng) * 10) / 10;
-curLat = e.lat; curLng = e.lng;
-});
-suggestions[day] = list;
-});
-lastSuggestion = suggestions;
-renderSuggestionModal(suggestions, unresolved, strategy);
-}
-function renderSuggestionModal(suggestions, unresolved, strategy) {
-const strategyLabel = ['⏱️ Earliest-first', '🌙 Latest-first', '🎲 Alternate mix'][strategy] || '';
-let html = `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
-<h3 style="margin:0;">🧭 Suggested Schedule</h3>
-<button class="action-btn" style="background:#0ea5e9; color:white; margin:0; flex-shrink:0;" onclick="generateSuggestedSchedule()" title="Try another valid arrangement">🔄</button>
-</div>
-<p style="font-size:10.5px; color:#64748b; margin:0 0 8px;">Strategy: ${strategyLabel} — every session respects each student's own window and time never overlaps. Nothing starts before 11:00 AM Saturday or 2:00 PM Sun-Thu. ★Mandatory sessions are locked in first, most time-constrained students get priority for real slots (no invented/unavailable sessions).</p>`;
-const dayKeys = Object.keys(suggestions);
-if (!dayKeys.length) {
-html += `<p>No sessions could be placed yet — check that at least one student has a saved location and preferred day/time.</p>`;
-} else {
-dayKeys.forEach(day => {
-html += `<div class="suggest-day-block"><b>${dayNamesFull[day]}</b>`;
-suggestions[day].forEach(e => {
-html += `<div class="suggest-row">
-<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.color || '#3b82f6'};margin-left:5px;"></span>${e.name}${e.mandatory ? ' <span style="color:#b91c1c; font-weight:bold;">★Mandatory</span>' : ''}</span>
-<span>${e.timeLabel} - ${e.endTimeLabel}</span>
-<span class="distance-badge">${e.dist} km</span>
-</div>`;
-});
-html += `</div>`;
-});
-html += `<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-top:5px;" onclick="applySuggestedSchedule()">✅ Apply Suggested Schedule</button>`;
-}
-if (unresolved && unresolved.length) {
-html += `<div class="suggest-day-block" style="border-color:#ef4444; background:#fef2f2;"><b style="color:#b91c1c;">⚠️ Could not fully schedule</b>`;
-unresolved.forEach(u => {
-let msg = u.reason === 'mandatory-conflict'
-? `${u.name}: mandatory time on ${dayNamesFull[u.day] || u.day} clashes with another mandatory session — adjust one of their times.`
-: `${u.name}: only fit ${u.wanted - u.missing} of ${u.wanted} requested session(s) this week — try widening their preferred windows or adding another preferred day.`;
-html += `<div class="suggest-row conflict"><span>${msg}</span></div>`;
-});
-html += `</div>`;
-}
-html += `<button class="action-btn" style="width:100%; background:#0ea5e9; color:white; margin-top:8px;" onclick="generateSuggestedSchedule()">🔄 Re-suggest</button>`;
-html += `<button class="action-btn" style="width:100%; margin-top:8px;" onclick="closeAll()">Close</button>`;
-document.getElementById('editFields').innerHTML = html;
-document.getElementById('editModal').classList.add('active');
-document.getElementById('overlay').classList.add('active');
-}
-function applySuggestedSchedule() {
-if (!lastSuggestion) return;
-if (!confirm('This will replace the schedule for students who have a suggestion with the new times. Continue?')) return;
-commitChange();
-Object.keys(lastSuggestion).forEach(day => {
-lastSuggestion[day].forEach(e => {
-let student = db.students.find(s => s.id === e.studentId);
-if (!student) return;
-if (!student.schedules) student.schedules = [];
-student.schedules = student.schedules.filter(sc => sc.day !== day);
-student.schedules.push({ day, time: e.timeLabel, offset: 0, status: 0 });
-});
-});
-save();
-closeAll();
-showToast('Suggested schedule applied ✅');
-}
 function timeToMinutes(t) {
 if (!t) return 0;
 let parts = t.split(' ');
@@ -965,6 +658,7 @@ render();
 function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
 function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
 function printFullSchedule() {
+document.getElementById('periodPrintPageStyle')?.remove();
 document.body.classList.remove('print-single-student');
 window.print();
 }
@@ -1045,6 +739,7 @@ ${financialsHTML}
 `;
 }
 function printSingleStudent(studentId, includeFinancials = false, includePhone = false) {
+document.getElementById('periodPrintPageStyle')?.remove();
 let student = db.students.find(s => s.id === studentId);
 if(!student) return;
 document.getElementById('studentPrintContainer').innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
@@ -1066,6 +761,298 @@ link.click();
 document.body.removeChild(tempDiv);
 }).catch(() => { document.body.removeChild(tempDiv); });
 }
+/* =====================================================================
+   PAYMENT PERIOD REPORT  (sessions dates & times for each billing period)
+   A "period" is the block of N teaching weeks (N = Billing Cycle, default 4)
+   that ends on a payment week (the ones highlighted in the accounts table).
+   Holiday weeks / paused weeks are listed as "no sessions" and don't count.
+   ===================================================================== */
+const DAY_MS = 86400000;
+const REPORT_WEEKS = 24; // same number of weeks shown in the accounts table
+const JS_DAY = { Sat: 6, Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5 };
+
+function escHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function ymdToUTC(str) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str || '');
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function fmtUTC(ms, opts) {
+    return new Date(ms).toLocaleDateString('en-GB', Object.assign({ timeZone: 'UTC' }, opts));
+}
+function fmtShort(ms) { return fmtUTC(ms, { day: 'numeric', month: 'short' }); }
+function fmtLong(ms) { return fmtUTC(ms, { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+function getStudentPaymentPeriods(s) {
+    const base = ymdToUTC(db.courseStartDate || new Date().toISOString().slice(0, 10));
+    if (base == null) return [];
+    const prices = (s.periods || [])
+        .map(p => ({ price: Number(p.price) || 0, cycle: Number(p.cycle) || 4, startMs: ymdToUTC(p.startDate) }))
+        .filter(p => p.startMs != null)
+        .sort((a, b) => a.startMs - b.startMs);
+    if (!prices.length) return [];
+
+    const hol = db.holidays || [];
+    const fm = s.financialMap || {};
+    const skippedAt = j => hol.includes(j) || fm[j] == 3;
+    const payDateOf = j => base + (j * 7 + 5) * DAY_MS; // the date shown in the accounts-table header
+
+    // 1) Walk every week exactly like the accounts table does, and find the payment weeks
+    const weeks = [];
+    for (let i = 0; i < REPORT_WEEKS; i++) {
+        const anchor = base + i * 7 * DAY_MS;
+        const payDate = payDateOf(i);
+        const isHol = hol.includes(i);
+        const isDis = fm[i] == 3;
+        let activeP = null;
+        for (const p of prices) if (payDate >= p.startMs) activeP = p;
+        let isPay = false;
+        if (activeP && !isHol && !isDis) {
+            const totalWeeks = Math.round((payDate - activeP.startMs) / (7 * DAY_MS));
+            let hCount = 0;
+            for (let j = 0; j <= i; j++) if (skippedAt(j) && payDateOf(j) >= activeP.startMs) hCount++;
+            const eff = totalWeeks - hCount;
+            if (eff >= 0 && eff % activeP.cycle === 0) isPay = true;
+        }
+        weeks.push({ i, anchor, isHol, isDis, activeP, isPay, payState: Number(fm[i]) || 0, sessions: [] });
+    }
+
+    // 2) Group the weeks: a period is the block of weeks that ENDS on a payment week
+    //    (the parent pays at the end of each cycle, for the weeks just taught)
+    const groups = [];
+    let pending = [];
+    weeks.forEach(w => {
+        if (!w.activeP) return; // before the student's start date
+        pending.push(w);
+        if (w.isPay) {
+            groups.push({
+                number: groups.length + 1, price: w.activeP.price, cycle: w.activeP.cycle,
+                startLimit: w.activeP.startMs, payState: w.payState, payMs: payDateOf(w.i),
+                weeks: pending, sessions: []
+            });
+            pending = [];
+        }
+    });
+
+    // 3) Put the real calendar date of every weekly slot inside each week
+    const slots = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null);
+    groups.forEach(g => {
+        g.weeks.forEach(w => {
+            if (w.isHol || w.isDis) return;
+            const anchorDow = new Date(w.anchor).getUTCDay();
+            slots.forEach(sc => {
+                const date = w.anchor + ((JS_DAY[sc.day] - anchorDow + 7) % 7) * DAY_MS;
+                if (date < g.startLimit) return; // before the student's start date
+                w.sessions.push({ date, day: sc.day, time: sc.time, min: timeToMinutes(sc.time) });
+            });
+            w.sessions.sort((a, b) => a.date - b.date || a.min - b.min);
+            g.sessions.push(...w.sessions);
+        });
+        g.startMs = Math.max(g.weeks[0].anchor, g.startLimit);
+        g.endMs = g.weeks[g.weeks.length - 1].anchor + 6 * DAY_MS;
+    });
+    return groups;
+}
+
+function periodRangeText(g) {
+    const sy = new Date(g.startMs).getUTCFullYear(), ey = new Date(g.endMs).getUTCFullYear();
+    return (sy === ey ? fmtShort(g.startMs) : fmtLong(g.startMs)) + ' – ' + fmtLong(g.endMs);
+}
+
+function defaultPeriodIndex(groups) {
+    if (!groups.length) return 0;
+    const now = new Date();
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    let idx = groups.findIndex(g => today >= g.startMs && today <= g.endMs);
+    if (idx === -1) idx = groups.findIndex(g => g.startMs > today);
+    return idx === -1 ? groups.length - 1 : idx;
+}
+
+function generatePeriodReportHTML(student, periodIdx, includeFinancials = false, includePhone = false) {
+    const groups = getStudentPaymentPeriods(student);
+    const g = groups[periodIdx];
+    if (!g) return '';
+
+    const teacherName = escHtml(db.teacherName || 'Teacher');
+    const teacherPhone = (includePhone && db.teacherPhone)
+        ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${escHtml(db.teacherPhone)}</div>` : '';
+    const color = student.color || '#3b82f6';
+
+    const tdBase = 'padding: 6px 10px; border-bottom: 1px solid #334155; font-size: 13px;';
+    let rows = '';
+    let weekNo = 0;
+    g.weeks.forEach(w => {
+        const wStart = Math.max(w.anchor, g.startLimit), wEnd = w.anchor + 6 * DAY_MS;
+        const range = `${fmtShort(wStart)} – ${fmtShort(wEnd)}`;
+        if (w.isHol || w.isDis) {
+            const label = w.isHol ? '🌙 Holiday week' : '⏸ Break week';
+            rows += `<tr><td colspan="3" style="padding: 6px 10px; background:#312e81; color:#e0e7ff; font-size:11px; font-weight:bold; text-align:center; border-bottom:1px solid #334155;">${label} · ${range} · no sessions</td></tr>`;
+            return;
+        }
+        weekNo++;
+        rows += `<tr><td colspan="3" style="padding: 5px 10px; background:#0f172a; color:#facc15; font-size:11px; font-weight:bold; border-bottom:1px solid #334155; border-top:1px solid #334155;">Week ${weekNo} &nbsp;·&nbsp; ${range}</td></tr>`;
+        if (!w.sessions.length) {
+            rows += `<tr><td colspan="3" style="${tdBase} color:#94a3b8; text-align:center;">No sessions</td></tr>`;
+        } else {
+            w.sessions.forEach(se => {
+                rows += `<tr>
+<td style="${tdBase} font-weight:bold; color:#ffffff;">✦ ${dayNamesFull[se.day] || se.day}</td>
+<td style="${tdBase} color:#e2e8f0;">${fmtLong(se.date)}</td>
+<td style="${tdBase} font-weight:bold; color:#38bdf8; text-align:right; white-space:nowrap;">${se.time}</td>
+</tr>`;
+            });
+        }
+    });
+    if (!g.sessions.length) {
+        rows = `<tr><td colspan="3" style="${tdBase} text-align:center; color:#94a3b8;">No scheduled slots found for this student.</td></tr>`;
+    }
+
+    let financialsHTML = '';
+    if (includeFinancials) {
+        const stateTxt = g.payState === 1 ? '<span style="color:#34d399;">Paid ✓</span>'
+            : (g.payState === 2 ? '<span style="color:#f87171;">Not paid ✕</span>' : '<span style="color:#fbbf24;">Due</span>');
+        financialsHTML = `
+<div style="position:relative; background: #1e293b; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+<div>
+<span style="font-size: 11px; color: #94a3b8; display: block;">Amount Due:</span>
+<strong style="font-size: 17px; color: #34d399;">${g.price}</strong>
+</div>
+<div style="text-align: center;">
+<span style="font-size: 11px; color: #94a3b8; display: block;">Due Date:</span>
+<strong style="font-size: 12px; color: #ffffff;">${fmtUTC(g.payMs, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</strong>
+</div>
+<div style="text-align: right;">
+<span style="font-size: 11px; color: #94a3b8; display: block;">Status:</span>
+<strong style="font-size: 14px;">${stateTxt}</strong>
+</div>
+</div>`;
+    }
+
+    return `
+<div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 18px; border-radius: 14px; border: 3px double #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden; box-sizing: border-box;">
+<div style="position:absolute; top:8px; left:8px; width:14px; height:14px; border-top:2px solid #facc15; border-left:2px solid #facc15; border-radius:3px 0 0 0;"></div>
+<div style="position:absolute; top:8px; right:8px; width:14px; height:14px; border-top:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 3px 0 0;"></div>
+<div style="position:absolute; bottom:8px; left:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-left:2px solid #facc15; border-radius:0 0 0 3px;"></div>
+<div style="position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 0 3px 0;"></div>
+<div style="position:absolute; top:-60px; right:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.10) 0%, rgba(250,204,21,0) 70%); pointer-events:none;"></div>
+<div style="position:absolute; bottom:-60px; left:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0) 70%); pointer-events:none;"></div>
+
+<div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 9px; margin-bottom: 10px;">
+<div>
+<h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
+<p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">Payment Period Schedule</p>
+</div>
+<div style="background: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; color: #ffffff; border: 1px solid #334155; text-align: right; line-height:1.3;">
+<div>${teacherName}</div>
+${teacherPhone}
+</div>
+</div>
+
+<div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${color};">
+<h3 style="margin: 0 0 4px 0; font-size: 18px; color: #ffffff;">🎓 ${escHtml(student.name)}</h3>
+<p style="margin: 0; font-size: 12px; color: #facc15; font-weight: bold;">Period ${g.number} &nbsp;·&nbsp; ${periodRangeText(g)}</p>
+<p style="margin: 3px 0 0; font-size: 11px; color: #94a3b8;">${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'} &nbsp;·&nbsp; every ${g.cycle} weeks</p>
+</div>
+${financialsHTML}
+<table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">
+<thead>
+<tr style="background: #0f172a; border-bottom: 2px solid #facc15;">
+<th style="padding: 7px 10px; text-align: left; font-size: 12px; color: #facc15;">Day</th>
+<th style="padding: 7px 10px; text-align: left; font-size: 12px; color: #facc15;">Date</th>
+<th style="padding: 7px 10px; text-align: right; font-size: 12px; color: #facc15;">Time</th>
+</tr>
+</thead>
+<tbody>${rows}</tbody>
+</table>
+<div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
+✦ Thank you for trusting us with your education ✦
+</div>
+</div>
+`;
+}
+
+function printPeriodReport(studentId, periodIdx, includeFinancials = false, includePhone = false) {
+    const student = db.students.find(s => s.id === studentId);
+    if (!student) return;
+    const html = generatePeriodReportHTML(student, periodIdx, includeFinancials, includePhone);
+    if (!html) { alert('No payment period found. Add a billing period first.'); return; }
+    document.getElementById('studentPrintContainer').innerHTML = html;
+    document.body.classList.add('print-single-student');
+    // the period report is tall, so print it on a portrait A4 page
+    const old = document.getElementById('periodPrintPageStyle');
+    if (old) old.remove();
+    const st = document.createElement('style');
+    st.id = 'periodPrintPageStyle';
+    st.textContent = '@media print { @page { size: A4 portrait; margin: 8mm; } }';
+    document.head.appendChild(st);
+    const cleanup = () => { st.remove(); window.removeEventListener('afterprint', cleanup); };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+}
+
+function buildReportCanvas(html) {
+    return new Promise((resolve, reject) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'position:absolute; left:-9999px; top:0; width:520px;';
+        tempDiv.innerHTML = html;
+        document.body.appendChild(tempDiv);
+        html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#0f172a' })
+            .then(canvas => { tempDiv.remove(); resolve(canvas); })
+            .catch(err => { tempDiv.remove(); reject(err); });
+    });
+}
+
+async function savePeriodImage(studentId, periodIdx, includeFinancials = false, includePhone = false, share = false) {
+    const student = db.students.find(s => s.id === studentId);
+    if (!student) return;
+    const html = generatePeriodReportHTML(student, periodIdx, includeFinancials, includePhone);
+    if (!html) { alert('No payment period found. Add a billing period first.'); return; }
+    if (typeof html2canvas === 'undefined') { alert('The image library could not be loaded. Please check your internet connection.'); return; }
+    showToast('Preparing image…');
+    try {
+        const canvas = await buildReportCanvas(html);
+        const g = getStudentPaymentPeriods(student)[periodIdx];
+        const safeName = String(student.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
+        const fileName = `Period_${g.number}_${safeName}.png`;
+
+        if (share && navigator.canShare && navigator.share) {
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            if (blob) {
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: `${student.name} – Period ${g.number}` });
+                        return;
+                    } catch (e) {
+                        if (e && e.name === 'AbortError') return; // user closed the share sheet
+                        // any other error → fall back to a normal download below
+                    }
+                }
+            }
+        }
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        showToast('Image saved ✅');
+    } catch (e) {
+        alert('Could not create the image. Please try again.');
+    }
+}
+
+function runPeriodReport(action, studentId) {
+    const sel = document.getElementById('reportPeriodSelect');
+    if (!sel) return;
+    const idx = Number(sel.value);
+    const fin = document.getElementById('includeFinancialsCheckbox').checked;
+    const ph = document.getElementById('includePhoneCheckbox').checked;
+    if (action === 'print') printPeriodReport(studentId, idx, fin, ph);
+    else savePeriodImage(studentId, idx, fin, ph, action === 'share');
+}
+
 function resetAllStudentsStartDate() {
 let newDate = document.getElementById('courseBaseDate').value;
 if(!newDate) { alert('Please select a valid date first'); return; }
@@ -1388,9 +1375,6 @@ let n = document.getElementById('sName').value, col = document.getElementById('h
 if(!n) return; commitChange();
 if(!db.students) db.students = [];
 let address = document.getElementById('sAddress')?.value.trim() || '';
-let preferredSchedule = getPrefSchedule('sPrefDays');
-let weeklyDaysCount = Number(document.getElementById('sWeeklyDays')?.value) || null;
-let sessionDurationMinutes = Number(document.getElementById('sSessionDuration')?.value) || null;
 let pendingLoc = window.__pendingStudentLoc || null;
 let newStudent = {
 id: Date.now(),
@@ -1398,7 +1382,7 @@ name: n,
 color: col,
 financialMap: {},
 schedules: [],
-address, preferredSchedule, weeklyDaysCount, sessionDurationMinutes,
+address,
 lat: pendingLoc ? pendingLoc.lat : null,
 lng: pendingLoc ? pendingLoc.lng : null,
 distanceKm: null,
@@ -1410,12 +1394,9 @@ newStudent.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, pen
 db.students.push(newStudent);
 save(); closeAll();
 document.getElementById('sAddress').value = '';
-document.getElementById('sWeeklyDays').value = '';
-document.getElementById('sSessionDuration').value = '';
 window.__pendingStudentLoc = null;
 let ns = document.getElementById('newStudentGeoStatus');
 if (ns) ns.innerText = '';
-buildDayPrefUI('sPrefDays', []);
 if (!pendingLoc && address && db.teacherLat != null) {
 geocodeAddress(address).then(loc => {
 if (loc) {
@@ -1450,6 +1431,20 @@ let phtml = (s.periods || []).map((p, idx) => `
 <label>Billing Cycle (every N weeks)</label><input type="number" class="p-cycle" value="${p.cycle}">
 ${idx > 0 ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; position:absolute; top:5px; right:5px; font-weight:bold">X</button>` : ''}
 </div>`).join('');
+let periodGroups = getStudentPaymentPeriods(s);
+let defPeriodIdx = defaultPeriodIndex(periodGroups);
+let periodOptions = periodGroups.map((g, idx) => `<option value="${idx}" ${idx === defPeriodIdx ? 'selected' : ''}>Period ${g.number}: ${periodRangeText(g)}</option>`).join('');
+let periodReportHtml = periodGroups.length ? `
+<div style="background:#fffbeb; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #fcd34d;">
+<div style="font-weight:bold; font-size:12px; color:#92400e; margin-bottom:4px;">📅 Payment Period Report (for parent)</div>
+<div style="font-size:10px; color:#78716c; margin-bottom:6px;">Dates & times of all sessions in the selected period. Based on saved data — press "Save All Changes" first if you edited anything.</div>
+<select id="reportPeriodSelect" style="margin-bottom:8px;">${periodOptions}</select>
+<div style="display:flex; gap:5px;">
+<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('print', ${s.id})">🖨️ PDF</button>
+<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('image', ${s.id})">📸 Image</button>
+<button class="action-btn" style="flex:1; background:#0ea5e9; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('share', ${s.id})">📤 Share</button>
+</div>
+</div>` : `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; font-size:11px; color:#64748b;">📅 Payment period report: add a billing period (start date, price, cycle) above and save to enable it.</div>`;
 let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
 document.getElementById('editFields').innerHTML = `
 <h3>Edit Student</h3>
@@ -1461,13 +1456,6 @@ document.getElementById('editFields').innerHTML = `
 <button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">📍</button>
 </div>
 <div style="margin:-6px 0 12px;">${distHtml}</div>
-<label style="font-size:11px; color:#64748b;">🔢 Weekly Session Days (helps when suggesting a schedule)</label>
-<input id="eWeeklyDays" type="number" min="1" value="${s.weeklyDaysCount || ''}" placeholder="e.g. 2">
-<label style="font-size:11px; color:#64748b;">⏱️ Session Duration in minutes (used when suggesting a schedule)</label>
-<input id="eSessionDuration" type="number" min="15" step="15" value="${s.sessionDurationMinutes || ''}" placeholder="e.g. 60">
-<label style="font-size:11px; color:#64748b;">📅 الأيام المفضلة (اضغط على اليوم لتحديد ساعاته الخاصة)</label>
-<div id="ePrefDays_pills" style="margin-bottom:6px;"></div>
-<div id="ePrefDays_times" style="margin-bottom:12px;"></div>
 <hr>
 <h4>Billing Periods</h4>
 <div id="editPeriods">${phtml}</div>
@@ -1480,15 +1468,16 @@ document.getElementById('editFields').innerHTML = `
 <input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
 </label>
 </div>
+<div style="font-size:11px; font-weight:bold; color:#64748b; margin-bottom:4px;">🗓️ Weekly schedule card</div>
 <div style="display: flex; gap: 5px; margin-bottom: 8px;">
 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
 </div>
+${periodReportHtml}
 <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
 <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
 `;
 initColors('ecg', 'eColor', s.color);
-buildDayPrefUI('ePrefDays', getStudentPrefSchedule(s));
 document.getElementById('editModal').classList.add('active');
 document.getElementById('overlay').classList.add('active');
 }
@@ -1526,9 +1515,6 @@ s.color = document.getElementById('hidden_ecg').value;
 let newAddress = document.getElementById('eAddress')?.value.trim() || '';
 if (newAddress !== s.address) { s.lat = null; s.lng = null; s.distanceKm = null; }
 s.address = newAddress;
-s.preferredSchedule = getPrefSchedule('ePrefDays');
-s.weeklyDaysCount = Number(document.getElementById('eWeeklyDays')?.value) || null;
-s.sessionDurationMinutes = Number(document.getElementById('eSessionDuration')?.value) || null;
 let newPeriods = [];
 document.querySelectorAll('.period-card').forEach(card => {
 newPeriods.push({
