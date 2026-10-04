@@ -138,7 +138,7 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <h3 style="margin:0">Account Statement 💰</h3>
 <div class="map-icon-btn" onclick="closeAll()">✕</div>
 </div>
-<label style="font-size:11px; color:#64748b;">Student</label>
+<label style="font-size:11px; color:#64748b;">Choose student</label>
 <select id="accStudent" onchange="runAccount()"></select>
 <label style="font-size:11px; color:#64748b;">Account up to this date (that day is included)</label>
 <input id="accDate" type="date" onchange="runAccount()" oninput="runAccount()">
@@ -1133,10 +1133,11 @@ function runAccount() {
     const students = (db.students || []).filter(s => pick === 'all' || String(s.id) === pick);
     const stmts = students.map(s => computeStudentStatement(s, cutoff, true));
     let html = '';
-    if (stmts.length > 1) {
-        const all = stmts.reduce((a, r) => a + r.earned, 0);
-        html += `<div style="background:#0f172a; color:#facc15; border-radius:8px; padding:8px 10px; margin:8px 0; font-weight:900; font-size:13px;">Total all students: ${money(all)}</div>`;
-    }
+    const grand = stmts.reduce((a, r) => a + r.earned, 0);
+    const who = stmts.length === 1 ? escHtml(stmts[0].student.name) : 'All students';
+    html += `<div style="background:#0F172A; border:2px solid #FACC15; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
+<div style="color:#94a3b8; font-size:11px;">${who} — up to ${fmtLong(cutoff)}</div>
+<div style="color:#FACC15; font-size:30px; font-weight:900; line-height:1.2;">${money(grand)}</div></div>`;
     stmts.forEach(r => {
         const s = r.student;
         let inner = '';
