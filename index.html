@@ -114,11 +114,39 @@ body:not(.print-single-student) .container { display: block !important; padding:
 .total-row td { color: #000000 !important; background: #FACC15 !important; font-weight: 900 !important; }
 .grand-total-cell { background: #000000 !important; color: #FACC15 !important; font-size: 9px !important; }
 }
+.acc-card { border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; border-radius: 8px; padding: 8px; margin-bottom: 10px; background: #fff; }
+.acc-card h4 { margin: 0 0 4px; font-size: 14px; }
+.acc-mini { width: 100%; border-collapse: collapse; font-size: 10.5px; margin: 4px 0; }
+.acc-mini th, .acc-mini td { border: 1px solid #e2e8f0; padding: 3px 4px; text-align: center; }
+.acc-mini th { background: #f1f5f9; color: #334155; }
+.acc-mini td.l, .acc-mini th.l { text-align: left; }
+.acc-sum { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 6px; }
+.acc-sum div { flex: 1 1 70px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; text-align: center; }
+.acc-sum span { display: block; font-size: 9px; color: #64748b; }
+.acc-sum b { font-size: 13px; }
+.acc-owe { color: #b91c1c; } .acc-ok { color: #047857; } .acc-zero { color: #475569; }
+.acc-note { font-size: 10.5px; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
 </style>
 </head>
 <body>
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 <div class="modal" id="editModal"><div id="editFields"></div></div>
+<div class="modal" id="accountModal" style="width:min(100%, 480px);">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="margin:0">Account Statement 💰</h3>
+<div class="map-icon-btn" onclick="closeAll()">✕</div>
+</div>
+<label style="font-size:11px; color:#64748b;">Student</label>
+<select id="accStudent" onchange="runAccount()"></select>
+<label style="font-size:11px; color:#64748b;">Stop date (account up to this day)</label>
+<input id="accDate" type="date" onchange="runAccount()" oninput="runAccount()">
+<label style="font-size:11px; color:#64748b;">Are we at the start or the end of that day?</label>
+<select id="accWhen" onchange="runAccount()">
+<option value="start">Start of day — that day's sessions NOT counted</option>
+<option value="end">End of day — that day's sessions ARE counted</option>
+</select>
+<div id="accountResult"></div>
+</div>
 <div class="modal" id="mapModal">
 <div class="map-top-bar">
 <div class="map-icon-btn" onclick="closeAll()">✕</div>
@@ -197,7 +225,8 @@ body:not(.print-single-student) .container { display: block !important; padding:
 </div>
 <header>
 <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-<div style="display: flex; gap: 5px;">
+<div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+<button class="action-btn" onclick="openAccount()">💰 ACCOUNT</button>
 <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
 <button class="action-btn" onclick="undo()">↩️ UNDO</button>
 <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
@@ -770,7 +799,6 @@ document.body.removeChild(tempDiv);
 const DAY_MS = 86400000;
 const REPORT_WEEKS = 24; // same number of weeks shown in the accounts table
 const JS_DAY = { Sat: 6, Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5 };
-
 function escHtml(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -783,8 +811,7 @@ function fmtUTC(ms, opts) {
 }
 function fmtShort(ms) { return fmtUTC(ms, { day: 'numeric', month: 'short' }); }
 function fmtLong(ms) { return fmtUTC(ms, { day: 'numeric', month: 'short', year: 'numeric' }); }
-
-function getStudentPaymentPeriods(s) {
+function getStudentPaymentPeriods(s, includePartial = false) {
     const base = ymdToUTC(db.courseStartDate || new Date().toISOString().slice(0, 10));
     if (base == null) return [];
     const prices = (s.periods || [])
@@ -792,12 +819,10 @@ function getStudentPaymentPeriods(s) {
         .filter(p => p.startMs != null)
         .sort((a, b) => a.startMs - b.startMs);
     if (!prices.length) return [];
-
     const hol = db.holidays || [];
     const fm = s.financialMap || {};
     const skippedAt = j => hol.includes(j) || fm[j] == 3;
     const payDateOf = j => base + (j * 7 + 5) * DAY_MS; // the date shown in the accounts-table header
-
     // 1) Walk every week exactly like the accounts table does, and find the payment weeks
     const weeks = [];
     for (let i = 0; i < REPORT_WEEKS; i++) {
@@ -817,7 +842,6 @@ function getStudentPaymentPeriods(s) {
         }
         weeks.push({ i, anchor, isHol, isDis, activeP, isPay, payState: Number(fm[i]) || 0, sessions: [] });
     }
-
     // 2) Group the weeks: a period is the block of weeks that ENDS on a payment week
     //    (the parent pays at the end of each cycle, for the weeks just taught)
     const groups = [];
@@ -834,7 +858,16 @@ function getStudentPaymentPeriods(s) {
             pending = [];
         }
     });
-
+    // 2b) optionally keep the last, still-open course (weeks after the final payment week)
+    if (includePartial && pending.length && pending.some(w => !w.isHol && !w.isDis)) {
+        const lw = pending[pending.length - 1];
+        groups.push({
+            number: groups.length + 1, price: lw.activeP.price, cycle: lw.activeP.cycle,
+            startLimit: lw.activeP.startMs, payState: 0, payMs: null, isPartial: true,
+            weeks: pending, sessions: []
+        });
+        pending = [];
+    }
     // 3) Put the real calendar date of every weekly slot inside each week
     const slots = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null);
     groups.forEach(g => {
@@ -854,12 +887,10 @@ function getStudentPaymentPeriods(s) {
     });
     return groups;
 }
-
 function periodRangeText(g) {
     const sy = new Date(g.startMs).getUTCFullYear(), ey = new Date(g.endMs).getUTCFullYear();
     return (sy === ey ? fmtShort(g.startMs) : fmtLong(g.startMs)) + ' – ' + fmtLong(g.endMs);
 }
-
 function defaultPeriodIndex(groups) {
     if (!groups.length) return 0;
     const now = new Date();
@@ -868,17 +899,14 @@ function defaultPeriodIndex(groups) {
     if (idx === -1) idx = groups.findIndex(g => g.startMs > today);
     return idx === -1 ? groups.length - 1 : idx;
 }
-
 function generatePeriodReportHTML(student, periodIdx, includeFinancials = false, includePhone = false) {
     const groups = getStudentPaymentPeriods(student);
     const g = groups[periodIdx];
     if (!g) return '';
-
     const teacherName = escHtml(db.teacherName || 'Teacher');
     const teacherPhone = (includePhone && db.teacherPhone)
         ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${escHtml(db.teacherPhone)}</div>` : '';
     const color = student.color || '#3b82f6';
-
     const tdBase = 'padding: 6px 10px; border-bottom: 1px solid #334155; font-size: 13px;';
     let rows = '';
     let weekNo = 0;
@@ -907,7 +935,6 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
     if (!g.sessions.length) {
         rows = `<tr><td colspan="3" style="${tdBase} text-align:center; color:#94a3b8;">No scheduled slots found for this student.</td></tr>`;
     }
-
     let financialsHTML = '';
     if (includeFinancials) {
         const stateTxt = g.payState === 1 ? '<span style="color:#34d399;">Paid ✓</span>'
@@ -928,7 +955,6 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
 </div>
 </div>`;
     }
-
     return `
 <div style="max-width: 480px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 18px; border-radius: 14px; border: 3px double #facc15; font-family: Arial, sans-serif; position: relative; overflow: hidden; box-sizing: border-box;">
 <div style="position:absolute; top:8px; left:8px; width:14px; height:14px; border-top:2px solid #facc15; border-left:2px solid #facc15; border-radius:3px 0 0 0;"></div>
@@ -937,7 +963,6 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
 <div style="position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-bottom:2px solid #facc15; border-right:2px solid #facc15; border-radius:0 0 3px 0;"></div>
 <div style="position:absolute; top:-60px; right:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(250,204,21,0.10) 0%, rgba(250,204,21,0) 70%); pointer-events:none;"></div>
 <div style="position:absolute; bottom:-60px; left:-60px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0) 70%); pointer-events:none;"></div>
-
 <div style="position:relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #facc15; padding-bottom: 9px; margin-bottom: 10px;">
 <div>
 <h2 style="margin: 0; color: #ffffff; font-size: 20px;">SMART <span style="color: #facc15;">TUTOR</span></h2>
@@ -948,7 +973,6 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
 ${teacherPhone}
 </div>
 </div>
-
 <div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${color};">
 <h3 style="margin: 0 0 4px 0; font-size: 18px; color: #ffffff;">🎓 ${escHtml(student.name)}</h3>
 <p style="margin: 0; font-size: 12px; color: #facc15; font-weight: bold;">Period ${g.number} &nbsp;·&nbsp; ${periodRangeText(g)}</p>
@@ -971,7 +995,6 @@ ${financialsHTML}
 </div>
 `;
 }
-
 function printPeriodReport(studentId, periodIdx, includeFinancials = false, includePhone = false) {
     const student = db.students.find(s => s.id === studentId);
     if (!student) return;
@@ -990,7 +1013,6 @@ function printPeriodReport(studentId, periodIdx, includeFinancials = false, incl
     window.addEventListener('afterprint', cleanup);
     window.print();
 }
-
 function buildReportCanvas(html) {
     return new Promise((resolve, reject) => {
         const tempDiv = document.createElement('div');
@@ -1002,7 +1024,6 @@ function buildReportCanvas(html) {
             .catch(err => { tempDiv.remove(); reject(err); });
     });
 }
-
 async function savePeriodImage(studentId, periodIdx, includeFinancials = false, includePhone = false, share = false) {
     const student = db.students.find(s => s.id === studentId);
     if (!student) return;
@@ -1015,7 +1036,6 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
         const g = getStudentPaymentPeriods(student)[periodIdx];
         const safeName = String(student.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
         const fileName = `Period_${g.number}_${safeName}.png`;
-
         if (share && navigator.canShare && navigator.share) {
             const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
             if (blob) {
@@ -1042,7 +1062,6 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
         alert('Could not create the image. Please try again.');
     }
 }
-
 function runPeriodReport(action, studentId) {
     const sel = document.getElementById('reportPeriodSelect');
     if (!sel) return;
@@ -1053,6 +1072,133 @@ function runPeriodReport(action, studentId) {
     else savePeriodImage(studentId, idx, fin, ph, action === 'share');
 }
 
+/* =====================================================================
+   ACCOUNT STATEMENT
+   Pick a student (or all) + a stop date + "start / end of day" and get:
+   - every session up to that moment, with its price and a running total
+   - the total for each course (billing period): done / total, earned, paid
+   Price per session = course price / number of sessions in that course.
+   Holiday weeks and paused weeks have no sessions, so they never cost money.
+   Balance = earned so far - paid   (positive = student owes, negative = paid ahead)
+   ===================================================================== */
+function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function money(n) { return round2(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+function todayYMD() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function computeStudentStatement(s, cutoffMs, endOfDay) {
+    const groups = getStudentPaymentPeriods(s, true);
+    const slotsPerWeek = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null).length;
+    const res = { student: s, courses: [], days: [], total: 0, done: 0, earned: 0, paid: 0, price: 0, hidden: 0 };
+    groups.forEach(g => {
+        const total = g.isPartial ? slotsPerWeek * g.cycle : g.sessions.length;
+        const rate = total ? g.price / total : 0;
+        const isDone = se => endOfDay ? se.date <= cutoffMs : se.date < cutoffMs;
+        const doneList = g.sessions.filter(isDone);
+        // courses that start after the stop date are not part of the account yet
+        if (!doneList.length && g.startMs > cutoffMs) { res.hidden++; return; }
+        const earned = (total && doneList.length >= total) ? g.price : round2(doneList.length * rate);
+        const paid = g.payState === 1 ? g.price : 0;
+        res.courses.push({
+            number: g.number, range: periodRangeText(g), price: g.price, cycle: g.cycle, isPartial: !!g.isPartial,
+            total, done: doneList.length, rate, earned, paid, payState: g.payState, payMs: g.payMs, balance: round2(earned - paid)
+        });
+        doneList.forEach(se => res.days.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate }));
+        res.total += total; res.done += doneList.length; res.earned += earned; res.paid += paid; res.price += g.price;
+    });
+    res.days.sort((a, b) => a.date - b.date || a.min - b.min);
+    let run = 0;
+    res.days.forEach(d => { run += d.rate; d.running = round2(run); });
+    res.earned = round2(res.earned); res.paid = round2(res.paid);
+    res.balance = round2(res.earned - res.paid);
+    return res;
+}
+function balClass(b) { return b > 0 ? 'acc-owe' : (b < 0 ? 'acc-ok' : 'acc-zero'); }
+function balText(b) { return b > 0 ? money(b) + ' due' : (b < 0 ? money(-b) + ' paid ahead' : '0'); }
+function openAccount(studentId) {
+    closeAll();
+    const sel = document.getElementById('accStudent');
+    sel.innerHTML = '<option value="all">All students</option>' +
+        (db.students || []).map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+    sel.value = studentId != null ? String(studentId) : 'all';
+    document.getElementById('accDate').value = todayYMD();
+    document.getElementById('accountModal').classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+    runAccount();
+}
+function runAccount() {
+    const out = document.getElementById('accountResult');
+    if (!out) return;
+    const cutoff = ymdToUTC(document.getElementById('accDate').value);
+    if (cutoff == null) { out.innerHTML = '<div class="acc-note">Please pick a date.</div>'; return; }
+    const endOfDay = document.getElementById('accWhen').value === 'end';
+    const pick = document.getElementById('accStudent').value;
+    const students = (db.students || []).filter(s => pick === 'all' || String(s.id) === pick);
+    if (!students.length) { out.innerHTML = '<div class="acc-note">No students yet.</div>'; return; }
+    const stmts = students.map(s => computeStudentStatement(s, cutoff, endOfDay));
+    const single = stmts.length === 1;
+    const base = ymdToUTC(db.courseStartDate || todayYMD());
+    const coveredUntil = base + REPORT_WEEKS * 7 * DAY_MS;
+
+    let html = `<div style="background:#0f172a; color:#fff; border-radius:8px; padding:8px 10px; margin:8px 0; font-size:11.5px;">
+<b style="color:#facc15;">${fmtUTC(cutoff, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</b><br>
+${endOfDay ? 'END of day — this day\'s sessions are counted' : 'START of day — this day\'s sessions are NOT counted'}</div>`;
+    if (cutoff > coveredUntil) {
+        html += `<div class="acc-note">⚠️ This date is after the ${REPORT_WEEKS} weeks shown in the accounts table, so later sessions are not included.</div>`;
+    }
+
+    if (!single) {
+        const T = stmts.reduce((a, r) => ({ done: a.done + r.done, earned: a.earned + r.earned, paid: a.paid + r.paid }), { done: 0, earned: 0, paid: 0 });
+        const bal = round2(T.earned - T.paid);
+        html += `<div class="acc-sum">
+<div><span>Sessions done</span><b>${T.done}</b></div>
+<div><span>Earned</span><b>${money(T.earned)}</b></div>
+<div><span>Paid</span><b>${money(T.paid)}</b></div>
+<div><span>Balance</span><b class="${balClass(bal)}">${balText(bal)}</b></div></div>
+<table class="acc-mini"><tr><th class="l">Student</th><th>Done</th><th>Earned</th><th>Paid</th><th>Balance</th></tr>
+${stmts.map(r => `<tr><td class="l" style="border-left:4px solid ${r.student.color || '#3b82f6'}"><b>${escHtml(r.student.name)}</b></td><td>${r.done}/${r.total}</td><td>${money(r.earned)}</td><td>${money(r.paid)}</td><td class="${balClass(r.balance)}"><b>${balText(r.balance)}</b></td></tr>`).join('')}
+</table><div style="font-size:10px; color:#64748b; margin:4px 0 8px;">Tap a student below for the course totals and the day-by-day list.</div>`;
+    }
+
+    stmts.forEach(r => {
+        const s = r.student;
+        let inner = '';
+        if (!r.courses.length) {
+            inner = '<div class="acc-note">No billing period / sessions found for this student. Add a price period and weekly slots first.</div>';
+        } else {
+            inner += `<div class="acc-sum">
+<div><span>Sessions done</span><b>${r.done}</b></div>
+<div><span>Earned so far</span><b>${money(r.earned)}</b></div>
+<div><span>Paid</span><b>${money(r.paid)}</b></div>
+<div><span>Balance</span><b class="${balClass(r.balance)}">${balText(r.balance)}</b></div></div>`;
+            inner += `<div style="font-size:11px; font-weight:bold; margin-top:6px;">📘 Courses</div>
+<div style="overflow-x:auto;"><table class="acc-mini"><tr><th>#</th><th class="l">Dates</th><th>Done</th><th>Per session</th><th>Earned</th><th>Course total</th><th>Paid?</th><th>Balance</th></tr>
+${r.courses.map(c => {
+    const pay = c.payState === 1 ? '<span class="acc-ok">✓</span>' : (c.payState === 2 ? '<span class="acc-owe">✕</span>' : '–');
+    const tag = c.isPartial ? ' <i>(open)</i>' : (c.done === 0 ? ' <i>(not started)</i>' : (c.done >= c.total ? ' <i>(finished)</i>' : ' <i>(running)</i>'));
+    return `<tr><td>${c.number}</td><td class="l">${c.range}${tag}</td><td>${c.done}/${c.total}</td><td>${money(c.rate)}</td><td><b>${money(c.earned)}</b></td><td>${money(c.price)}</td><td>${pay}</td><td class="${balClass(c.balance)}">${balText(c.balance)}</td></tr>`;
+}).join('')}
+<tr style="background:#fef9c3; font-weight:bold;"><td colspan="2" class="l">All courses</td><td>${r.done}/${r.total}</td><td></td><td>${money(r.earned)}</td><td>${money(r.price)}</td><td>${money(r.paid)}</td><td class="${balClass(r.balance)}">${balText(r.balance)}</td></tr>
+</table></div>${r.hidden ? `<div style="font-size:10px; color:#64748b;">${r.hidden} later course${r.hidden === 1 ? '' : 's'} not started yet at this date (not listed).</div>` : ''}`;
+            inner += `<div style="font-size:11px; font-weight:bold; margin-top:8px;">🗓️ Day by day (sessions counted)</div>`;
+            if (!r.days.length) {
+                inner += '<div style="font-size:11px; color:#64748b; padding:4px 0;">No sessions counted yet at this date.</div>';
+            } else {
+                inner += `<div style="overflow-x:auto;"><table class="acc-mini"><tr><th>#</th><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Course</th><th>Price</th><th>Running total</th></tr>
+${r.days.map((d, i) => `<tr><td>${i + 1}</td><td class="l">${fmtLong(d.date)}</td><td class="l">${dayNamesFull[d.day] || d.day}</td><td>${d.time}</td><td>${d.course}</td><td>${money(d.rate)}</td><td><b>${money(d.running)}</b></td></tr>`).join('')}
+</table></div>`;
+            }
+        }
+        const head = `<span style="font-weight:900;">${escHtml(s.name)}</span> — <span class="${balClass(r.balance)}"><b>${r.courses.length ? balText(r.balance) : 'no data'}</b></span>`;
+        if (single) {
+            html += `<div class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><h4>${head}</h4>${inner}</div>`;
+        } else {
+            html += `<details class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><summary style="cursor:pointer; font-size:13px;">${head}</summary>${inner}</details>`;
+        }
+    });
+    out.innerHTML = html;
+}
 function resetAllStudentsStartDate() {
 let newDate = document.getElementById('courseBaseDate').value;
 if(!newDate) { alert('Please select a valid date first'); return; }
@@ -1473,6 +1619,7 @@ document.getElementById('editFields').innerHTML = `
 <button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
 <button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
 </div>
+<button class="action-btn" style="width:100%; background:#f59e0b; color:#000; justify-content:center; margin:0 0 8px;" onclick="openAccount(${s.id})">💰 Account Statement (stop / balance)</button>
 ${periodReportHtml}
 <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
 <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
