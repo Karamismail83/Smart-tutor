@@ -1087,28 +1087,34 @@ function todayYMD() {
 function computeStudentStatement(s, cutoffMs, endOfDay) {
     const groups = getStudentPaymentPeriods(s, true);
     const slotsPerWeek = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null).length;
-    const res = { student: s, courses: [], days: [], total: 0, done: 0, earned: 0, paid: 0, price: 0, hidden: 0 };
+    const res = { student: s, courses: [], days: [], earned: 0, done: 0, total: 0, lastPaid: null };
+    const allDays = [];
     groups.forEach(g => {
         const total = g.isPartial ? slotsPerWeek * g.cycle : g.sessions.length;
         const rate = total ? g.price / total : 0;
         const isDone = se => endOfDay ? se.date <= cutoffMs : se.date < cutoffMs;
         const doneList = g.sessions.filter(isDone);
         // courses that start after the stop date are not part of the account yet
-        if (!doneList.length && g.startMs > cutoffMs) { res.hidden++; return; }
+        if (!doneList.length && g.startMs > cutoffMs) return;
         const earned = (total && doneList.length >= total) ? g.price : round2(doneList.length * rate);
-        const paid = g.payState === 1 ? g.price : 0;
         res.courses.push({
-            number: g.number, range: periodRangeText(g), price: g.price, cycle: g.cycle, isPartial: !!g.isPartial,
-            total, done: doneList.length, rate, earned, paid, payState: g.payState, payMs: g.payMs, balance: round2(earned - paid)
+            number: g.number, range: periodRangeText(g), price: g.price, isPartial: !!g.isPartial,
+            total, done: doneList.length, rate, earned, payState: g.payState
         });
-        doneList.forEach(se => res.days.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate }));
-        res.total += total; res.done += doneList.length; res.earned += earned; res.paid += paid; res.price += g.price;
+        doneList.forEach(se => allDays.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate }));
     });
-    res.days.sort((a, b) => a.date - b.date || a.min - b.min);
+    // Count only what is still unpaid: everything after the last course marked paid (✓),
+    // plus any earlier course explicitly marked not paid (✕).
+    const lastPaidIdx = res.courses.reduce((m, c, i) => c.payState === 1 ? i : m, -1);
+    res.courses.forEach((c, i) => { c.counted = c.payState === 2 || i > lastPaidIdx; });
+    res.lastPaid = lastPaidIdx >= 0 ? res.courses[lastPaidIdx] : null;
+    const nums = new Set(res.courses.filter(c => c.counted).map(c => c.number));
+    res.courses = res.courses.filter(c => c.counted);
+    allDays.filter(d => nums.has(d.course)).sort((a, b) => a.date - b.date || a.min - b.min).forEach(d => res.days.push(d));
     let run = 0;
     res.days.forEach(d => { run += d.rate; d.running = round2(run); });
-    res.earned = round2(res.earned); res.paid = round2(res.paid);
-    res.balance = round2(res.earned - res.paid);
+    res.courses.forEach(c => { res.earned += c.earned; res.done += c.done; res.total += c.total; });
+    res.earned = round2(res.earned);
     return res;
 }
 function balClass(b) { return b > 0 ? 'acc-owe' : (b < 0 ? 'acc-ok' : 'acc-zero'); }
@@ -1132,20 +1138,20 @@ function runAccount() {
     const pick = document.getElementById('accStudent').value;
     const students = (db.students || []).filter(s => pick === 'all' || String(s.id) === pick);
     const stmts = students.map(s => computeStudentStatement(s, cutoff, true));
-    let html = '';
     const grand = stmts.reduce((a, r) => a + r.earned, 0);
     const who = stmts.length === 1 ? escHtml(stmts[0].student.name) : 'All students';
-    html += `<div style="background:#0F172A; border:2px solid #FACC15; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
-<div style="color:#94a3b8; font-size:11px;">${who} — up to ${fmtLong(cutoff)}</div>
+    let html = `<div style="background:#0F172A; border:2px solid #FACC15; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
+<div style="color:#94a3b8; font-size:11px;">${who} — owed up to ${fmtLong(cutoff)}</div>
 <div style="color:#FACC15; font-size:30px; font-weight:900; line-height:1.2;">${money(grand)}</div></div>`;
     stmts.forEach(r => {
         const s = r.student;
         let inner = '';
+        inner += `<div style="font-size:10.5px; color:#64748b; margin-bottom:4px;">${r.lastPaid ? 'Counted after last payment: Course ' + r.lastPaid.number + ' (' + r.lastPaid.range + ')' : 'No payment recorded yet — counted from the start'}</div>`;
         if (!r.courses.length) {
-            inner = '<div style="font-size:11px; color:#64748b;">No sessions found.</div>';
+            inner += '<div style="font-size:11px; color:#64748b;">Nothing owed.</div>';
         } else {
             inner += `<table class="acc-mini"><tr><th>Course</th><th class="l">Dates</th><th>Sessions</th><th>Total</th></tr>
-${r.courses.map(c => `<tr><td>${c.number}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
+${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">✕</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
 <tr style="background:#fef9c3; font-weight:bold;"><td colspan="2" class="l">Total</td><td>${r.done}</td><td>${money(r.earned)}</td></tr></table>`;
             if (r.days.length) {
                 inner += `<table class="acc-mini"><tr><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Price</th><th>Total</th></tr>
