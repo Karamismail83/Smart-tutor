@@ -142,7 +142,10 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <select id="accStudent" onchange="runAccount()"></select>
 <label style="font-size:11px; color:#64748b;">Account up to this date (that day is included)</label>
 <input id="accDate" type="date" onchange="runAccount()" oninput="runAccount()">
-<button class="action-btn" style="width:100%; margin:4px 0 0; justify-content:center; padding:10px; background:#0f172a; color:#fff;" onclick="printAccountReport()">🖨️ Print Account Report</button>
+<div style="display:flex; gap:6px; margin-top:4px;">
+<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#0f172a; color:#fff;" onclick="printAccountReport()">🖨️ PDF</button>
+<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#10b981; color:#fff;" onclick="saveAccountImage()">📸 Image</button>
+</div>
 <div id="accountResult"></div>
 </div>
 <div class="modal" id="mapModal">
@@ -1226,6 +1229,39 @@ function printAccountReport() {
     const cleanup = () => { stl.remove(); window.removeEventListener('afterprint', cleanup); };
     window.addEventListener('afterprint', cleanup);
     window.print();
+}
+async function saveAccountImage() {
+    const cutoff = ymdToUTC(document.getElementById('accDate').value);
+    if (cutoff == null) { alert('Please pick a date.'); return; }
+    const pick = document.getElementById('accStudent').value;
+    const students = (db.students || []).filter(x => pick === 'all' || String(x.id) === pick);
+    if (!students.length) { alert('No students to save.'); return; }
+    if (typeof html2canvas === 'undefined') { alert('The image library could not be loaded. Please check your internet connection.'); return; }
+    showToast('Preparing image…');
+    try {
+        for (const st of students) {
+            const r = computeStudentStatement(st, cutoff, true);
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = 'position:absolute; left:-9999px; top:0; width:640px;';
+            tempDiv.innerHTML = generateAccountReportHTML(r, cutoff);
+            document.body.appendChild(tempDiv);
+            let canvas;
+            try {
+                canvas = await html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#0f172a' });
+            } finally { tempDiv.remove(); }
+            const safeName = String(st.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
+            const link = document.createElement('a');
+            link.download = `Account_${safeName}_${document.getElementById('accDate').value}.png`;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            if (students.length > 1) await new Promise(res => setTimeout(res, 400));
+        }
+        showToast('Image saved ✅');
+    } catch (e) {
+        alert('Could not create the image. Please try again.');
+    }
 }
 function resetAllStudentsStartDate() {
 let newDate = document.getElementById('courseBaseDate').value;
