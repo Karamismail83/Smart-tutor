@@ -114,6 +114,8 @@ body:not(.print-single-student) .container { display: block !important; padding:
 .total-row td { color: #000000 !important; background: #FACC15 !important; font-weight: 900 !important; }
 .grand-total-cell { background: #000000 !important; color: #FACC15 !important; font-size: 9px !important; }
 }
+.acc-icon-btn { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; border: 2px solid var(--gold); background: radial-gradient(circle at 30% 30%, #334155, #0F172A); color: var(--gold); font-size: 17px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; margin-right: 4px; box-shadow: 0 0 8px rgba(250,204,21,0.45); transition: transform 0.15s, box-shadow 0.15s; }
+.acc-icon-btn:active { transform: scale(0.92); box-shadow: 0 0 14px rgba(250,204,21,0.8); }
 .acc-card { border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; border-radius: 8px; padding: 8px; margin-bottom: 10px; background: #fff; }
 .acc-card h4 { margin: 0 0 4px; font-size: 14px; }
 .acc-mini { width: 100%; border-collapse: collapse; font-size: 10.5px; margin: 4px 0; }
@@ -220,7 +222,8 @@ body:not(.print-single-student) .container { display: block !important; padding:
 </div>
 <header>
 <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
-<div style="display: flex; gap: 5px;">
+<div style="display: flex; gap: 5px; align-items: center;">
+<button class="acc-icon-btn" onclick="openAccount()" title="Account Statement" aria-label="Account Statement">💰</button>
 <button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
 <button class="action-btn" onclick="undo()">↩️ UNDO</button>
 <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
@@ -235,8 +238,7 @@ body:not(.print-single-student) .container { display: block !important; padding:
 <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
 </div>
 <div id="scheduleGrid"></div>
-<button class="action-btn" style="width:100%; margin:15px 0 0; justify-content:center; padding:10px; font-size:13px;" onclick="openAccount()">💰 Account Statement — all students</button>
-<div class="acc-table-wrapper" style="margin-top:8px;">
+<div class="acc-table-wrapper">
 <table class="acc-table">
 <thead><tr id="accHeader"></tr></thead>
 <thead id="accTotalHeader"></thead>
