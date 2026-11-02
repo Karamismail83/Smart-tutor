@@ -2381,5 +2381,207 @@ ${courses}${days}
   box.addEventListener('pointercancel', () => endDrag(false));
 })();
 </script>
+<script>
+/* ===== Arabic mode (EN / عربي toggle) — paste right before </body>, after the last </script> ===== */
+(function () {
+  let AR = false;
+  try { AR = localStorage.getItem('tutor_lang') === 'ar'; } catch (e) {}
+
+  /* ---- toggle button (always added) ---- */
+  const bar = document.querySelector('header > div:last-child');
+  if (bar) {
+    const b = document.createElement('button');
+    b.className = 'action-btn';
+    b.style.padding = '6px 8px';
+    b.textContent = AR ? '🌐 EN' : '🌐 عربي';
+    b.onclick = () => {
+      try { localStorage.setItem('tutor_lang', AR ? 'en' : 'ar'); } catch (e) {}
+      location.reload();
+    };
+    bar.insertBefore(b, bar.firstChild);
+  }
+  if (!AR) return;
+
+  /* ---- layout ---- */
+  document.documentElement.lang = 'ar';
+  document.documentElement.dir = 'rtl';
+  document.title = 'المعلم الذكي - جدول الطباعة';
+  const css = document.createElement('style');
+  css.textContent = 'header,.container{direction:ltr}.teacher-box input{direction:rtl;text-align:right}';
+  document.head.appendChild(css);
+
+  /* ---- days ---- */
+  Object.assign(dayNamesFull, { Sat: 'السبت', Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس' });
+  Object.assign(dayNamesMap, { Sat: 'السبت', Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس' });
+
+  /* ---- dates in Arabic month names (Latin digits) ---- */
+  window.fmtUTC = function (ms, opts) {
+    return new Date(ms).toLocaleDateString('ar-EG-u-nu-latn-ca-gregory', Object.assign({ timeZone: 'UTC' }, opts));
+  };
+
+  /* ---- dictionary (exact match) ---- */
+  const D = {
+    '🖨️ EXPORT': '🖨️ تصدير', '↩️ UNDO': '↩️ تراجع', '➕ ADD': '➕ إضافة',
+    'Teacher Name': 'اسم المعلم', 'TOTAL': 'المجموع',
+    'Account Statement 💰': 'كشف الحساب 💰', 'Choose student': 'اختر الطالب',
+    'Account up to this date (that day is included)': 'الحساب حتى هذا التاريخ (يشمل اليوم نفسه)',
+    '📸 Image': '📸 صورة', '📤 Share': '📤 مشاركة', 'All students': 'كل الطلاب',
+    'Export 🖨️': 'تصدير 🖨️', '🖨️ PDF (Landscape)': '🖨️ PDF (أفقي)',
+    'Settings ⚙️': 'الإعدادات ⚙️', 'Teacher Phone 📱': 'هاتف المعلم 📱',
+    'Phone number to display under teacher name in student reports:': 'رقم الهاتف الذي يظهر تحت اسم المعلم في تقارير الطلاب:',
+    'e.g. +1 555 0100': 'مثال: +966 5X XXX XXXX',
+    '🏠 Your Home Address (for distance calculations)': '🏠 عنوان منزلك (لحساب المسافات)',
+    'Enter your address (area/street/city), or just tap the pin to set it precisely on the map:': 'اكتب عنوانك (الحي/الشارع/المدينة)، أو اضغط على الدبوس لتحديده بدقة على الخريطة:',
+    'e.g. Downtown, Springfield': 'مثال: وسط المدينة', 'e.g. Uptown, Springfield': 'مثال: حي الشمال',
+    'Reset Course Start Date 📅': 'إعادة ضبط تاريخ بداية الدورة 📅',
+    'Course start date for all students:': 'تاريخ بداية الدورة لكل الطلاب:',
+    'Reset All Dates 🔄': 'إعادة ضبط كل التواريخ 🔄',
+    'End of study weeks (dates in the accounts table run until this date, default 1 July):': 'نهاية أسابيع الدراسة (تواريخ جدول الحسابات تمتد حتى هذا التاريخ، الافتراضي 1 يوليو):',
+    'Backup & Restore 💾': 'النسخ الاحتياطي والاستعادة 💾', 'Export Backup 📤': 'تصدير نسخة احتياطية 📤', 'Import Backup 📥': 'استيراد نسخة احتياطية 📥',
+    'Add Student': 'إضافة طالب', 'Name': 'الاسم', 'Price': 'السعر',
+    '📍 Student Address/Area (for distance)': '📍 عنوان/منطقة الطالب (لحساب المسافة)',
+    'Save Student': 'حفظ الطالب', 'Add Slot (Session)': 'إضافة حصة', 'Select Student': 'اختر الطالب', 'Save Slot': 'حفظ الحصة',
+    'Search, or paste coordinates / a Google Maps link...': 'ابحث، أو الصق الإحداثيات / رابط خرائط جوجل...',
+    'Search your home, or paste coordinates / a Maps link...': 'ابحث عن منزلك، أو الصق الإحداثيات / رابط الخريطة...',
+    'Search, or paste coordinates / a Maps link...': 'ابحث، أو الصق الإحداثيات / رابط الخريطة...',
+    '✅ Confirm This Location': '✅ تأكيد هذا الموقع',
+    'Satellite view': 'عرض القمر الصناعي', 'Use my current location': 'استخدم موقعي الحالي', 'Set location on map': 'تحديد الموقع على الخريطة',
+    '⏳ Searching...': '⏳ جارٍ البحث...', '⏳ Finding your current location...': '⏳ جارٍ تحديد موقعك الحالي...',
+    '⚠️ Could not access your location, drag the pin manually': '⚠️ تعذر الوصول إلى موقعك، حرّك الدبوس يدوياً',
+    '⏳ Saving location...': '⏳ جارٍ حفظ الموقع...', '✅ Jumped to the exact pasted location': '✅ تم الانتقال إلى الموقع الملصوق',
+    '⚠️ Something went wrong while searching': '⚠️ حدث خطأ أثناء البحث', '⏳ Locating...': '⏳ جارٍ تحديد الموقع...',
+    '✅ Location set successfully': '✅ تم تحديد الموقع بنجاح', '✅ Location set from the map': '✅ تم تحديد الموقع من الخريطة',
+    '✅ Location saved': '✅ تم حفظ الموقع', '✅ Location set, will be saved with the student': '✅ تم تحديد الموقع وسيُحفظ مع الطالب',
+    '⚠️ Could not locate this address, try a clearer address or use the map': '⚠️ تعذر تحديد هذا العنوان، جرّب عنواناً أوضح أو استخدم الخريطة',
+    'Edit Session Slot ⏰': 'تعديل الحصة ⏰', 'Student Name': 'اسم الطالب', 'Day': 'اليوم', 'Time': 'الوقت', 'Date': 'التاريخ',
+    'Attendance Status': 'حالة الحضور', 'Normal / Unspecified': 'عادي / غير محدد', 'Present (✓)': 'حاضر (✓)', 'Absent (✕)': 'غائب (✕)', 'Cancelled (⟳)': 'ملغاة (⟳)',
+    'Horizontal Offset (px)': 'الإزاحة الأفقية (بكسل)', 'e.g. 20 or -10': 'مثال: 20 أو -10',
+    'Save Changes 💾': 'حفظ التغييرات 💾', 'Delete Slot 🗑️': 'حذف الحصة 🗑️',
+    'Edit Student': 'تعديل الطالب', '📍 Student Address/Area': '📍 عنوان/منطقة الطالب', 'Billing Periods': 'فترات الدفع',
+    'Start Date': 'تاريخ البداية', 'Billing Cycle (every N weeks)': 'دورة الدفع (كل كم أسبوع)', '+ Add Price Period': '+ إضافة فترة سعر',
+    'Show Account & Price Details in Print/Image': 'إظهار الحساب وتفاصيل السعر في الطباعة/الصورة',
+    'Show Teacher Phone Number 📱 in Print/Image': 'إظهار رقم هاتف المعلم 📱 في الطباعة/الصورة',
+    '🗓️ Weekly schedule card': '🗓️ بطاقة الجدول الأسبوعي', '📸 Save Image': '📸 حفظ صورة',
+    '💰 Account Statement (stop / balance)': '💰 كشف الحساب (إيقاف / رصيد)',
+    'Save All Changes': 'حفظ كل التغييرات', 'Delete Student': 'حذف الطالب',
+    '📅 Payment Period Report (for parent)': '📅 تقرير فترة الدفع (لولي الأمر)',
+    'Dates & times of all sessions in the selected period. Based on saved data — press "Save All Changes" first if you edited anything.': 'تواريخ وأوقات كل الحصص في الفترة المختارة. يعتمد على البيانات المحفوظة — اضغط "حفظ كل التغييرات" أولاً إن عدّلت شيئاً.',
+    'Distance not calculated yet': 'لم تُحسب المسافة بعد',
+    'No payment recorded yet — counted from the start': 'لا توجد دفعة مسجلة — الحساب من البداية', 'Nothing owed.': 'لا يوجد مستحق.',
+    'Course': 'الدورة', 'Dates': 'التواريخ', 'Sessions': 'الحصص', 'Total': 'الإجمالي', 'Cancelled': 'ملغاة',
+    '• Tap a session to cancel it (not charged); tap again to restore.': '• اضغط على الحصة لإلغائها (لا تُحسب)، واضغط مرة أخرى لإرجاعها.',
+    '• To compensate a cancelled session: drag its ⠿ and drop it onto the session that will run double (×2).': '• لتعويض حصة ملغاة: اسحب ⠿ الخاصة بها وأفلتها فوق الحصة التي ستكون مضاعفة (×2).',
+    '• Tap a badge to unmerge.': '• اضغط على الشارة لفك الضم.',
+    'Account Statement': 'كشف الحساب', 'Official Weekly Schedule': 'الجدول الأسبوعي الرسمي', 'Payment Period Schedule': 'جدول فترة الدفع',
+    'Here are the assigned weekly session times:': 'مواعيد الحصص الأسبوعية المخصصة:',
+    'No scheduled slots found for this student.': 'لا توجد حصص مجدولة لهذا الطالب.',
+    '✦ Thank you for trusting us with your education ✦': '✦ شكراً لثقتكم بنا في تعليم أبنائكم ✦',
+    'Amount Due:': 'المبلغ المستحق:', 'Amount Due': 'المبلغ المستحق', 'Billing Cycle:': 'دورة الدفع:', 'Due Date:': 'تاريخ الاستحقاق:', 'Status:': 'الحالة:',
+    'Paid ✓': 'مدفوع ✓', 'Not paid ✕': 'غير مدفوع ✕', 'Due': 'مستحق', 'No sessions': 'لا توجد حصص', 'Teacher': 'المعلم',
+    /* alerts / toasts */
+    'Please select a valid date first': 'الرجاء اختيار تاريخ صحيح أولاً',
+    'Course start date reset for all students successfully!': 'تمت إعادة ضبط تاريخ بداية الدورة لكل الطلاب بنجاح!',
+    'Are you sure you want to restore this backup? Current data will be replaced.': 'هل أنت متأكد من استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية.',
+    'Data restored successfully!': 'تمت استعادة البيانات بنجاح!', 'Invalid backup file!': 'ملف النسخة الاحتياطية غير صالح!',
+    'Delete student and all their records?': 'حذف الطالب وكل سجلاته؟',
+    'No payment period found. Add a billing period first.': 'لا توجد فترة دفع. أضف فترة دفع أولاً.',
+    'The image library could not be loaded. Please check your internet connection.': 'تعذر تحميل مكتبة الصور. تحقق من اتصالك بالإنترنت.',
+    'Could not create the image. Please try again.': 'تعذر إنشاء الصورة. حاول مرة أخرى.',
+    'Please pick a date.': 'الرجاء اختيار تاريخ.', 'No students to export.': 'لا يوجد طلاب للتصدير.',
+    'Preparing image…': 'جارٍ تجهيز الصورة…', 'Image saved ✅': 'تم حفظ الصورة ✅',
+    'Home location saved ✅': 'تم حفظ موقع المنزل ✅', 'Student location set ✅': 'تم تحديد موقع الطالب ✅', 'Student location updated ✅': 'تم تحديث موقع الطالب ✅',
+    'Cannot merge into a cancelled session': 'لا يمكن الضم على حصة ملغاة',
+    'This session already has a compensation, unmerge it first': 'هذه الحصة تحمل تعويضاً، فكّ ضمها أولاً',
+    'Please enter your address first': 'الرجاء كتابة عنوانك أولاً',
+    "This browser doesn't support location detection": 'هذا المتصفح لا يدعم تحديد الموقع',
+    "Please enter the student's address first": 'الرجاء كتابة عنوان الطالب أولاً',
+    'You need to save your home address from Settings first': 'يجب حفظ عنوان منزلك من الإعدادات أولاً',
+    "This is a shortened Google Maps link and can't be read directly here. Open it once in your browser, then paste the full address-bar link (it will contain @lat,lng) - or in Google Maps, long-press the spot to drop a pin and paste the coordinates shown at the bottom.": 'هذا رابط خرائط جوجل مختصر ولا يمكن قراءته هنا. افتحه مرة في المتصفح ثم الصق الرابط الكامل من شريط العنوان (يحتوي على @lat,lng) — أو اضغط مطولاً على المكان في خرائط جوجل وانسخ الإحداثيات الظاهرة بالأسفل.'
+  };
+  const R = [
+    [/^Coordinates: (.*)$/, 'الإحداثيات: $1'],
+    [/^Are you sure you want to reset course start date for all students to (.*)\?$/, 'هل أنت متأكد من إعادة ضبط تاريخ بداية الدورة لكل الطلاب إلى $1؟'],
+    [/^Merged ✅ session is now ×(\d+)$/, 'تم الضم ✅ الحصة أصبحت ×$1'],
+    [/^Period (\d+): (.*)$/, 'الفترة $1: $2'],
+    [/^Period (\d+) · (.*)$/, 'الفترة $1 · $2'],
+    [/^(\d+) sessions? · every (\d+) weeks$/, '$1 حصة · كل $2 أسابيع'],
+    [/^Every (\d+) Weeks$/, 'كل $1 أسابيع'],
+    [/^Week (\d+) · (.*)$/, 'الأسبوع $1 · $2'],
+    [/^🌙 Holiday week · (.*) · no sessions$/, '🌙 أسبوع إجازة · $1 · لا حصص'],
+    [/^⏸ Break week · (.*) · no sessions$/, '⏸ أسبوع توقف · $1 · لا حصص'],
+    [/^🎓 Name: (.*)$/, '🎓 الاسم: $1'],
+    [/^📍 (.*) km from your home$/, '📍 $1 كم من منزلك'],
+    [/^(.*) — owed up to (.*)$/, '$1 — المستحق حتى $2'],
+    [/^Counted after last payment: Course (\d+) \((.*)\)$/, 'محسوب بعد آخر دفعة: الدورة $1 ($2)'],
+    [/^Account up to (.*) · Counted after last payment: Course (\d+) \((.*)\)$/, 'الحساب حتى $1 · محسوب بعد آخر دفعة: الدورة $2 ($3)'],
+    [/^Account up to (.*) · No payment recorded yet$/, 'الحساب حتى $1 · لا توجد دفعة مسجلة'],
+    [/^📅 Payment period report: add a billing period.*$/, '📅 تقرير فترة الدفع: أضف فترة دفع (تاريخ بداية، سعر، دورة) ثم احفظ لتفعيله.'],
+    [/^No results in our map data for "(.*)"\..*$/, 'لا توجد نتائج لـ "$1" في بيانات الخريطة. إن كان العنوان يتضمن رقم مبنى/وحدة فالبيانات المجانية لا تصل لهذا التفصيل — جرّب اسم الحي أو المدينة فقط.'],
+    [/^🔎 Not found here\? Open "(.*)" on Google Maps.*$/, '🔎 لم تجده؟ افتح "$1" في خرائط جوجل، اضغط مطولاً للحصول على الإحداثيات ثم الصقها هنا']
+  ];
+  const ampm = s => s.replace(/(\d{1,2}:\d{2}) AM\b/g, '$1 ص').replace(/(\d{1,2}:\d{2}) PM\b/g, '$1 م');
+
+  function trText(t) {
+    const core = t.replace(/\u00a0|&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!core) return t;
+    let out = D[core];
+    if (out === undefined) {
+      for (const [re, rep] of R) if (re.test(core)) { out = core.replace(re, rep); break; }
+    }
+    let res = out === undefined ? core : out;
+    res = ampm(res);
+    if (out === undefined && res === core) return t;
+    return t.match(/^\s*/)[0] + res + t.match(/\s*$/)[0];
+  }
+
+  /* ---- live DOM translation ---- */
+  function walk(root) {
+    if (root.nodeType === 3) {
+      const p = root.parentNode && root.parentNode.nodeName;
+      if (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA') return;
+      const n = trText(root.nodeValue);
+      if (n !== root.nodeValue) root.nodeValue = n;
+      return;
+    }
+    if (root.nodeType !== 1) return;
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const list = [];
+    while (tw.nextNode()) list.push(tw.currentNode);
+    list.forEach(walk);
+    const els = root.querySelectorAll ? root.querySelectorAll('[placeholder],[title]') : [];
+    [root, ...els].forEach(el => {
+      if (!el.getAttribute) return;
+      ['placeholder', 'title'].forEach(a => {
+        const v = el.getAttribute(a);
+        if (v) { const n = trText(v); if (n !== v) el.setAttribute(a, n); }
+      });
+    });
+  }
+  walk(document.body);
+  new MutationObserver(ms => {
+    ms.forEach(m => {
+      if (m.type === 'characterData') walk(m.target);
+      else if (m.type === 'attributes') walk(m.target);
+      else m.addedNodes.forEach(walk);
+    });
+  }).observe(document.body, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
+
+  /* ---- alerts / confirms ---- */
+  const _alert = window.alert.bind(window), _confirm = window.confirm.bind(window);
+  window.alert = m => _alert(trText(String(m)));
+  window.confirm = m => _confirm(trText(String(m)));
+
+  /* ---- generated reports (PDF / image) ---- */
+  const transHTML = h => {
+    if (!h) return h;
+    h = h.replace(/>([^<>]+)</g, (m, t) => '>' + trText(t) + '<');
+    return h.replace('<div style="', '<div style="direction:rtl;');
+  };
+  ['generateStudentReportHTML', 'generatePeriodReportHTML', 'accLandHTML', 'generateAccountReportHTML'].forEach(n => {
+    const f = window[n];
+    if (typeof f === 'function') window[n] = function () { return transHTML(f.apply(this, arguments)); };
+  });
+})();
+</script>
 </body>
 </html>
