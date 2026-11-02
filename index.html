@@ -85,34 +85,29 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 #studentPrintContainer { display: none; }
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 #toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ===== PRINT: the main schedule prints exactly like the app (colors, layout, purple holidays) ===== */
 @media print {
-@page { size: A4 landscape; margin: 5mm; }
-html, body { background: #0F172A !important; color: #FFFFFF !important; font-family: Arial, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-header, .sidebar, .modal, .overlay, .action-btn, .container, #toast { display: none !important; }
-body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; background: #0F172A !important; color: #FFFFFF !important; }
-body:not(.print-single-student) header, body:not(.print-single-student) .sidebar, body:not(.print-single-student) .modal, body:not(.print-single-student) .overlay, body:not(.print-single-student) .action-btn { display: none !important; }
-body:not(.print-single-student) .container { display: block !important; padding: 0 !important; width: 100% !important; }
-.teacher-box { background: #1E293B !important; border: 2px solid #FACC15 !important; border-radius: 8px !important; padding: 8px 14px !important; margin-bottom: 10px !important; box-shadow: none !important; }
-#teacherName { color: #FACC15 !important; border-bottom: 1px solid #444 !important; font-size: 16px !important; font-weight: bold !important; background: transparent !important; }
-.day-row { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.15) !important; margin-bottom: 4px !important; min-height: 40px !important; align-items: center !important; page-break-inside: avoid; }
-.day-label { background: #FACC15 !important; color: #000000 !important; font-size: 10px !important; width: 55px !important; font-weight: bold; }
-.slots { padding: 3px 5px !important; gap: 4px !important; min-height: 38px !important; align-items: center !important; }
-.slot { border: 1px solid rgba(255,255,255,0.2) !important; background: #1E293B !important; color: #ffffff !important; font-size: 9px !important; padding: 3px 3px !important; min-width: 48px !important; box-shadow: none !important; }
-.slot.wide-slot { min-width: 62px !important; }
-.acc-table-wrapper { background: #1E293B !important; box-shadow: none !important; border: 1px solid #FACC15 !important; margin-top: 10px !important; overflow: visible !important; page-break-inside: avoid; border-radius: 10px; }
-.acc-table { width: 100% !important; table-layout: fixed !important; color: #ffffff !important; }
-.acc-table th { background: #1E293B !important; color: #ffffff !important; font-size: 6.5px !important; padding: 3px 1px !important; border: 1px solid #334155 !important; min-width: 0 !important; }
-.acc-table td { border: 1px solid #334155 !important; padding: 2px 1px !important; background: #1E293B !important; color: #ffffff !important; min-width: 0 !important; }
-.sticky-name { color: #ffffff !important; border-right: 2px solid #FACC15 !important; font-size: 8.5px !important; padding-left: 6px !important; width: 90px !important; }
-.sub-price { font-size: 7px !important; color: #ffffff !important; }
-.box { width: 14px !important; height: 18px !important; font-size: 9px !important; border: 1px solid #cbd5e1 !important; background: #ffffff !important; color: #000000 !important; }
-.is-pay-week { border: 2px solid #b45309 !important; background: #fef3c7 !important; }
-.status-paid { background: #d1fae5 !important; color: #047857 !important; }
-.status-notpaid { background: #fee2e2 !important; color: #b91c1c !important; }
-.status-disabled { background: #4b5563 !important; color: #ffffff !important; }
-.total-row { background: #FACC15 !important; color: #000000 !important; font-size: 7px !important; }
-.total-row td { color: #000000 !important; background: #FACC15 !important; font-weight: 900 !important; }
-.grand-total-cell { background: #000000 !important; color: #FACC15 !important; font-size: 9px !important; }
+  @page { size: A4 landscape; margin: 5mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  html, body { background:#0F172A !important; width:100% !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
+  header, .sidebar, .modal, .overlay, #toast { display:none !important; }
+
+  body.print-single-student .container { display:none !important; }
+  body.print-single-student #studentPrintContainer { display:block !important; padding:20px; background:#0F172A !important; color:#fff !important; }
+  body:not(.print-single-student) .container { display:block !important; padding:0 !important; width:100% !important; }
+
+  .day-row { page-break-inside: avoid; }
+  .slots { overflow: visible !important; }
+  .acc-table-wrapper { overflow: visible !important; page-break-inside: avoid; }
+  .acc-table { width:100% !important; table-layout: fixed !important; }
+  .acc-table th, .acc-table td { min-width:0 !important; }
+  .acc-table th { font-size:6.5px !important; padding:3px 0 !important; }
+  .sticky-name { position: static !important; width:90px !important; font-size:8.5px !important; }
+  .sub-price { font-size:7px !important; }
+  .box { width:14px !important; height:18px !important; font-size:9px !important; }
+  .total-row td { font-size:7px !important; }
+  .grand-total-cell { font-size:9px !important; }
 }
 .acc-icon-btn { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; border: 2px solid var(--gold); background: radial-gradient(circle at 30% 30%, #334155, #0F172A); color: var(--gold); font-size: 17px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; margin-right: 4px; box-shadow: 0 0 8px rgba(250,204,21,0.45); transition: transform 0.15s, box-shadow 0.15s; }
 .acc-icon-btn:active { transform: scale(0.92); box-shadow: 0 0 14px rgba(250,204,21,0.8); }
@@ -273,23 +268,9 @@ const PALETTE = [
 const daysOrder = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
 const DEFAULT_REGION_LAT = 25.3838;
 const DEFAULT_REGION_LNG = 49.5922;
-const DEFAULT_REGION_ZOOM = 11; // wide enough to see Al-Hofuf, Al-Mubarraz and surrounding villages together
-const dayNamesMap = {
-"Sat": "Sat",
-"Sun": "Sun",
-"Mon": "Mon",
-"Tue": "Tue",
-"Wed": "Wed",
-"Thu": "Thu"
-};
-const dayNamesFull = {
-"Sat": "Saturday",
-"Sun": "Sunday",
-"Mon": "Monday",
-"Tue": "Tuesday",
-"Wed": "Wednesday",
-"Thu": "Thursday"
-};
+const DEFAULT_REGION_ZOOM = 11;
+const dayNamesMap = { "Sat": "Sat", "Sun": "Sun", "Mon": "Mon", "Tue": "Tue", "Wed": "Wed", "Thu": "Thu" };
+const dayNamesFull = { "Sat": "Saturday", "Sun": "Sunday", "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday" };
 let db;
 try {
 db = JSON.parse(localStorage.getItem('tutor_v390')) || { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStartDate: new Date().toISOString().slice(0,10) };
@@ -373,9 +354,9 @@ const segs = query.split(',')
 .map(s => s.trim().replace(/\s*\d{4,6}\s*$/, '').trim())
 .filter(s => s && !/^\d+$/.test(s));
 if (segs.length) {
-candidates.push(segs.join(', '));      // all place-name segments together
-candidates.push(segs[segs.length - 1]); // last segment (often the city)
-candidates.push(segs[0]);               // first segment (often the district)
+candidates.push(segs.join(', '));
+candidates.push(segs[segs.length - 1]);
+candidates.push(segs[0]);
 segs.forEach(s => {
 if (/\band\b/i.test(s)) {
 s.split(/\band\b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
@@ -437,7 +418,7 @@ return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 let pickerMapInstance = null;
 let pickerMarker = null;
-let pickerContext = null; // 'teacher' | 'newStudent' | {type:'edit', id}
+let pickerContext = null;
 let pickerStreetLayer = null;
 let pickerSatelliteLayer = null;
 let pickerIsSatellite = false;
@@ -805,10 +786,7 @@ document.body.removeChild(tempDiv);
 }).catch(() => { document.body.removeChild(tempDiv); });
 }
 /* =====================================================================
-   PAYMENT PERIOD REPORT  (sessions dates & times for each billing period)
-   A "period" is the block of N teaching weeks (N = Billing Cycle, default 4)
-   that ends on a payment week (the ones highlighted in the accounts table).
-   Holiday weeks / paused weeks are listed as "no sessions" and don't count.
+   PAYMENT PERIOD REPORT
    ===================================================================== */
 const DAY_MS = 86400000;
 const JS_DAY = { Sat: 6, Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4 };
@@ -819,7 +797,6 @@ function ymdToUTC(str) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str || '');
     return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
 }
-/* End of the study weeks: default = 1 July (the next 1 July on/after the course start date) */
 function getCourseEndYMD() {
     if (db.courseEndDate) return db.courseEndDate;
     const start = db.courseStartDate || new Date().toISOString().slice(0, 10);
@@ -828,7 +805,6 @@ function getCourseEndYMD() {
     if (end < start) end = (y + 1) + '-07-01';
     return end;
 }
-/* Number of weekly columns = weeks from the course start date until the end date */
 function getReportWeeks() {
     const b = ymdToUTC(db.courseStartDate || new Date().toISOString().slice(0, 10));
     const e = ymdToUTC(getCourseEndYMD());
@@ -856,8 +832,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
     const hol = db.holidays || [];
     const fm = s.financialMap || {};
     const skippedAt = j => hol.includes(j) || fm[j] == 3;
-    const payDateOf = j => base + (j * 7 + 5) * DAY_MS; // the date shown in the accounts-table header
-    // 1) Walk every week exactly like the accounts table does, and find the payment weeks
+    const payDateOf = j => base + (j * 7 + 5) * DAY_MS;
     const weeks = [];
     const totalReportWeeks = getReportWeeks();
     for (let i = 0; i < totalReportWeeks; i++) {
@@ -877,12 +852,10 @@ function getStudentPaymentPeriods(s, includePartial = false) {
         }
         weeks.push({ i, anchor, isHol, isDis, activeP, isPay, payState: Number(fm[i]) || 0, sessions: [] });
     }
-    // 2) Group the weeks: a period is the block of weeks that ENDS on a payment week
-    //    (the parent pays at the end of each cycle, for the weeks just taught)
     const groups = [];
     let pending = [];
     weeks.forEach(w => {
-        if (!w.activeP) return; // before the student's start date
+        if (!w.activeP) return;
         pending.push(w);
         if (w.isPay) {
             groups.push({
@@ -893,7 +866,6 @@ function getStudentPaymentPeriods(s, includePartial = false) {
             pending = [];
         }
     });
-    // 2b) optionally keep the last, still-open course (weeks after the final payment week)
     if (includePartial && pending.length && pending.some(w => !w.isHol && !w.isDis)) {
         const lw = pending[pending.length - 1];
         groups.push({
@@ -903,7 +875,6 @@ function getStudentPaymentPeriods(s, includePartial = false) {
         });
         pending = [];
     }
-    // 3) Put the real calendar date of every weekly slot inside each week
     const slots = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null);
     groups.forEach(g => {
         g.weeks.forEach(w => {
@@ -911,7 +882,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
             const anchorDow = new Date(w.anchor).getUTCDay();
             slots.forEach(sc => {
                 const date = w.anchor + ((JS_DAY[sc.day] - anchorDow + 7) % 7) * DAY_MS;
-                if (date < g.startLimit) return; // before the student's start date
+                if (date < g.startLimit) return;
                 w.sessions.push({ date, day: sc.day, time: sc.time, min: timeToMinutes(sc.time) });
             });
             w.sessions.sort((a, b) => a.date - b.date || a.min - b.min);
@@ -1037,7 +1008,6 @@ function printPeriodReport(studentId, periodIdx, includeFinancials = false, incl
     if (!html) { alert('No payment period found. Add a billing period first.'); return; }
     document.getElementById('studentPrintContainer').innerHTML = html;
     document.body.classList.add('print-single-student');
-    // the period report is tall, so print it on a portrait A4 page
     const old = document.getElementById('periodPrintPageStyle');
     if (old) old.remove();
     const st = document.createElement('style');
@@ -1080,8 +1050,7 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
                         await navigator.share({ files: [file], title: `${student.name} – Period ${g.number}` });
                         return;
                     } catch (e) {
-                        if (e && e.name === 'AbortError') return; // user closed the share sheet
-                        // any other error → fall back to a normal download below
+                        if (e && e.name === 'AbortError') return;
                     }
                 }
             }
@@ -1108,13 +1077,8 @@ function runPeriodReport(action, studentId) {
 }
 
 /* =====================================================================
-   ACCOUNT STATEMENT
-   Pick a student (or all) + a stop date + "start / end of day" and get:
-   - every session up to that moment, with its price and a running total
-   - the total for each course (billing period): done / total, earned, paid
-   Price per session = course price / number of sessions in that course.
-   Holiday weeks and paused weeks have no sessions, so they never cost money.
-   Balance = earned so far - paid   (positive = student owes, negative = paid ahead)
+   ACCOUNT STATEMENT  (with cancellable sessions)
+   Tap a session row to mark it cancelled: it is not charged (price 0).
    ===================================================================== */
 function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 function money(n) { return round2(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
@@ -1124,25 +1088,26 @@ function todayYMD() {
 }
 function computeStudentStatement(s, cutoffMs, endOfDay) {
     const groups = getStudentPaymentPeriods(s, true);
+    const canc = s.cancelledSessions || {};
+    const isCanc = se => !!canc[se.date + '|' + se.time];
     const slotsPerWeek = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null).length;
-    const res = { student: s, courses: [], days: [], earned: 0, done: 0, total: 0, lastPaid: null };
+    const res = { student: s, courses: [], days: [], earned: 0, done: 0, total: 0, cancelled: 0, lastPaid: null };
     const allDays = [];
     groups.forEach(g => {
         const total = g.isPartial ? slotsPerWeek * g.cycle : g.sessions.length;
         const rate = total ? g.price / total : 0;
         const isDone = se => endOfDay ? se.date <= cutoffMs : se.date < cutoffMs;
-        const doneList = g.sessions.filter(isDone);
-        // courses that start after the stop date are not part of the account yet
-        if (!doneList.length && g.startMs > cutoffMs) return;
+        const upTo = g.sessions.filter(isDone);
+        const doneList = upTo.filter(se => !isCanc(se));
+        const cancList = upTo.filter(isCanc);
+        if (!upTo.length && g.startMs > cutoffMs) return;
         const earned = (total && doneList.length >= total) ? g.price : round2(doneList.length * rate);
         res.courses.push({
             number: g.number, range: periodRangeText(g), price: g.price, isPartial: !!g.isPartial,
-            total, done: doneList.length, rate, earned, payState: g.payState
+            total, done: doneList.length, cancelled: cancList.length, rate, earned, payState: g.payState
         });
-        doneList.forEach(se => allDays.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate }));
+        upTo.forEach(se => allDays.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate, cancelled: isCanc(se) }));
     });
-    // Count only what is still unpaid: everything after the last course marked paid (✓),
-    // plus any earlier course explicitly marked not paid (✕).
     const lastPaidIdx = res.courses.reduce((m, c, i) => c.payState === 1 ? i : m, -1);
     res.courses.forEach((c, i) => { c.counted = c.payState === 2 || i > lastPaidIdx; });
     res.lastPaid = lastPaidIdx >= 0 ? res.courses[lastPaidIdx] : null;
@@ -1150,10 +1115,20 @@ function computeStudentStatement(s, cutoffMs, endOfDay) {
     res.courses = res.courses.filter(c => c.counted);
     allDays.filter(d => nums.has(d.course)).sort((a, b) => a.date - b.date || a.min - b.min).forEach(d => res.days.push(d));
     let run = 0;
-    res.days.forEach(d => { run += d.rate; d.running = round2(run); });
-    res.courses.forEach(c => { res.earned += c.earned; res.done += c.done; res.total += c.total; });
+    res.days.forEach(d => { if (!d.cancelled) run += d.rate; d.running = round2(run); });
+    res.courses.forEach(c => { res.earned += c.earned; res.done += c.done; res.total += c.total; res.cancelled += c.cancelled; });
     res.earned = round2(res.earned);
     return res;
+}
+function toggleCancelSession(studentId, dateMs, time) {
+    const s = db.students.find(x => x.id === studentId);
+    if (!s) return;
+    commitChange();
+    if (!s.cancelledSessions) s.cancelledSessions = {};
+    const k = dateMs + '|' + time;
+    if (s.cancelledSessions[k]) delete s.cancelledSessions[k]; else s.cancelledSessions[k] = true;
+    save();
+    runAccount();
 }
 function balClass(b) { return b > 0 ? 'acc-owe' : (b < 0 ? 'acc-ok' : 'acc-zero'); }
 function balText(b) { return b > 0 ? money(b) + ' due' : (b < 0 ? money(-b) + ' paid ahead' : '0'); }
@@ -1189,11 +1164,14 @@ function runAccount() {
             inner += '<div style="font-size:11px; color:#64748b;">Nothing owed.</div>';
         } else {
             inner += `<table class="acc-mini"><tr><th>Course</th><th class="l">Dates</th><th>Sessions</th><th>Total</th></tr>
-${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">✕</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
+${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">✕</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}${c.cancelled ? ' <span class="acc-owe">(−' + c.cancelled + ')</span>' : ''}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
 <tr style="background:#fef9c3; font-weight:bold;"><td colspan="2" class="l">Total</td><td>${r.done}</td><td>${money(r.earned)}</td></tr></table>`;
             if (r.days.length) {
-                inner += `<table class="acc-mini"><tr><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Price</th><th>Total</th></tr>
-${r.days.map(d => `<tr><td class="l">${fmtLong(d.date)}</td><td class="l">${dayNamesFull[d.day] || d.day}</td><td>${d.time}</td><td>${money(d.rate)}</td><td><b>${money(d.running)}</b></td></tr>`).join('')}</table>`;
+                inner += `<div class="acc-note">اضغط على أي حصة لجعلها ملغاة (لا تُحسب)، واضغط مرة أخرى لإرجاعها.</div>
+<table class="acc-mini"><tr><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Price</th><th>Total</th></tr>
+${r.days.map(d => `<tr onclick="toggleCancelSession(${s.id}, ${d.date}, '${d.time}')" style="cursor:pointer; ${d.cancelled ? 'background:#fee2e2; color:#991b1b; text-decoration:line-through;' : ''}">
+<td class="l">${fmtLong(d.date)}</td><td class="l">${dayNamesFull[d.day] || d.day}</td><td>${d.time}</td>
+<td>${d.cancelled ? 'Cancelled' : money(d.rate)}</td><td><b>${money(d.running)}</b></td></tr>`).join('')}</table>`;
             }
         }
         html += `<div class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><h4>${escHtml(s.name)} — ${money(r.earned)}</h4>${inner}</div>`;
@@ -1211,12 +1189,12 @@ function generateAccountReportHTML(r, cutoff) {
     if (r.courses.length) {
         courses = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
 <thead><tr style="background:#0f172a; border-bottom:2px solid #facc15;"><th style="${th}">Course</th><th style="${th}">Dates</th><th style="${th} text-align:center;">Sessions</th><th style="${th} text-align:right;">Total</th></tr></thead><tbody>
-${r.courses.map(c => `<tr style="page-break-inside:avoid;"><td style="${td} font-weight:bold;">${c.number}${c.payState === 2 ? ' <span style="color:#f87171;">✕</span>' : ''}</td><td style="${td}">${c.range}</td><td style="${td} text-align:center;">${c.done}/${c.total}</td><td style="${td} text-align:right; font-weight:bold; color:#34d399;">${money(c.earned)}</td></tr>`).join('')}
+${r.courses.map(c => `<tr style="page-break-inside:avoid;"><td style="${td} font-weight:bold;">${c.number}${c.payState === 2 ? ' <span style="color:#f87171;">✕</span>' : ''}</td><td style="${td}">${c.range}</td><td style="${td} text-align:center;">${c.done}/${c.total}${c.cancelled ? ' <span style="color:#f87171;">(−' + c.cancelled + ')</span>' : ''}</td><td style="${td} text-align:right; font-weight:bold; color:#34d399;">${money(c.earned)}</td></tr>`).join('')}
 <tr style="background:#0f172a;"><td colspan="2" style="${td} font-weight:bold; color:#facc15;">Total</td><td style="${td} text-align:center; font-weight:bold;">${r.done}</td><td style="${td} text-align:right; font-weight:bold; color:#facc15;">${money(r.earned)}</td></tr></tbody></table>`;
         if (r.days.length) {
             days = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
 <thead><tr style="background:#0f172a; border-bottom:2px solid #facc15;"><th style="${th}">Date</th><th style="${th}">Day</th><th style="${th}">Time</th><th style="${th} text-align:right;">Price</th><th style="${th} text-align:right;">Total</th></tr></thead><tbody>
-${r.days.map(d => `<tr style="page-break-inside:avoid;"><td style="${td}">${fmtLong(d.date)}</td><td style="${td}">${dayNamesFull[d.day] || d.day}</td><td style="${td} color:#38bdf8;">${d.time}</td><td style="${td} text-align:right;">${money(d.rate)}</td><td style="${td} text-align:right; font-weight:bold;">${money(d.running)}</td></tr>`).join('')}
+${r.days.map(d => { const cx = d.cancelled ? 'text-decoration:line-through; color:#f87171;' : ''; return `<tr style="page-break-inside:avoid; ${d.cancelled ? 'background:#3f1d1d;' : ''}"><td style="${td} ${cx}">${fmtLong(d.date)}</td><td style="${td} ${cx}">${dayNamesFull[d.day] || d.day}</td><td style="${td} ${d.cancelled ? cx : 'color:#38bdf8;'}">${d.time}</td><td style="${td} text-align:right; ${d.cancelled ? 'color:#f87171;' : ''}">${d.cancelled ? 'Cancelled' : money(d.rate)}</td><td style="${td} text-align:right; font-weight:bold;">${money(d.running)}</td></tr>`; }).join('')}
 </tbody></table>`;
         }
     } else {
@@ -1508,7 +1486,7 @@ let row = `<tr><td class="sticky-name" style="background:${s.color || '#3b82f6'}
 dates.forEach((d, i) => {
 let isHol = (db.holidays || []).includes(i), isPay = false;
 let st_val = s.financialMap[i] || 0;
-let isDis = st_val == 3; // disabled session for this student only
+let isDis = st_val == 3;
 let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p => d >= new Date(p.startDate)) : null;
 if (activeP && !isHol && !isDis) {
 let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
@@ -1808,16 +1786,19 @@ req.onsuccess = (e) => res(e.target.result);
 req.onerror = () => res(null);
 });
 }
+/* Teacher photo: keep the original proportions (center-crop to a square, no stretching) */
 function handleImageUpload(input) {
 if (input.files && input.files[0]) {
 const reader = new FileReader();
 reader.onload = (e) => {
 const img = new Image();
 img.onload = async () => {
+const size = Math.min(img.width, img.height);
+const sx = (img.width - size) / 2, sy = (img.height - size) / 2;
 const canvas = document.createElement('canvas');
-canvas.width = 150; canvas.height = 150;
-canvas.getContext('2d').drawImage(img,0,0,150,150);
-const url = canvas.toDataURL('image/jpeg', 0.7);
+canvas.width = 300; canvas.height = 300;
+canvas.getContext('2d').drawImage(img, sx, sy, size, size, 0, 0, 300, 300);
+const url = canvas.toDataURL('image/jpeg', 0.85);
 document.getElementById('teacherImg').src = url;
 let d = await openPhotoDB();
 if(d) d.transaction("photos", "readwrite").objectStore("photos").put(url, "teacherImg");
