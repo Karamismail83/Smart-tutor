@@ -1953,5 +1953,219 @@ reader.readAsDataURL(input.files[0]);
 }
 window.onload = () => { loadPhoto(); initLessonTimes(); render(); };
 </script>
+<script>
+/* ===== ضم الحصص (تعويض حصة ملغاة بحصة مضاعفة) ===== */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `
+.acc-h{cursor:grab;touch-action:none;user-select:none;font-size:16px;color:#64748b;width:24px}
+.acc-row-over{outline:2px solid #16a34a;background:#dcfce7!important}
+.acc-row-drag{opacity:.45}
+.acc-badge{display:inline-block;text-decoration:none;background:#16a34a;color:#fff;border-radius:8px;padding:0 5px;font-size:9px;font-weight:bold;margin-inline-start:3px;cursor:pointer}
+.acc-badge.src{background:#f59e0b;color:#000}
+#accGhost{position:fixed;z-index:9999;pointer-events:none;background:#facc15;color:#000;font-weight:bold;font-size:11px;padding:4px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.4)}`;
+  document.head.appendChild(st);
+
+  const sk = (d, t) => d + '|' + t;
+  const keyLabel = k => { const i = k.indexOf('|'); return fmtShort(+k.slice(0, i)) + ' ' + k.slice(i + 1); };
+  function removeSource(s, k) {
+    const ms = s.mergedSessions || {};
+    Object.keys(ms).forEach(t => { ms[t] = (ms[t] || []).filter(x => x !== k); if (!ms[t].length) delete ms[t]; });
+  }
+
+  /* ---------- الحساب ---------- */
+  window.computeStudentStatement = function (s, cutoffMs, endOfDay) {
+    const groups = getStudentPaymentPeriods(s, true);
+    const canc = s.cancelledSessions || {}, ms = s.mergedSessions || {};
+    const src2t = {};
+    Object.keys(ms).forEach(t => (ms[t] || []).forEach(x => { if (canc[x]) src2t[x] = t; }));
+    const isCanc = se => !!canc[sk(se.date, se.time)];
+    const mult = se => { const k = sk(se.date, se.time); return canc[k] ? 0 : 1 + (ms[k] || []).filter(x => canc[x]).length; };
+    const slotsPerWeek = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null).length;
+    const res = { student: s, courses: [], days: [], earned: 0, done: 0, total: 0, cancelled: 0, lastPaid: null };
+    const allDays = [];
+    groups.forEach(g => {
+      const total = g.isPartial ? slotsPerWeek * g.cycle : g.sessions.length;
+      const rate = total ? g.price / total : 0;
+      const isDone = se => endOfDay ? se.date <= cutoffMs : se.date < cutoffMs;
+      const upTo = g.sessions.filter(isDone);
+      const doneList = upTo.filter(se => !isCanc(se));
+      const cancList = upTo.filter(isCanc);
+      if (!upTo.length && g.startMs > cutoffMs) return;
+      const w = doneList.reduce((a, se) => a + mult(se), 0);
+      const earned = (total && w >= total) ? g.price : round2(w * rate);
+      res.courses.push({ number: g.number, range: periodRangeText(g), price: g.price, isPartial: !!g.isPartial,
+        total, done: w, cancelled: cancList.length, rate, earned, payState: g.payState });
+      upTo.forEach(se => {
+        const k = sk(se.date, se.time);
+        allDays.push({ date: se.date, day: se.day, time: se.time, min: se.min, course: g.number, rate,
+          cancelled: isCanc(se), mult: mult(se), to: src2t[k] || null });
+      });
+    });
+    const lastPaidIdx = res.courses.reduce((m, c, i) => c.payState === 1 ? i : m, -1);
+    res.courses.forEach((c, i) => { c.counted = c.payState === 2 || i > lastPaidIdx; });
+    res.lastPaid = lastPaidIdx >= 0 ? res.courses[lastPaidIdx] : null;
+    const nums = new Set(res.courses.filter(c => c.counted).map(c => c.number));
+    res.courses = res.courses.filter(c => c.counted);
+    allDays.filter(d => nums.has(d.course)).sort((a, b) => a.date - b.date || a.min - b.min).forEach(d => res.days.push(d));
+    let run = 0;
+    res.days.forEach(d => { if (!d.cancelled) run += d.rate * d.mult; d.running = round2(run); });
+    res.courses.forEach(c => { res.earned += c.earned; res.done += c.done; res.total += c.total; res.cancelled += c.cancelled; });
+    res.earned = round2(res.earned);
+    return res;
+  };
+
+  /* ---------- الإلغاء / الضم / فك الضم ---------- */
+  window.toggleCancelSession = function (id, dateMs, time) {
+    const s = db.students.find(x => x.id === id); if (!s) return;
+    commitChange();
+    s.cancelledSessions = s.cancelledSessions || {}; s.mergedSessions = s.mergedSessions || {};
+    const k = sk(dateMs, time);
+    if (s.cancelledSessions[k]) { delete s.cancelledSessions[k]; removeSource(s, k); }
+    else { s.cancelledSessions[k] = true; delete s.mergedSessions[k]; }
+    save(); runAccount();
+  };
+  window.mergeSessions = function (id, sd, stime, td, ttime) {
+    const s = db.students.find(x => x.id === id); if (!s) return;
+    const a = sk(sd, stime), b = sk(td, ttime); if (a === b) return;
+    s.cancelledSessions = s.cancelledSessions || {}; s.mergedSessions = s.mergedSessions || {};
+    if (s.cancelledSessions[b]) { showToast('لا يمكن الضم على حصة ملغاة'); return; }
+    if ((s.mergedSessions[a] || []).length) { showToast('هذه الحصة تحمل تعويضاً، فكّ ضمها أولاً'); return; }
+    commitChange();
+    s.cancelledSessions[a] = true;
+    removeSource(s, a);
+    (s.mergedSessions[b] = s.mergedSessions[b] || []).push(a);
+    save(); runAccount();
+    showToast('تم الضم ✅ الحصة أصبحت ×' + (1 + s.mergedSessions[b].length));
+  };
+  window.unmergeSession = function (id, d, t, asTarget) {
+    const s = db.students.find(x => x.id === id); if (!s) return;
+    commitChange();
+    const k = sk(d, t);
+    if (asTarget) { if (s.mergedSessions) delete s.mergedSessions[k]; } else removeSource(s, k);
+    save(); runAccount();
+  };
+
+  /* ---------- عرض الكشف ---------- */
+  window.runAccount = function () {
+    const out = document.getElementById('accountResult'); if (!out) return;
+    const cutoff = ymdToUTC(document.getElementById('accDate').value);
+    if (cutoff == null) { out.innerHTML = ''; return; }
+    const pick = document.getElementById('accStudent').value;
+    const students = (db.students || []).filter(s => pick === 'all' || String(s.id) === pick);
+    const stmts = students.map(s => computeStudentStatement(s, cutoff, true));
+    const grand = stmts.reduce((a, r) => a + r.earned, 0);
+    const who = stmts.length === 1 ? escHtml(stmts[0].student.name) : 'All students';
+    let html = `<div style="background:#0F172A; border:2px solid #FACC15; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
+<div style="color:#94a3b8; font-size:11px;">${who} — owed up to ${fmtLong(cutoff)}</div>
+<div style="color:#FACC15; font-size:30px; font-weight:900; line-height:1.2;">${money(grand)}</div></div>`;
+    stmts.forEach(r => {
+      const s = r.student; let inner = '';
+      inner += `<div style="font-size:10.5px; color:#64748b; margin-bottom:4px;">${r.lastPaid ? 'Counted after last payment: Course ' + r.lastPaid.number + ' (' + r.lastPaid.range + ')' : 'No payment recorded yet — counted from the start'}</div>`;
+      if (!r.courses.length) inner += '<div style="font-size:11px; color:#64748b;">Nothing owed.</div>';
+      else {
+        inner += `<table class="acc-mini"><tr><th>Course</th><th class="l">Dates</th><th>Sessions</th><th>Total</th></tr>
+${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">✕</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}${c.cancelled ? ' <span class="acc-owe">(−' + c.cancelled + ')</span>' : ''}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
+<tr style="background:#fef9c3; font-weight:bold;"><td colspan="2" class="l">Total</td><td>${r.done}</td><td>${money(r.earned)}</td></tr></table>`;
+        if (r.days.length) {
+          inner += `<div class="acc-note">• اضغط على الحصة لإلغائها (لا تُحسب) وأعد الضغط لإرجاعها.<br>• لتعويض حصة ملغاة: اسحب ⠿ الخاصة بها وأفلتها فوق الحصة التي ستكون بوقت مضاعف (×2).<br>• اضغط على الشارة الخضراء/البرتقالية لفك الضم.</div>
+<table class="acc-mini"><tr><th></th><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Price</th><th>Total</th></tr>
+${r.days.map(d => {
+            const badge = d.cancelled
+              ? (d.to ? ` <span class="acc-badge src" onclick="event.stopPropagation();unmergeSession(${s.id},${d.date},'${d.time}',false)">↪ ${keyLabel(d.to)}</span>` : '')
+              : (d.mult > 1 ? ` <span class="acc-badge" onclick="event.stopPropagation();unmergeSession(${s.id},${d.date},'${d.time}',true)">×${d.mult}</span>` : '');
+            return `<tr data-sid="${s.id}" data-date="${d.date}" data-time="${d.time}" onclick="toggleCancelSession(${s.id}, ${d.date}, '${d.time}')" style="cursor:pointer; ${d.cancelled ? 'background:#fee2e2; color:#991b1b;' : ''}">
+<td class="acc-h" onclick="event.stopPropagation()">⠿</td>
+<td class="l" style="${d.cancelled ? 'text-decoration:line-through;' : ''}">${fmtLong(d.date)}</td><td class="l" style="${d.cancelled ? 'text-decoration:line-through;' : ''}">${dayNamesFull[d.day] || d.day}</td><td>${d.time}</td>
+<td>${d.cancelled ? 'Cancelled' : money(d.rate * d.mult)}${badge}</td><td><b>${money(d.running)}</b></td></tr>`;
+          }).join('')}</table>`;
+        }
+      }
+      html += `<div class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><h4>${escHtml(s.name)} — ${money(r.earned)}</h4>${inner}</div>`;
+    });
+    out.innerHTML = html;
+  };
+
+  /* ---------- تقرير PDF / الصورة ---------- */
+  window.generateAccountReportHTML = function (r, cutoff) {
+    const s = r.student;
+    const teacherName = escHtml(db.teacherName || 'Teacher');
+    const teacherPhone = db.teacherPhone ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${escHtml(db.teacherPhone)}</div>` : '';
+    const td = 'padding:5px 8px; border-bottom:1px solid #334155; font-size:12px;';
+    const th = 'padding:6px 8px; font-size:11px; color:#facc15; text-align:left;';
+    const lastPaidTxt = r.lastPaid ? `Counted after last payment: Course ${r.lastPaid.number} (${r.lastPaid.range})` : 'No payment recorded yet';
+    let courses = '', days = '';
+    if (r.courses.length) {
+      courses = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
+<thead><tr style="background:#0f172a; border-bottom:2px solid #facc15;"><th style="${th}">Course</th><th style="${th}">Dates</th><th style="${th} text-align:center;">Sessions</th><th style="${th} text-align:right;">Total</th></tr></thead><tbody>
+${r.courses.map(c => `<tr style="page-break-inside:avoid;"><td style="${td} font-weight:bold;">${c.number}${c.payState === 2 ? ' <span style="color:#f87171;">✕</span>' : ''}</td><td style="${td}">${c.range}</td><td style="${td} text-align:center;">${c.done}/${c.total}${c.cancelled ? ' <span style="color:#f87171;">(−' + c.cancelled + ')</span>' : ''}</td><td style="${td} text-align:right; font-weight:bold; color:#34d399;">${money(c.earned)}</td></tr>`).join('')}
+<tr style="background:#0f172a;"><td colspan="2" style="${td} font-weight:bold; color:#facc15;">Total</td><td style="${td} text-align:center; font-weight:bold;">${r.done}</td><td style="${td} text-align:right; font-weight:bold; color:#facc15;">${money(r.earned)}</td></tr></tbody></table>`;
+      if (r.days.length) {
+        days = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
+<thead><tr style="background:#0f172a; border-bottom:2px solid #facc15;"><th style="${th}">Date</th><th style="${th}">Day</th><th style="${th}">Time</th><th style="${th} text-align:right;">Price</th><th style="${th} text-align:right;">Total</th></tr></thead><tbody>
+${r.days.map(d => {
+          const cx = d.cancelled ? 'text-decoration:line-through; color:#f87171;' : '';
+          const note = d.cancelled
+            ? (d.to ? ` <span style="display:inline-block; text-decoration:none; color:#fbbf24;">↪ ${keyLabel(d.to)}</span>` : '')
+            : (d.mult > 1 ? ` <span style="display:inline-block; color:#34d399; font-weight:bold;">×${d.mult}</span>` : '');
+          return `<tr style="page-break-inside:avoid; ${d.cancelled ? 'background:#3f1d1d;' : ''}"><td style="${td} ${cx}">${fmtLong(d.date)}</td><td style="${td} ${cx}">${dayNamesFull[d.day] || d.day}</td><td style="${td} ${d.cancelled ? cx : 'color:#38bdf8;'}">${d.time}</td><td style="${td} text-align:right; ${d.cancelled ? 'color:#f87171;' : ''}">${d.cancelled ? 'Cancelled' : money(d.rate * d.mult)}${note}</td><td style="${td} text-align:right; font-weight:bold;">${money(d.running)}</td></tr>`;
+        }).join('')}
+</tbody></table>`;
+      }
+    } else courses = `<div style="padding:10px; text-align:center; color:#94a3b8; font-size:12px;">Nothing owed.</div>`;
+    return `
+<div style="max-width:680px; margin:0 auto 14px; background:#0f172a; color:#ffffff; padding:18px; border-radius:14px; border:3px double #facc15; font-family:Arial, sans-serif; box-sizing:border-box;">
+<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #facc15; padding-bottom:9px; margin-bottom:10px;">
+<div><h2 style="margin:0; color:#ffffff; font-size:20px;">SMART <span style="color:#facc15;">TUTOR</span></h2>
+<p style="margin:2px 0 0; color:#94a3b8; font-size:11px;">Account Statement</p></div>
+<div style="background:#1e293b; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px; border:1px solid #334155; text-align:right; line-height:1.3;"><div>${teacherName}</div>${teacherPhone}</div>
+</div>
+<div style="background:#1e293b; padding:9px 12px; border-radius:8px; margin-bottom:8px; border:1px solid #334155; border-left:4px solid ${s.color || '#3b82f6'};">
+<h3 style="margin:0 0 3px; font-size:18px;">🎓 ${escHtml(s.name)}</h3>
+<p style="margin:0; font-size:11px; color:#94a3b8;">Account up to ${fmtLong(cutoff)} · ${lastPaidTxt}</p>
+</div>
+<div style="background:#1e293b; padding:10px 12px; border-radius:8px; margin-bottom:10px; border:1px solid #475569; text-align:center;">
+<span style="font-size:11px; color:#94a3b8; display:block;">Amount Due</span>
+<strong style="font-size:28px; color:#facc15;">${money(r.earned)}</strong>
+</div>
+${courses}${days}
+<div style="text-align:center; border-top:1px dashed #334155; padding-top:8px; color:#64748b; font-size:11px;">✦ Thank you for trusting us with your education ✦</div>
+</div>`;
+  };
+
+  /* ---------- السحب (يعمل بالماوس واللمس) ---------- */
+  const box = document.getElementById('accountResult');
+  let g = null;
+  const rowAt = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.closest ? e.closest('#accountResult tr[data-sid]') : null; };
+  box.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.acc-h'); if (!h) return;
+    const tr = h.closest('tr'); e.preventDefault();
+    const gh = document.createElement('div'); gh.id = 'accGhost';
+    gh.textContent = '⠿ ' + tr.children[1].textContent + ' · ' + tr.dataset.time;
+    gh.style.left = (e.clientX + 12) + 'px'; gh.style.top = (e.clientY - 34) + 'px';
+    document.body.appendChild(gh);
+    g = { tr, gh, over: null };
+    tr.classList.add('acc-row-drag');
+    try { h.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  box.addEventListener('pointermove', e => {
+    if (!g) return;
+    g.gh.style.left = (e.clientX + 12) + 'px'; g.gh.style.top = (e.clientY - 34) + 'px';
+    const r = rowAt(e.clientX, e.clientY);
+    if (g.over) g.over.classList.remove('acc-row-over');
+    g.over = (r && r !== g.tr && r.dataset.sid === g.tr.dataset.sid) ? r : null;
+    if (g.over) g.over.classList.add('acc-row-over');
+  });
+  const endDrag = ok => {
+    if (!g) return;
+    const { tr, gh, over } = g; g = null;
+    gh.remove(); tr.classList.remove('acc-row-drag');
+    if (over) over.classList.remove('acc-row-over');
+    if (ok && over) mergeSessions(+tr.dataset.sid, +tr.dataset.date, tr.dataset.time, +over.dataset.date, over.dataset.time);
+  };
+  box.addEventListener('pointerup', () => endDrag(true));
+  box.addEventListener('pointercancel', () => endDrag(false));
+})();
+</script>
 </body>
 </html>
