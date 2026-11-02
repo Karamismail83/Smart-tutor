@@ -142,8 +142,8 @@ body.print-single-student #studentPrintContainer.acc-land { padding: 0 !importan
 #studentPrintContainer.acc-land .acc-page { page-break-inside: avoid; }
 
 /* ===== Main schedule export: golden frame + one landscape page ===== */
-#printArea{position:relative;border:3px double var(--gold);border-radius:16px;padding:20px 18px;background:var(--bg-dark);
-  box-shadow:inset 0 0 0 5px var(--bg-dark),inset 0 0 0 6px rgba(250,204,21,.5),0 0 18px rgba(250,204,21,.18);}
+#printArea{position:relative}
+.fc,.fm{display:none}
 .fc{position:absolute;width:14px;height:14px;border:3px solid var(--gold);pointer-events:none}
 .fc.tl{top:5px;left:5px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
 .fc.tr{top:5px;right:5px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
@@ -151,6 +151,9 @@ body.print-single-student #studentPrintContainer.acc-land { padding: 0 !importan
 .fc.br{bottom:5px;right:5px;border-left:0;border-top:0;border-radius:0 0 6px 0}
 .fm{position:absolute;left:50%;transform:translateX(-50%);color:var(--gold);background:var(--bg-dark);padding:0 8px;font-size:12px;line-height:1}
 .fm.t{top:-8px}.fm.b{bottom:-8px}
+.print-fit,.exporting{border:3px double var(--gold);border-radius:16px;padding:20px 18px;background:var(--bg-dark);
+  box-shadow:inset 0 0 0 5px var(--bg-dark),inset 0 0 0 6px rgba(250,204,21,.5);}
+.print-fit .fc,.exporting .fc,.print-fit .fm,.exporting .fm{display:block}
 .print-fit{width:1080px!important;margin:0 auto!important;box-sizing:border-box}
 .print-fit .acc-table-wrapper{overflow:visible!important}
 .print-fit .slots{overflow:visible!important}
@@ -322,6 +325,8 @@ db = { students: [], holidays: [], teacherName: '', teacherPhone: '', courseStar
 }
 let historyStack = [];
 let draggedData = null;
+/* Pick a high render scale (up to 4x) without exceeding mobile canvas limits */
+function pickScale(w, h) { return Math.max(1.5, Math.min(4, Math.sqrt(14000000 / (Math.max(1, w) * Math.max(1, h))))); }
 function showToast(message) {
 let toast = document.getElementById('toast');
 toast.innerText = message;
@@ -760,8 +765,15 @@ async function exportScheduleImage(share) {
   showToast('Preparing image…');
   try {
     const a = document.getElementById('printArea');
+    const probe = a.cloneNode(true);
+    probe.removeAttribute('id');
+    probe.classList.add('exporting');
+    probe.style.cssText = 'position:absolute;left:-99999px;top:0;';
+    document.body.appendChild(probe);
+    const probeH = probe.offsetHeight;
+    probe.remove();
     const canvas = await html2canvas(a, {
-      scale: 2, useCORS: true, backgroundColor: '#0F172A', windowWidth: 1400,
+      scale: pickScale(1400, probeH), useCORS: true, backgroundColor: '#0F172A', windowWidth: 1400,
       onclone: (doc) => { doc.getElementById('printArea').classList.add('exporting'); }
     });
     const fileName = 'Schedule_' + new Date().toISOString().slice(0, 10) + '.png';
@@ -878,7 +890,7 @@ let tempDiv = document.createElement('div');
 tempDiv.style.position = 'absolute'; tempDiv.style.left = '-9999px'; tempDiv.style.top = '0'; tempDiv.style.width = '650px';
 tempDiv.innerHTML = generateStudentReportHTML(student, includeFinancials, includePhone);
 document.body.appendChild(tempDiv);
-html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true }).then(canvas => {
+html2canvas(tempDiv.firstElementChild, { scale: pickScale(650, tempDiv.firstElementChild.offsetHeight), useCORS: true }).then(canvas => {
 let link = document.createElement('a');
 link.download = `Student_Report_${student.name}.png`;
 link.href = canvas.toDataURL('image/png');
@@ -1125,7 +1137,7 @@ function buildReportCanvas(html) {
         tempDiv.style.cssText = 'position:absolute; left:-9999px; top:0; width:520px;';
         tempDiv.innerHTML = html;
         document.body.appendChild(tempDiv);
-        html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#0f172a' })
+        html2canvas(tempDiv.firstElementChild, { scale: pickScale(520, tempDiv.firstElementChild.offsetHeight), useCORS: true, backgroundColor: '#0f172a' })
             .then(canvas => { tempDiv.remove(); resolve(canvas); })
             .catch(err => { tempDiv.remove(); reject(err); });
     });
@@ -1379,8 +1391,9 @@ async function accountImages(share) {
       tmp.style.cssText = 'position:absolute;left:-9999px;top:0;width:1080px;';
       tmp.innerHTML = accLandHTML(r, sel.cutoff);
       document.body.appendChild(tmp);
+      const sc = pickScale(1080, tmp.firstElementChild.offsetHeight);
       let canvas;
-      try { canvas = await html2canvas(tmp.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#0f172a' }); }
+      try { canvas = await html2canvas(tmp.firstElementChild, { scale: sc, useCORS: true, backgroundColor: '#0f172a' }); }
       finally { tmp.remove(); }
       const safe = String(st.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
       const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
