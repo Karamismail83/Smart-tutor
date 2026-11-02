@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Smart Tutor - Professional Print Schedule</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -86,28 +87,59 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #facc15; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 4000; transition: transform 0.3s ease; border: 1px solid #facc15; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 #toast.show { transform: translateX(-50%) translateY(0); }
 
-/* ===== PRINT: the main schedule prints exactly like the app (colors, layout, purple holidays) ===== */
+/* ===== PRINT / EXPORT: the whole schedule on ONE landscape A4 page, inside a framed sheet ===== */
+.print-only { display: none; }
+#exitPrintBtn { display: none; }
+header .action-btn { padding: 6px 8px; margin-left: 3px; }
+.export-btn { width: 100%; margin: 0 0 10px; justify-content: center; padding: 12px; font-size: 12px; }
+
+body.fit-print { background: #0F172A; overflow: visible; }
+body.fit-print header, body.fit-print .sidebar, body.fit-print .modal, body.fit-print .overlay, body.fit-print #toast { display: none !important; }
+body.fit-print .container { padding: 0; }
+body.fit-print #exitPrintBtn { display: block; position: fixed; top: 8px; right: 8px; z-index: 9999; background: #ef4444; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-weight: bold; font-size: 12px; cursor: pointer; }
+body.fit-print.fit-image #exitPrintBtn { display: none; }
+
+body.fit-print #printFrame {
+  position: relative; display: flex; flex-direction: column; box-sizing: border-box;
+  width: 1040px; margin: 0 auto; padding: 16px 18px 12px;
+  border: 3px double var(--gold); border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 6%, rgba(250,204,21,0.10), rgba(250,204,21,0) 38%),
+    radial-gradient(circle at 6% 96%, rgba(56,189,248,0.08), rgba(56,189,248,0) 38%),
+    #0F172A;
+  box-shadow: 0 0 0 1px rgba(250,204,21,0.35);
+}
+body.fit-print #printFrame::before { content: ""; position: absolute; inset: 6px; border: 1px solid rgba(250,204,21,0.45); border-radius: 13px; pointer-events: none; }
+body.fit-print .print-only { display: flex; }
+body.fit-print .pf-title { justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); padding-bottom: 7px; margin-bottom: 9px; }
+body.fit-print .pf-brand { font-size: 18px; font-weight: 900; letter-spacing: 0.5px; color: #fff; }
+body.fit-print .pf-brand span { color: var(--gold); }
+body.fit-print .pf-brand small { display: block; font-size: 9px; font-weight: normal; color: #94a3b8; letter-spacing: 0; margin-top: 1px; }
+body.fit-print .pf-meta { font-size: 10px; color: #cbd5e1; text-align: right; line-height: 1.5; }
+body.fit-print .pf-foot { justify-content: center; margin-top: auto; padding-top: 8px; border-top: 1px dashed #334155; color: #94a3b8; font-size: 10px; }
+
+body.fit-print .teacher-box { margin-bottom: 9px; padding: 6px 10px; }
+body.fit-print .profile-img-container { width: 42px; height: 42px; }
+body.fit-print .day-row { page-break-inside: avoid; }
+body.fit-print .slots { overflow: visible; }
+body.fit-print .acc-table-wrapper { overflow: visible; margin-top: 9px; margin-bottom: 10px; }
+body.fit-print .acc-table { width: 100%; table-layout: fixed; }
+body.fit-print .acc-table th, body.fit-print .acc-table td { min-width: 0; }
+body.fit-print .acc-table th { font-size: 7px; padding: 3px 0; }
+body.fit-print .sticky-name { position: static; width: 90px; font-size: 8.5px; }
+body.fit-print .sub-price { font-size: 7px; }
+body.fit-print .box { width: 100%; max-width: 16px; height: 18px; font-size: 9px; }
+body.fit-print .total-row td { font-size: 7.5px; }
+body.fit-print .grand-total-cell { font-size: 9px !important; }
+
 @media print {
-  @page { size: A4 landscape; margin: 5mm; }
+  @page { size: A4 landscape; margin: 6mm; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  html, body { background:#0F172A !important; width:100% !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
-  header, .sidebar, .modal, .overlay, #toast { display:none !important; }
-
-  body.print-single-student .container { display:none !important; }
-  body.print-single-student #studentPrintContainer { display:block !important; padding:20px; background:#0F172A !important; color:#fff !important; }
-  body:not(.print-single-student) .container { display:block !important; padding:0 !important; width:100% !important; }
-
-  .day-row { page-break-inside: avoid; }
-  .slots { overflow: visible !important; }
-  .acc-table-wrapper { overflow: visible !important; page-break-inside: avoid; }
-  .acc-table { width:100% !important; table-layout: fixed !important; }
-  .acc-table th, .acc-table td { min-width:0 !important; }
-  .acc-table th { font-size:6.5px !important; padding:3px 0 !important; }
-  .sticky-name { position: static !important; width:90px !important; font-size:8.5px !important; }
-  .sub-price { font-size:7px !important; }
-  .box { width:14px !important; height:18px !important; font-size:9px !important; }
-  .total-row td { font-size:7px !important; }
-  .grand-total-cell { font-size:9px !important; }
+  html, body { background: #0F172A !important; margin: 0 !important; padding: 0 !important; }
+  header, .sidebar, .modal, .overlay, #toast, #exitPrintBtn { display: none !important; }
+  body.print-single-student .container { display: none !important; }
+  body.print-single-student #studentPrintContainer { display: block !important; padding: 20px; background: #0F172A !important; color: #fff !important; }
+  body.fit-print #printFrame { break-inside: avoid; page-break-inside: avoid; }
 }
 .acc-icon-btn { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; border: 2px solid var(--gold); background: radial-gradient(circle at 30% 30%, #334155, #0F172A); color: var(--gold); font-size: 17px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; margin-right: 4px; box-shadow: 0 0 8px rgba(250,204,21,0.45); transition: transform 0.15s, box-shadow 0.15s; }
 .acc-icon-btn:active { transform: scale(0.92); box-shadow: 0 0 14px rgba(250,204,21,0.8); }
@@ -143,66 +175,78 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 <div class="modal" id="editModal"><div id="editFields"></div></div>
 <div class="modal" id="accountModal" style="width:min(100%, 480px);">
 <div style="display:flex; justify-content:space-between; align-items:center;">
-<h3 style="margin:0">Account Statement 💰</h3>
-<div class="map-icon-btn" onclick="closeAll()">✕</div>
+<h3 style="margin:0">Account Statement ����</h3>
+<div class="map-icon-btn" onclick="closeAll()">���</div>
 </div>
 <label style="font-size:11px; color:#64748b;">Choose student</label>
 <select id="accStudent" onchange="runAccount()"></select>
 <label style="font-size:11px; color:#64748b;">Account up to this date (that day is included)</label>
 <input id="accDate" type="date" onchange="runAccount()" oninput="runAccount()">
 <div style="display:flex; gap:6px; margin-top:4px;">
-<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#0f172a; color:#fff;" onclick="printAccountReport()">🖨️ PDF</button>
-<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#10b981; color:#fff;" onclick="saveAccountImage()">📸 Image</button>
+<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#0f172a; color:#fff;" onclick="printAccountReport()">������� PDF</button>
+<button class="action-btn" style="flex:1; margin:0; justify-content:center; padding:10px; background:#10b981; color:#fff;" onclick="saveAccountImage()">���� Image</button>
 </div>
 <div id="accountResult"></div>
 </div>
 <div class="modal" id="mapModal">
 <div class="map-top-bar">
-<div class="map-icon-btn" onclick="closeAll()">✕</div>
+<div class="map-icon-btn" onclick="closeAll()">���</div>
 <input id="mapSearchInput" placeholder="Search, or paste coordinates / a Google Maps link..." onkeydown="if(event.key==='Enter'){event.preventDefault(); searchMapLocation();}">
-<div class="map-icon-btn" onclick="searchMapLocation()">🔍</div>
+<div class="map-icon-btn" onclick="searchMapLocation()">����</div>
 <div id="mapSearchResults"></div>
 </div>
 <div id="pickerMap"></div>
 <div class="map-fab-stack">
-<div class="locate-fab" id="satelliteToggleBtn" title="Satellite view" onclick="toggleSatellite()">🛰️</div>
-<div class="locate-fab" title="Use my current location" onclick="useMyLocationInPicker()">🎯</div>
+<div class="locate-fab" id="satelliteToggleBtn" title="Satellite view" onclick="toggleSatellite()">�������</div>
+<div class="locate-fab" title="Use my current location" onclick="useMyLocationInPicker()">����</div>
 </div>
 <div class="map-bottom-bar">
 <div class="map-status" id="mapPickerStatus"></div>
-<button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">✅ Confirm This Location</button>
+<button class="action-btn" style="width:100%; background:#10b981; color:white;" onclick="confirmMapPicker()">��� Confirm This Location</button>
 </div>
+</div>
+<div class="modal" id="exportModal">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="margin:0">Print / Export �������</h3>
+<div class="map-icon-btn" onclick="closeAll()">���</div>
+</div>
+<p style="font-size:11px; color:#64748b;">The whole schedule fits on one landscape A4 page, inside a framed sheet.</p>
+<button class="action-btn export-btn" style="background:#0f172a; color:#fff;" onclick="printFullSchedule()">������� Print / Save as PDF (browser)</button>
+<button class="action-btn export-btn" style="background:#ef4444; color:#fff;" onclick="downloadSchedulePDF()">���� Download PDF file</button>
+<button class="action-btn export-btn" style="background:#10b981; color:#fff;" onclick="saveScheduleImage(false)">���� Save as Image</button>
+<button class="action-btn export-btn" style="background:#0ea5e9; color:#fff;" onclick="saveScheduleImage(true)">���� Share Image</button>
 </div>
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
+<button id="exitPrintBtn" onclick="exitFitPrint()">��� Exit print view</button>
 <div class="sidebar" id="sidebar">
-<h2 style="margin-top:0">Settings ⚙️</h2>
+<h2 style="margin-top:0">Settings ������</h2>
 <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-<h3 style="margin-top:0;">Teacher Phone 📱</h3>
+<h3 style="margin-top:0;">Teacher Phone ����</h3>
 <label style="font-size:11px; color:#64748b;">Phone number to display under teacher name in student reports:</label>
-<input id="teacherPhoneInput" type="text" placeholder="e.g. +1 555 0100" oninput="db.teacherPhone=this.value; save();">
+<input id="teacherPhoneInput" type="text" placeholder="e.g. � 555 0100" oninput="db.teacherPhone=this.value; save();">
 </div>
 <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-<h3 style="margin-top:0;">🏠 Your Home Address (for distance calculations)</h3>
+<h3 style="margin-top:0;">���� Your Home Address (for distance calculations)</h3>
 <label style="font-size:11px; color:#64748b;">Enter your address (area/street/city), or just tap the pin to set it precisely on the map:</label>
 <div class="addr-row">
 <input id="teacherAddressInput" type="text" placeholder="e.g. Downtown, Springfield" oninput="db.teacherAddress=this.value;">
-<button type="button" class="loc-icon-btn" onclick="openMapPicker('teacher')" title="Set location on map">📍</button>
+<button type="button" class="loc-icon-btn" onclick="openMapPicker('teacher')" title="Set location on map">����</button>
 </div>
 <div id="teacherGeoStatus" style="font-size:11px; color:#64748b; margin-top:-6px;"></div>
 </div>
 <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-<h3 style="margin-top:0;">Reset Course Start Date 📅</h3>
+<h3 style="margin-top:0;">Reset Course Start Date ����</h3>
 <label style="font-size:11px; color:#64748b;">Course start date for all students:</label>
 <input id="courseBaseDate" type="date">
-<button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates 🔄</button>
+<button class="action-btn" style="width:100%; background:#ef4444; color:white; margin-top:5px;" onclick="resetAllStudentsStartDate()">Reset All Dates ����</button>
 <label style="font-size:11px; color:#64748b; display:block; margin-top:12px;">End of study weeks (dates in the accounts table run until this date, default 1 July):</label>
 <input id="courseEndDate" type="date" onchange="setCourseEndDate(this.value)">
 </div>
 <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-<h3 style="margin-top:0;">Backup & Restore 💾</h3>
-<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup 📤</button>
-<button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup 📥</button>
+<h3 style="margin-top:0;">Backup & Restore ����</h3>
+<button class="action-btn" style="width:100%; background:#10b981; color:white; margin-bottom:8px;" onclick="exportBackup()">Export Backup ����</button>
+<button class="action-btn" style="width:100%; background:#3b82f6; color:white;" onclick="document.getElementById('importFile').click()">Import Backup ����</button>
 <input type="file" id="importFile" hidden accept=".json" onchange="importBackup(this)">
 </div>
 <hr style="margin:15px 0; opacity:0.1">
@@ -212,10 +256,10 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 <input id="sPrice" type="number" placeholder="Price">
 <input id="sDate" type="date">
 <input id="sCycle" type="number" value="4">
-<label style="font-size:11px; color:#64748b;">📍 Student Address/Area (for distance)</label>
+<label style="font-size:11px; color:#64748b;">���� Student Address/Area (for distance)</label>
 <div class="addr-row">
 <input id="sAddress" placeholder="e.g. Uptown, Springfield">
-<button type="button" class="loc-icon-btn" onclick="openMapPicker('newStudent')" title="Set location on map">📍</button>
+<button type="button" class="loc-icon-btn" onclick="openMapPicker('newStudent')" title="Set location on map">����</button>
 </div>
 <div class="map-status" id="newStudentGeoStatus"></div>
 <button class="action-btn" style="width:100%" onclick="addStudent()">Save Student</button>
@@ -236,16 +280,18 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 <header>
 <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
 <div style="display: flex; gap: 5px; align-items: center;">
-<button class="acc-icon-btn" onclick="openAccount()" title="Account Statement" aria-label="Account Statement">💰</button>
-<button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
-<button class="action-btn" onclick="undo()">↩️ UNDO</button>
-<button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
+<button class="acc-icon-btn" onclick="openAccount()" title="Account Statement" aria-label="Account Statement">����</button>
+<button class="action-btn" onclick="openExport()">������� PRINT</button>
+<button class="action-btn" onclick="undo()">������ UNDO</button>
+<button class="action-btn" onclick="toggleSidebar()">��� ADD</button>
 </div>
 </header>
 <div class="container">
+<div id="printFrame">
+<div class="print-only pf-title"><div class="pf-brand">SMART <span>TUTOR</span><small>Weekly Schedule &amp; Accounts</small></div><div class="pf-meta"><div id="pfTeacher"></div><div id="pfDate"></div></div></div>
 <div class="teacher-box">
 <div class="profile-img-container" onclick="document.getElementById('tFile').click()">
-<img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+<img id="teacherImg" class="profile-img" src="data:image/svg왩�,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
 </div>
 <input type="file" id="tFile" hidden onchange="handleImageUpload(this)">
 <input id="teacherName" oninput="db.teacherName=this.value; commitChange();" placeholder="Teacher Name">
@@ -257,6 +303,8 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 <thead id="accTotalHeader"></thead>
 <tbody id="accBody"></tbody>
 </table>
+</div>
+<div class="print-only pf-foot">��� Smart Tutor �� Weekly Schedule ���</div>
 </div>
 </div>
 <script>
@@ -287,7 +335,7 @@ setTimeout(() => { toast.classList.remove('show'); }, 2500);
 }
 function getTimeOptionsHTML(selectedTime = '') {
 let html = '';
-for(let h = 10; h <= 22; h++){
+for(let h = 10; h <= 22; h�){
 for(let m of [0, 15, 30, 45]){
 if(h === 22 && m > 0) continue;
 let hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
@@ -295,7 +343,7 @@ let mm = m.toString().padStart(2, '0');
 let ampm = h < 12 ? 'AM' : 'PM';
 let t = `${hh}:${mm} ${ampm}`;
 let isSel = (t === selectedTime) ? 'selected' : '';
-html += `<option value="${t}" ${isSel}>${t}</option>`;
+html �= `<option value="${t}" ${isSel}>${t}</option>`;
 }
 }
 return html;
@@ -318,7 +366,7 @@ return clean.join(', ');
 }
 async function photonSearch(query, limit = 8, biasLat = null, biasLon = null) {
 let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}`;
-if (biasLat != null && biasLon != null) url += `&lat=${biasLat}&lon=${biasLon}&location_bias_scale=0.9`;
+if (biasLat != null && biasLon != null) url �= `&lat=${biasLat}&lon=${biasLon}&location_bias_scale=0.9`;
 const res = await fetch(url);
 const data = await res.json();
 if (!data || !data.features) return [];
@@ -332,7 +380,7 @@ async function nominatimSearch(query, limit = 8, biasLat = null, biasLon = null)
 let url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(query)}`;
 if (biasLat != null && biasLon != null) {
 const d = 0.6;
-url += `&viewbox=${biasLon - d},${biasLat + d},${biasLon + d},${biasLat - d}&bounded=0`;
+url �= `&viewbox=${biasLon - d},${biasLat � d},${biasLon � d},${biasLat - d}&bounded=0`;
 }
 const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
 const data = await res.json();
@@ -351,20 +399,20 @@ if (results.length === 0) {
 const candidates = [];
 if (query.includes(',')) {
 const segs = query.split(',')
-.map(s => s.trim().replace(/\s*\d{4,6}\s*$/, '').trim())
-.filter(s => s && !/^\d+$/.test(s));
+.map(s => s.trim().replace(/�s*�d{4,6}�s*$/, '').trim())
+.filter(s => s && !/^�d�$/.test(s));
 if (segs.length) {
 candidates.push(segs.join(', '));
 candidates.push(segs[segs.length - 1]);
 candidates.push(segs[0]);
 segs.forEach(s => {
-if (/\band\b/i.test(s)) {
-s.split(/\band\b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
+if (/�band�b/i.test(s)) {
+s.split(/�band�b/i).forEach(p => { if (p.trim()) candidates.push(p.trim()); });
 }
 });
 }
 }
-const words = query.trim().split(/\s+/);
+const words = query.trim().split(/�s�);
 if (words.length > 1) {
 candidates.push(words.slice(1).join(' '));
 candidates.push(words.slice(0, -1).join(' '));
@@ -413,7 +461,7 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 const R = 6371;
 const dLat = (lat2 - lat1) * Math.PI / 180;
 const dLon = (lon2 - lon1) * Math.PI / 180;
-const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+const a = Math.sin(dLat/2)**2 � Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 let pickerMapInstance = null;
@@ -430,7 +478,7 @@ if (!pickerMapInstance) {
 pickerMapInstance = L.map('pickerMap', { zoomControl: true }).setView([lat, lng], initialLat != null ? 16 : DEFAULT_REGION_ZOOM);
 pickerStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 maxZoom: 19,
-attribution: '© OpenStreetMap'
+attribution: '�� OpenStreetMap'
 }).addTo(pickerMapInstance);
 pickerSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
 maxZoom: 19,
@@ -460,7 +508,7 @@ pickerMapInstance.removeLayer(pickerSatelliteLayer);
 pickerStreetLayer.addTo(pickerMapInstance);
 }
 let btn = document.getElementById('satelliteToggleBtn');
-if (btn) btn.innerText = pickerIsSatellite ? '🗺️' : '🛰️';
+if (btn) btn.innerText = pickerIsSatellite ? '�������' : '�������';
 }
 async function updatePickerStatus() {
 const statusEl = document.getElementById('mapPickerStatus');
@@ -470,21 +518,21 @@ statusEl.innerText = `Coordinates: ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
 }
 function extractLatLngFromInput(q) {
 q = q.trim();
-let m = q.match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+let m = q.match(/^(-?�d{1,3}(?:�.�d�)?)�s*,�s*(-?�d{1,3}(?:�.�d�)?)$/);
 if (m) {
 const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
 if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
 }
-m = q.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+m = q.match(/@(-?�d��.�d�),(-?�d��.�d�)/);
 if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-m = q.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+m = q.match(/!3d(-?�d��.�d�)!4d(-?�d��.�d�)/);
 if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-m = q.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+m = q.match(/[?&](?:q|ll)=(-?�d��.�d�),(-?�d��.�d�)/);
 if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
 return null;
 }
 function isShortGoogleLink(q) {
-return /(maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(q);
+return /(maps�.app�.goo�.gl|goo�.gl�/maps)/i.test(q);
 }
 async function searchMapLocation() {
 const q = document.getElementById('mapSearchInput').value.trim();
@@ -496,7 +544,7 @@ if (coords) {
 pickerMarker.setLatLng([coords.lat, coords.lng]);
 pickerMapInstance.setView([coords.lat, coords.lng], 17);
 updatePickerStatus();
-resultsEl.innerHTML = `<div class="map-search-item">✅ Jumped to the exact pasted location</div>`;
+resultsEl.innerHTML = `<div class="map-search-item">��� Jumped to the exact pasted location</div>`;
 setTimeout(() => { resultsEl.style.display = 'none'; }, 1200);
 return;
 }
@@ -504,7 +552,7 @@ if (isShortGoogleLink(q)) {
 resultsEl.innerHTML = `<div class="map-search-item">This is a shortened Google Maps link and can't be read directly here. Open it once in your browser, then paste the full address-bar link (it will contain @lat,lng) - or in Google Maps, long-press the spot to drop a pin and paste the coordinates shown at the bottom.</div>`;
 return;
 }
-resultsEl.innerHTML = '<div class="map-search-item">⏳ Searching...</div>';
+resultsEl.innerHTML = '<div class="map-search-item">��� Searching...</div>';
 try {
 let biasLat = null, biasLon = null;
 if (pickerMapInstance) {
@@ -515,17 +563,17 @@ const results = await placesSearch(q, 8, biasLat, biasLon);
 mapSearchResultsData = results;
 if (mapSearchResultsData.length) {
 resultsEl.innerHTML = mapSearchResultsData.map((r, i) =>
-`<div class="map-search-item" onclick="selectSearchResult(${i})">📍 ${r.display_name}</div>`
-).join('') + googleFallbackItemHTML(q);
+`<div class="map-search-item" onclick="selectSearchResult(${i})">���� ${r.display_name}</div>`
+).join('') � googleFallbackItemHTML(q);
 } else {
-resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". If this includes a building/unit number, free map data won't have that level of detail - try just the district or city name, or use the option below for exact accuracy.</div>` + googleFallbackItemHTML(q);
+resultsEl.innerHTML = `<div class="map-search-item">No results in our map data for "${q}". If this includes a building/unit number, free map data won't have that level of detail - try just the district or city name, or use the option below for exact accuracy.</div>` � googleFallbackItemHTML(q);
 }
 } catch (e) {
-resultsEl.innerHTML = '<div class="map-search-item">⚠️ Something went wrong while searching</div>' + googleFallbackItemHTML(q);
+resultsEl.innerHTML = '<div class="map-search-item">������ Something went wrong while searching</div>' � googleFallbackItemHTML(q);
 }
 }
 function googleFallbackItemHTML(q) {
-return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">🔎 Not found here? Open "${q}" on Google Maps, long-press it to get coordinates, then paste them back here</div>`;
+return `<div class="map-search-item" style="color:#0ea5e9; font-weight:bold;" onclick="window.open('https://www.google.com/maps/search/${encodeURIComponent(q)}', '_blank')">���� Not found here? Open "${q}" on Google Maps, long-press it to get coordinates, then paste them back here</div>`;
 }
 function selectSearchResult(idx) {
 const r = mapSearchResultsData[idx];
@@ -578,20 +626,20 @@ if (!navigator.geolocation) {
 if (!silent) alert("This browser doesn't support location detection");
 return;
 }
-if (statusEl) statusEl.innerText = '⏳ Finding your current location...';
+if (statusEl) statusEl.innerText = '��� Finding your current location...';
 navigator.geolocation.getCurrentPosition((pos) => {
 const lat = pos.coords.latitude, lng = pos.coords.longitude;
 ensurePickerMap(lat, lng);
 if (pickerMapInstance) pickerMapInstance.setView([lat, lng], 16);
 }, (err) => {
-if (statusEl) statusEl.innerText = silent ? '' : '⚠️ Could not access your location, drag the pin manually';
+if (statusEl) statusEl.innerText = silent ? '' : '������ Could not access your location, drag the pin manually';
 }, { enableHighAccuracy: true, timeout: 10000 });
 }
 async function confirmMapPicker() {
 if (!pickerMarker) { closeAll(); return; }
 const ll = pickerMarker.getLatLng();
 const statusEl = document.getElementById('mapPickerStatus');
-if (statusEl) statusEl.innerText = '⏳ Saving location...';
+if (statusEl) statusEl.innerText = '��� Saving location...';
 const addr = await reverseGeocode(ll.lat, ll.lng);
 if (pickerContext === 'teacher') {
 commitChange();
@@ -602,15 +650,15 @@ save();
 let tAddrInput = document.getElementById('teacherAddressInput');
 if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
 let tGeoStatus = document.getElementById('teacherGeoStatus');
-if (tGeoStatus) tGeoStatus.innerText = '✅ Location set from the map';
+if (tGeoStatus) tGeoStatus.innerText = '��� Location set from the map';
 recalcAllDistances();
-showToast('Home location saved ✅');
+showToast('Home location saved ���');
 } else if (pickerContext === 'newStudent') {
 window.__pendingStudentLoc = { lat: ll.lat, lng: ll.lng };
 if (addr) document.getElementById('sAddress').value = addr;
 let ns = document.getElementById('newStudentGeoStatus');
-if (ns) ns.innerText = '✅ Location set, will be saved with the student';
-showToast('Student location set ✅');
+if (ns) ns.innerText = '��� Location set, will be saved with the student';
+showToast('Student location set ���');
 } else if (pickerContext && pickerContext.type === 'edit') {
 let s = db.students.find(x => x.id === pickerContext.id);
 if (s) {
@@ -621,7 +669,7 @@ if (db.teacherLat != null) {
 s.distanceKm = Math.round(haversineKm(db.teacherLat, db.teacherLng, ll.lat, ll.lng) * 10) / 10;
 }
 save();
-showToast('Student location updated ✅');
+showToast('Student location updated ���');
 openEdit(s.id);
 }
 }
@@ -631,7 +679,7 @@ async function geocodeTeacherAddress() {
 const addr = document.getElementById('teacherAddressInput').value.trim();
 const statusEl = document.getElementById('teacherGeoStatus');
 if (!addr) { alert('Please enter your address first'); return; }
-statusEl.innerText = '⏳ Locating...';
+statusEl.innerText = '��� Locating...';
 const loc = await geocodeAddress(addr);
 if (loc) {
 commitChange();
@@ -639,10 +687,10 @@ db.teacherAddress = addr;
 db.teacherLat = loc.lat;
 db.teacherLng = loc.lng;
 save();
-statusEl.innerText = '✅ Location set successfully';
+statusEl.innerText = '��� Location set successfully';
 recalcAllDistances();
 } else {
-statusEl.innerText = '⚠️ Could not locate this address, try a clearer address or use the map';
+statusEl.innerText = '������ Could not locate this address, try a clearer address or use the map';
 }
 }
 async function recalcAllDistances() {
@@ -670,9 +718,9 @@ let timeParts = time.split(':');
 if(timeParts.length < 2) return 0;
 let hrs = Number(timeParts[0]);
 let mins = Number(timeParts[1]);
-if (ampm === 'PM' && hrs !== 12) hrs += 12;
+if (ampm === 'PM' && hrs !== 12) hrs �= 12;
 if (ampm === 'AM' && hrs === 12) hrs = 0;
-return hrs * 60 + mins;
+return hrs * 60 � mins;
 }
 function save() {
 try { localStorage.setItem('tutor_v390', JSON.stringify(db)); } catch(e) {}
@@ -680,14 +728,106 @@ render();
 }
 function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
 function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
+/* ===== One-page framed print / PDF / image of the whole schedule ===== */
+const FIT_W = 1040;                                   // layout width (px) before scaling
+const PAGE_W_PX = (297 - 12) * 96 / 25.4;             // A4 landscape minus 6mm margins
+const PAGE_H_PX = (210 - 12) * 96 / 25.4 * 0.97;      // small safety so it never spills to page 2
+function enterFitPrint(forImage) {
+  document.getElementById('periodPrintPageStyle')?.remove();
+  const body = document.body, frame = document.getElementById('printFrame');
+  body.classList.remove('print-single-student');
+  body.classList.add('fit-print');
+  body.classList.toggle('fit-image', !!forImage);
+  document.getElementById('pfDate').textContent = 'Printed ' � new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  document.getElementById('pfTeacher').textContent = db.teacherPhone ? '���� ' � db.teacherPhone : '';
+  frame.style.zoom = ''; frame.style.minHeight = '0'; frame.style.width = FIT_W � 'px';
+  if (!forImage) {
+    const H = frame.offsetHeight;
+    const scale = Math.min(PAGE_W_PX / FIT_W, PAGE_H_PX / H, 1.6);
+    frame.style.zoom = scale;
+    frame.style.width = (PAGE_W_PX / scale) � 'px';
+    frame.style.minHeight = (PAGE_H_PX / scale) � 'px';
+  }
+}
+function exitFitPrint() {
+  const frame = document.getElementById('printFrame');
+  document.body.classList.remove('fit-print', 'fit-image', 'print-single-student');
+  if (frame) { frame.style.zoom = ''; frame.style.width = ''; frame.style.minHeight = ''; }
+}
+window.addEventListener('beforeprint', () => {
+  const c = document.body.classList;
+  if (!c.contains('fit-print') && !c.contains('print-single-student')) enterFitPrint(false);
+});
+window.addEventListener('afterprint', exitFitPrint);
+function openExport() {
+  closeAll();
+  document.getElementById('exportModal').classList.add('active');
+  document.getElementById('overlay').classList.add('active');
+}
 function printFullSchedule() {
-document.getElementById('periodPrintPageStyle')?.remove();
-document.body.classList.remove('print-single-student');
-window.print();
+  closeAll();
+  enterFitPrint(false);
+  setTimeout(() => window.print(), 150);
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function captureSchedule() {
+  if (typeof html2canvas === 'undefined') throw new Error('html2canvas missing');
+  closeAll();
+  window.scrollTo(0, 0);
+  enterFitPrint(true);
+  await delay(250);
+  try {
+    return await html2canvas(document.getElementById('printFrame'), {
+      scale: 2, useCORS: true, backgroundColor: '#0F172A', scrollX: 0, scrollY: 0, windowWidth: 1200,
+      onclone: d => { d.body.style.overflow = 'visible'; }
+    });
+  } finally { exitFitPrint(); }
+}
+async function saveScheduleImage(share) {
+  showToast('Preparing image���');
+  try {
+    const canvas = await captureSchedule();
+    const fileName = 'Schedule_' � todayYMD() � '.png';
+    if (share && navigator.canShare && navigator.share) {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (blob) {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Weekly Schedule' }); return; }
+          catch (e) { if (e && e.name === 'AbortError') return; }
+        }
+      }
+    }
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); link.remove();
+    showToast('Image saved ���');
+  } catch (e) {
+    alert('Could not create the image. Please check your internet connection and try again.');
+  }
+}
+async function downloadSchedulePDF() {
+  if (!window.jspdf) { alert('The PDF library could not be loaded. Please check your internet connection.'); return; }
+  showToast('Preparing PDF���');
+  try {
+    const canvas = await captureSchedule();
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pw = 297, ph = 210, m = 6;
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pw, ph, 'F');
+    const r = Math.min((pw - 2 * m) / canvas.width, (ph - 2 * m) / canvas.height);
+    const w = canvas.width * r, h = canvas.height * r;
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', (pw - w) / 2, (ph - h) / 2, w, h);
+    doc.save('Schedule_' � todayYMD() � '.pdf');
+    showToast('PDF saved ���');
+  } catch (e) {
+    alert('Could not create the PDF. Please try again.');
+  }
 }
 function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
 let teacherName = db.teacherName || 'Teacher';
-let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${db.teacherPhone}</div>` : '';
+let teacherPhone = (includePhone && db.teacherPhone) ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">���� ${db.teacherPhone}</div>` : '';
 let schedulesHTML = '';
 let activeSchedules = (student.schedules || []).filter(sc => sc.day !== 'Fri');
 if(activeSchedules.length === 0) {
@@ -700,9 +840,9 @@ return timeToMinutes(a.time) - timeToMinutes(b.time);
 });
 sortedSchedules.forEach(sc => {
 let fullDay = dayNamesFull[sc.day] || sc.day;
-schedulesHTML += `
+schedulesHTML �= `
 <tr>
-<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">✦ ${fullDay}</td>
+<td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #ffffff;">��� ${fullDay}</td>
 <td style="padding: 7px 10px; border-bottom: 1px solid #334155; font-weight: bold; font-size: 14px; color: #38bdf8; text-align: left;">${sc.time}</td>
 </tr>
 `;
@@ -743,7 +883,7 @@ ${teacherPhone}
 </div>
 </div>
 <div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${student.color || '#3b82f6'};">
-<h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">🎓 Name: ${student.name}</h3>
+<h3 style="margin: 0 0 3px 0; font-size: 18px; color: #ffffff;">���� Name: ${student.name}</h3>
 <p style="margin: 0; font-size: 11px; color: #94a3b8;">Here are the assigned weekly session times:</p>
 </div>
 ${financialsHTML}
@@ -757,7 +897,7 @@ ${financialsHTML}
 <tbody>${schedulesHTML}</tbody>
 </table>
 <div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
-✦ Thank you for trusting us with your education ✦
+��� Thank you for trusting us with your education ���
 </div>
 </div>
 `;
@@ -794,22 +934,22 @@ function escHtml(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 function ymdToUTC(str) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str || '');
-    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
+    const m = /^(�d{4})-(�d{2})-(�d{2})/.exec(str || '');
+    return m ? Date.UTC(�[1], �[2] - 1, �[3]) : null;
 }
 function getCourseEndYMD() {
     if (db.courseEndDate) return db.courseEndDate;
     const start = db.courseStartDate || new Date().toISOString().slice(0, 10);
     const y = parseInt(start.slice(0, 4), 10);
-    let end = y + '-07-01';
-    if (end < start) end = (y + 1) + '-07-01';
+    let end = y � '-07-01';
+    if (end < start) end = (y � 1) � '-07-01';
     return end;
 }
 function getReportWeeks() {
     const b = ymdToUTC(db.courseStartDate || new Date().toISOString().slice(0, 10));
     const e = ymdToUTC(getCourseEndYMD());
     if (b == null || e == null || e < b) return 24;
-    return Math.floor((e - b) / (7 * DAY_MS)) + 1;
+    return Math.floor((e - b) / (7 * DAY_MS)) � 1;
 }
 function setCourseEndDate(v) {
     commitChange();
@@ -832,11 +972,11 @@ function getStudentPaymentPeriods(s, includePartial = false) {
     const hol = db.holidays || [];
     const fm = s.financialMap || {};
     const skippedAt = j => hol.includes(j) || fm[j] == 3;
-    const payDateOf = j => base + (j * 7 + 5) * DAY_MS;
+    const payDateOf = j => base � (j * 7 � 5) * DAY_MS;
     const weeks = [];
     const totalReportWeeks = getReportWeeks();
-    for (let i = 0; i < totalReportWeeks; i++) {
-        const anchor = base + i * 7 * DAY_MS;
+    for (let i = 0; i < totalReportWeeks; i�) {
+        const anchor = base � i * 7 * DAY_MS;
         const payDate = payDateOf(i);
         const isHol = hol.includes(i);
         const isDis = fm[i] == 3;
@@ -846,7 +986,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
         if (activeP && !isHol && !isDis) {
             const totalWeeks = Math.round((payDate - activeP.startMs) / (7 * DAY_MS));
             let hCount = 0;
-            for (let j = 0; j <= i; j++) if (skippedAt(j) && payDateOf(j) >= activeP.startMs) hCount++;
+            for (let j = 0; j <= i; j�) if (skippedAt(j) && payDateOf(j) >= activeP.startMs) hCount�;
             const eff = totalWeeks - hCount;
             if (eff >= 0 && eff % activeP.cycle === 0) isPay = true;
         }
@@ -859,7 +999,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
         pending.push(w);
         if (w.isPay) {
             groups.push({
-                number: groups.length + 1, price: w.activeP.price, cycle: w.activeP.cycle,
+                number: groups.length � 1, price: w.activeP.price, cycle: w.activeP.cycle,
                 startLimit: w.activeP.startMs, payState: w.payState, payMs: payDateOf(w.i),
                 weeks: pending, sessions: []
             });
@@ -869,7 +1009,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
     if (includePartial && pending.length && pending.some(w => !w.isHol && !w.isDis)) {
         const lw = pending[pending.length - 1];
         groups.push({
-            number: groups.length + 1, price: lw.activeP.price, cycle: lw.activeP.cycle,
+            number: groups.length � 1, price: lw.activeP.price, cycle: lw.activeP.cycle,
             startLimit: lw.activeP.startMs, payState: 0, payMs: null, isPartial: true,
             weeks: pending, sessions: []
         });
@@ -881,7 +1021,7 @@ function getStudentPaymentPeriods(s, includePartial = false) {
             if (w.isHol || w.isDis) return;
             const anchorDow = new Date(w.anchor).getUTCDay();
             slots.forEach(sc => {
-                const date = w.anchor + ((JS_DAY[sc.day] - anchorDow + 7) % 7) * DAY_MS;
+                const date = w.anchor � ((JS_DAY[sc.day] - anchorDow � 7) % 7) * DAY_MS;
                 if (date < g.startLimit) return;
                 w.sessions.push({ date, day: sc.day, time: sc.time, min: timeToMinutes(sc.time) });
             });
@@ -889,13 +1029,13 @@ function getStudentPaymentPeriods(s, includePartial = false) {
             g.sessions.push(...w.sessions);
         });
         g.startMs = Math.max(g.weeks[0].anchor, g.startLimit);
-        g.endMs = g.weeks[g.weeks.length - 1].anchor + 6 * DAY_MS;
+        g.endMs = g.weeks[g.weeks.length - 1].anchor � 6 * DAY_MS;
     });
     return groups;
 }
 function periodRangeText(g) {
     const sy = new Date(g.startMs).getUTCFullYear(), ey = new Date(g.endMs).getUTCFullYear();
-    return (sy === ey ? fmtShort(g.startMs) : fmtLong(g.startMs)) + ' – ' + fmtLong(g.endMs);
+    return (sy === ey ? fmtShort(g.startMs) : fmtLong(g.startMs)) � ' ��� ' � fmtLong(g.endMs);
 }
 function defaultPeriodIndex(groups) {
     if (!groups.length) return 0;
@@ -911,27 +1051,27 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
     if (!g) return '';
     const teacherName = escHtml(db.teacherName || 'Teacher');
     const teacherPhone = (includePhone && db.teacherPhone)
-        ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${escHtml(db.teacherPhone)}</div>` : '';
+        ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">���� ${escHtml(db.teacherPhone)}</div>` : '';
     const color = student.color || '#3b82f6';
     const tdBase = 'padding: 6px 10px; border-bottom: 1px solid #334155; font-size: 13px;';
     let rows = '';
     let weekNo = 0;
     g.weeks.forEach(w => {
-        const wStart = Math.max(w.anchor, g.startLimit), wEnd = w.anchor + 6 * DAY_MS;
-        const range = `${fmtShort(wStart)} – ${fmtShort(wEnd)}`;
+        const wStart = Math.max(w.anchor, g.startLimit), wEnd = w.anchor � 6 * DAY_MS;
+        const range = `${fmtShort(wStart)} ��� ${fmtShort(wEnd)}`;
         if (w.isHol || w.isDis) {
-            const label = w.isHol ? '🌙 Holiday week' : '⏸ Break week';
-            rows += `<tr><td colspan="3" style="padding: 6px 10px; background:#312e81; color:#e0e7ff; font-size:11px; font-weight:bold; text-align:center; border-bottom:1px solid #334155;">${label} · ${range} · no sessions</td></tr>`;
+            const label = w.isHol ? '���� Holiday week' : '��� Break week';
+            rows �= `<tr><td colspan="3" style="padding: 6px 10px; background:#312e81; color:#e0e7ff; font-size:11px; font-weight:bold; text-align:center; border-bottom:1px solid #334155;">${label} �� ${range} �� no sessions</td></tr>`;
             return;
         }
-        weekNo++;
-        rows += `<tr><td colspan="3" style="padding: 5px 10px; background:#0f172a; color:#facc15; font-size:11px; font-weight:bold; border-bottom:1px solid #334155; border-top:1px solid #334155;">Week ${weekNo} &nbsp;·&nbsp; ${range}</td></tr>`;
+        weekNo�;
+        rows �= `<tr><td colspan="3" style="padding: 5px 10px; background:#0f172a; color:#facc15; font-size:11px; font-weight:bold; border-bottom:1px solid #334155; border-top:1px solid #334155;">Week ${weekNo} &nbsp;��&nbsp; ${range}</td></tr>`;
         if (!w.sessions.length) {
-            rows += `<tr><td colspan="3" style="${tdBase} color:#94a3b8; text-align:center;">No sessions</td></tr>`;
+            rows �= `<tr><td colspan="3" style="${tdBase} color:#94a3b8; text-align:center;">No sessions</td></tr>`;
         } else {
             w.sessions.forEach(se => {
-                rows += `<tr>
-<td style="${tdBase} font-weight:bold; color:#ffffff;">✦ ${dayNamesFull[se.day] || se.day}</td>
+                rows �= `<tr>
+<td style="${tdBase} font-weight:bold; color:#ffffff;">��� ${dayNamesFull[se.day] || se.day}</td>
 <td style="${tdBase} color:#e2e8f0;">${fmtLong(se.date)}</td>
 <td style="${tdBase} font-weight:bold; color:#38bdf8; text-align:right; white-space:nowrap;">${se.time}</td>
 </tr>`;
@@ -943,8 +1083,8 @@ function generatePeriodReportHTML(student, periodIdx, includeFinancials = false,
     }
     let financialsHTML = '';
     if (includeFinancials) {
-        const stateTxt = g.payState === 1 ? '<span style="color:#34d399;">Paid ✓</span>'
-            : (g.payState === 2 ? '<span style="color:#f87171;">Not paid ✕</span>' : '<span style="color:#fbbf24;">Due</span>');
+        const stateTxt = g.payState === 1 ? '<span style="color:#34d399;">Paid ���</span>'
+            : (g.payState === 2 ? '<span style="color:#f87171;">Not paid ���</span>' : '<span style="color:#fbbf24;">Due</span>');
         financialsHTML = `
 <div style="position:relative; background: #1e293b; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #475569; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
 <div>
@@ -980,9 +1120,9 @@ ${teacherPhone}
 </div>
 </div>
 <div style="position:relative; background: #1e293b; padding: 9px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155; border-left: 4px solid ${color};">
-<h3 style="margin: 0 0 4px 0; font-size: 18px; color: #ffffff;">🎓 ${escHtml(student.name)}</h3>
-<p style="margin: 0; font-size: 12px; color: #facc15; font-weight: bold;">Period ${g.number} &nbsp;·&nbsp; ${periodRangeText(g)}</p>
-<p style="margin: 3px 0 0; font-size: 11px; color: #94a3b8;">${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'} &nbsp;·&nbsp; every ${g.cycle} weeks</p>
+<h3 style="margin: 0 0 4px 0; font-size: 18px; color: #ffffff;">���� ${escHtml(student.name)}</h3>
+<p style="margin: 0; font-size: 12px; color: #facc15; font-weight: bold;">Period ${g.number} &nbsp;��&nbsp; ${periodRangeText(g)}</p>
+<p style="margin: 3px 0 0; font-size: 11px; color: #94a3b8;">${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'} &nbsp;��&nbsp; every ${g.cycle} weeks</p>
 </div>
 ${financialsHTML}
 <table style="position:relative; width: 100%; border-collapse: collapse; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">
@@ -996,7 +1136,7 @@ ${financialsHTML}
 <tbody>${rows}</tbody>
 </table>
 <div style="position:relative; text-align: center; border-top: 1px dashed #334155; padding-top: 8px; color: #64748b; font-size: 11px;">
-✦ Thank you for trusting us with your education ✦
+��� Thank you for trusting us with your education ���
 </div>
 </div>
 `;
@@ -1035,11 +1175,11 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
     const html = generatePeriodReportHTML(student, periodIdx, includeFinancials, includePhone);
     if (!html) { alert('No payment period found. Add a billing period first.'); return; }
     if (typeof html2canvas === 'undefined') { alert('The image library could not be loaded. Please check your internet connection.'); return; }
-    showToast('Preparing image…');
+    showToast('Preparing image���');
     try {
         const canvas = await buildReportCanvas(html);
         const g = getStudentPaymentPeriods(student)[periodIdx];
-        const safeName = String(student.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
+        const safeName = String(student.name).replace(/[^�w�u0600-�u06FF-]�, '_');
         const fileName = `Period_${g.number}_${safeName}.png`;
         if (share && navigator.canShare && navigator.share) {
             const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -1047,7 +1187,7 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
                 const file = new File([blob], fileName, { type: 'image/png' });
                 if (navigator.canShare({ files: [file] })) {
                     try {
-                        await navigator.share({ files: [file], title: `${student.name} – Period ${g.number}` });
+                        await navigator.share({ files: [file], title: `${student.name} ��� Period ${g.number}` });
                         return;
                     } catch (e) {
                         if (e && e.name === 'AbortError') return;
@@ -1061,7 +1201,7 @@ async function savePeriodImage(studentId, periodIdx, includeFinancials = false, 
         document.body.appendChild(link);
         link.click();
         link.remove();
-        showToast('Image saved ✅');
+        showToast('Image saved ���');
     } catch (e) {
         alert('Could not create the image. Please try again.');
     }
@@ -1084,12 +1224,12 @@ function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 function money(n) { return round2(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 function todayYMD() {
     const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() � '-' � String(d.getMonth() � 1).padStart(2, '0') � '-' � String(d.getDate()).padStart(2, '0');
 }
 function computeStudentStatement(s, cutoffMs, endOfDay) {
     const groups = getStudentPaymentPeriods(s, true);
     const canc = s.cancelledSessions || {};
-    const isCanc = se => !!canc[se.date + '|' + se.time];
+    const isCanc = se => !!canc[se.date � '|' � se.time];
     const slotsPerWeek = (s.schedules || []).filter(sc => JS_DAY[sc.day] != null).length;
     const res = { student: s, courses: [], days: [], earned: 0, done: 0, total: 0, cancelled: 0, lastPaid: null };
     const allDays = [];
@@ -1115,8 +1255,8 @@ function computeStudentStatement(s, cutoffMs, endOfDay) {
     res.courses = res.courses.filter(c => c.counted);
     allDays.filter(d => nums.has(d.course)).sort((a, b) => a.date - b.date || a.min - b.min).forEach(d => res.days.push(d));
     let run = 0;
-    res.days.forEach(d => { if (!d.cancelled) run += d.rate; d.running = round2(run); });
-    res.courses.forEach(c => { res.earned += c.earned; res.done += c.done; res.total += c.total; res.cancelled += c.cancelled; });
+    res.days.forEach(d => { if (!d.cancelled) run �= d.rate; d.running = round2(run); });
+    res.courses.forEach(c => { res.earned �= c.earned; res.done �= c.done; res.total �= c.total; res.cancelled �= c.cancelled; });
     res.earned = round2(res.earned);
     return res;
 }
@@ -1125,17 +1265,17 @@ function toggleCancelSession(studentId, dateMs, time) {
     if (!s) return;
     commitChange();
     if (!s.cancelledSessions) s.cancelledSessions = {};
-    const k = dateMs + '|' + time;
+    const k = dateMs � '|' � time;
     if (s.cancelledSessions[k]) delete s.cancelledSessions[k]; else s.cancelledSessions[k] = true;
     save();
     runAccount();
 }
 function balClass(b) { return b > 0 ? 'acc-owe' : (b < 0 ? 'acc-ok' : 'acc-zero'); }
-function balText(b) { return b > 0 ? money(b) + ' due' : (b < 0 ? money(-b) + ' paid ahead' : '0'); }
+function balText(b) { return b > 0 ? money(b) � ' due' : (b < 0 ? money(-b) � ' paid ahead' : '0'); }
 function openAccount(studentId) {
     closeAll();
     const sel = document.getElementById('accStudent');
-    sel.innerHTML = '<option value="all">All students</option>' +
+    sel.innerHTML = '<option value="all">All students</option>' �
         (db.students || []).map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
     sel.value = studentId != null ? String(studentId) : 'all';
     document.getElementById('accDate').value = todayYMD();
@@ -1151,37 +1291,37 @@ function runAccount() {
     const pick = document.getElementById('accStudent').value;
     const students = (db.students || []).filter(s => pick === 'all' || String(s.id) === pick);
     const stmts = students.map(s => computeStudentStatement(s, cutoff, true));
-    const grand = stmts.reduce((a, r) => a + r.earned, 0);
+    const grand = stmts.reduce((a, r) => a � r.earned, 0);
     const who = stmts.length === 1 ? escHtml(stmts[0].student.name) : 'All students';
     let html = `<div style="background:#0F172A; border:2px solid #FACC15; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
-<div style="color:#94a3b8; font-size:11px;">${who} — owed up to ${fmtLong(cutoff)}</div>
+<div style="color:#94a3b8; font-size:11px;">${who} ��� owed up to ${fmtLong(cutoff)}</div>
 <div style="color:#FACC15; font-size:30px; font-weight:900; line-height:1.2;">${money(grand)}</div></div>`;
     stmts.forEach(r => {
         const s = r.student;
         let inner = '';
-        inner += `<div style="font-size:10.5px; color:#64748b; margin-bottom:4px;">${r.lastPaid ? 'Counted after last payment: Course ' + r.lastPaid.number + ' (' + r.lastPaid.range + ')' : 'No payment recorded yet — counted from the start'}</div>`;
+        inner �= `<div style="font-size:10.5px; color:#64748b; margin-bottom:4px;">${r.lastPaid ? 'Counted after last payment: Course ' � r.lastPaid.number � ' (' � r.lastPaid.range � ')' : 'No payment recorded yet ��� counted from the start'}</div>`;
         if (!r.courses.length) {
-            inner += '<div style="font-size:11px; color:#64748b;">Nothing owed.</div>';
+            inner �= '<div style="font-size:11px; color:#64748b;">Nothing owed.</div>';
         } else {
-            inner += `<table class="acc-mini"><tr><th>Course</th><th class="l">Dates</th><th>Sessions</th><th>Total</th></tr>
-${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">✕</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}${c.cancelled ? ' <span class="acc-owe">(−' + c.cancelled + ')</span>' : ''}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
+            inner �= `<table class="acc-mini"><tr><th>Course</th><th class="l">Dates</th><th>Sessions</th><th>Total</th></tr>
+${r.courses.map(c => `<tr><td>${c.number}${c.payState === 2 ? ' <span class="acc-owe">���</span>' : ''}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}${c.cancelled ? ' <span class="acc-owe">(���' � c.cancelled � ')</span>' : ''}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}
 <tr style="background:#fef9c3; font-weight:bold;"><td colspan="2" class="l">Total</td><td>${r.done}</td><td>${money(r.earned)}</td></tr></table>`;
             if (r.days.length) {
-                inner += `<div class="acc-note">اضغط على أي حصة لجعلها ملغاة (لا تُحسب)، واضغط مرة أخرى لإرجاعها.</div>
+                inner �= `<div class="acc-note">�������� ������ ���� ������ ������������ ���������� (���� ����������)�� ���������� ������ �������� ����������������.</div>
 <table class="acc-mini"><tr><th class="l">Date</th><th class="l">Day</th><th>Time</th><th>Price</th><th>Total</th></tr>
 ${r.days.map(d => `<tr onclick="toggleCancelSession(${s.id}, ${d.date}, '${d.time}')" style="cursor:pointer; ${d.cancelled ? 'background:#fee2e2; color:#991b1b; text-decoration:line-through;' : ''}">
 <td class="l">${fmtLong(d.date)}</td><td class="l">${dayNamesFull[d.day] || d.day}</td><td>${d.time}</td>
 <td>${d.cancelled ? 'Cancelled' : money(d.rate)}</td><td><b>${money(d.running)}</b></td></tr>`).join('')}</table>`;
             }
         }
-        html += `<div class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><h4>${escHtml(s.name)} — ${money(r.earned)}</h4>${inner}</div>`;
+        html �= `<div class="acc-card" style="border-left-color:${s.color || '#3b82f6'}"><h4>${escHtml(s.name)} ��� ${money(r.earned)}</h4>${inner}</div>`;
     });
     out.innerHTML = html;
 }
 function generateAccountReportHTML(r, cutoff) {
     const s = r.student;
     const teacherName = escHtml(db.teacherName || 'Teacher');
-    const teacherPhone = db.teacherPhone ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">📱 ${escHtml(db.teacherPhone)}</div>` : '';
+    const teacherPhone = db.teacherPhone ? `<div style="font-size:11px; color:#94a3b8; font-weight:normal; margin-top:3px;">���� ${escHtml(db.teacherPhone)}</div>` : '';
     const td = 'padding:5px 8px; border-bottom:1px solid #334155; font-size:12px;';
     const th = 'padding:6px 8px; font-size:11px; color:#facc15; text-align:left;';
     let lastPaidTxt = r.lastPaid ? `Counted after last payment: Course ${r.lastPaid.number} (${r.lastPaid.range})` : 'No payment recorded yet';
@@ -1189,7 +1329,7 @@ function generateAccountReportHTML(r, cutoff) {
     if (r.courses.length) {
         courses = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
 <thead><tr style="background:#0f172a; border-bottom:2px solid #facc15;"><th style="${th}">Course</th><th style="${th}">Dates</th><th style="${th} text-align:center;">Sessions</th><th style="${th} text-align:right;">Total</th></tr></thead><tbody>
-${r.courses.map(c => `<tr style="page-break-inside:avoid;"><td style="${td} font-weight:bold;">${c.number}${c.payState === 2 ? ' <span style="color:#f87171;">✕</span>' : ''}</td><td style="${td}">${c.range}</td><td style="${td} text-align:center;">${c.done}/${c.total}${c.cancelled ? ' <span style="color:#f87171;">(−' + c.cancelled + ')</span>' : ''}</td><td style="${td} text-align:right; font-weight:bold; color:#34d399;">${money(c.earned)}</td></tr>`).join('')}
+${r.courses.map(c => `<tr style="page-break-inside:avoid;"><td style="${td} font-weight:bold;">${c.number}${c.payState === 2 ? ' <span style="color:#f87171;">���</span>' : ''}</td><td style="${td}">${c.range}</td><td style="${td} text-align:center;">${c.done}/${c.total}${c.cancelled ? ' <span style="color:#f87171;">(���' � c.cancelled � ')</span>' : ''}</td><td style="${td} text-align:right; font-weight:bold; color:#34d399;">${money(c.earned)}</td></tr>`).join('')}
 <tr style="background:#0f172a;"><td colspan="2" style="${td} font-weight:bold; color:#facc15;">Total</td><td style="${td} text-align:center; font-weight:bold;">${r.done}</td><td style="${td} text-align:right; font-weight:bold; color:#facc15;">${money(r.earned)}</td></tr></tbody></table>`;
         if (r.days.length) {
             days = `<table style="width:100%; border-collapse:collapse; margin-bottom:10px; background:#1e293b; border:1px solid #334155;">
@@ -1208,15 +1348,15 @@ ${r.days.map(d => { const cx = d.cancelled ? 'text-decoration:line-through; colo
 <div style="background:#1e293b; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px; border:1px solid #334155; text-align:right; line-height:1.3;"><div>${teacherName}</div>${teacherPhone}</div>
 </div>
 <div style="background:#1e293b; padding:9px 12px; border-radius:8px; margin-bottom:8px; border:1px solid #334155; border-left:4px solid ${s.color || '#3b82f6'};">
-<h3 style="margin:0 0 3px; font-size:18px;">🎓 ${escHtml(s.name)}</h3>
-<p style="margin:0; font-size:11px; color:#94a3b8;">Account up to ${fmtLong(cutoff)} · ${lastPaidTxt}</p>
+<h3 style="margin:0 0 3px; font-size:18px;">���� ${escHtml(s.name)}</h3>
+<p style="margin:0; font-size:11px; color:#94a3b8;">Account up to ${fmtLong(cutoff)} �� ${lastPaidTxt}</p>
 </div>
 <div style="background:#1e293b; padding:10px 12px; border-radius:8px; margin-bottom:10px; border:1px solid #475569; text-align:center;">
 <span style="font-size:11px; color:#94a3b8; display:block;">Amount Due</span>
 <strong style="font-size:28px; color:#facc15;">${money(r.earned)}</strong>
 </div>
 ${courses}${days}
-<div style="text-align:center; border-top:1px dashed #334155; padding-top:8px; color:#64748b; font-size:11px;">✦ Thank you for trusting us with your education ✦</div>
+<div style="text-align:center; border-top:1px dashed #334155; padding-top:8px; color:#64748b; font-size:11px;">��� Thank you for trusting us with your education ���</div>
 </div>`;
 }
 function printAccountReport() {
@@ -1249,7 +1389,7 @@ async function saveAccountImage() {
     const students = (db.students || []).filter(x => pick === 'all' || String(x.id) === pick);
     if (!students.length) { alert('No students to save.'); return; }
     if (typeof html2canvas === 'undefined') { alert('The image library could not be loaded. Please check your internet connection.'); return; }
-    showToast('Preparing image…');
+    showToast('Preparing image���');
     try {
         for (const st of students) {
             const r = computeStudentStatement(st, cutoff, true);
@@ -1261,7 +1401,7 @@ async function saveAccountImage() {
             try {
                 canvas = await html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#0f172a' });
             } finally { tempDiv.remove(); }
-            const safeName = String(st.name).replace(/[^\w\u0600-\u06FF-]+/g, '_');
+            const safeName = String(st.name).replace(/[^�w�u0600-�u06FF-]�, '_');
             const link = document.createElement('a');
             link.download = `Account_${safeName}_${document.getElementById('accDate').value}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -1270,7 +1410,7 @@ async function saveAccountImage() {
             link.remove();
             if (students.length > 1) await new Promise(res => setTimeout(res, 400));
         }
-        showToast('Image saved ✅');
+        showToast('Image saved ���');
     } catch (e) {
         alert('Could not create the image. Please try again.');
     }
@@ -1278,7 +1418,7 @@ async function saveAccountImage() {
 function resetAllStudentsStartDate() {
 let newDate = document.getElementById('courseBaseDate').value;
 if(!newDate) { alert('Please select a valid date first'); return; }
-if(confirm('Are you sure you want to reset course start date for all students to ' + newDate + '?')) {
+if(confirm('Are you sure you want to reset course start date for all students to ' � newDate � '?')) {
 commitChange();
 db.courseStartDate = newDate;
 db.students.forEach(student => {
@@ -1290,7 +1430,7 @@ closeAll();
 }
 }
 function exportBackup() {
-const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+const dataStr = "data:text/json;charset=utf-8," � encodeURIComponent(JSON.stringify(db, null, 2));
 const downloadAnchor = document.createElement('a');
 downloadAnchor.setAttribute("href", dataStr);
 downloadAnchor.setAttribute("download", `smart_tutor_backup_${new Date().toISOString().slice(0,10)}.json`);
@@ -1357,7 +1497,7 @@ slot.style.zIndex = '100';
 window.addEventListener('mousemove', (e) => {
 if (!isDraggingHorizontal || !currentSlot) return;
 let diffX = e.clientX - startX;
-let newOffset = initialOffset + diffX;
+let newOffset = initialOffset � diffX;
 currentSlot.style.marginLeft = `${newOffset}px`;
 });
 window.addEventListener('mouseup', () => {
@@ -1393,7 +1533,7 @@ document.getElementById('teacherPhoneInput').value = db.teacherPhone || '';
 let tAddrInput = document.getElementById('teacherAddressInput');
 if (tAddrInput) tAddrInput.value = db.teacherAddress || '';
 let tGeoStatus = document.getElementById('teacherGeoStatus');
-if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '✅ Location saved' : '';
+if (tGeoStatus) tGeoStatus.innerText = db.teacherLat != null ? '��� Location saved' : '';
 document.getElementById('courseBaseDate').value = db.courseStartDate || new Date().toISOString().slice(0,10);
 let endInput = document.getElementById('courseEndDate');
 if (endInput) endInput.value = getCourseEndYMD();
@@ -1401,7 +1541,7 @@ document.getElementById('sDate').value = db.courseStartDate || new Date().toISOS
 const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
 days.forEach(d => {
 let bilingualDayLabel = dayNamesMap[d] || d;
-grid.innerHTML += `
+grid.innerHTML �= `
 <div class="day-row">
 <div class="day-label">${bilingualDayLabel}</div>
 <div class="slots" id="slot-${d}"
@@ -1415,7 +1555,7 @@ let allSchedulesByDay = {};
 days.forEach(d => allSchedulesByDay[d] = []);
 if(db.students && Array.isArray(db.students)) {
 db.students.forEach(s => {
-sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+sSelect.innerHTML �= `<option value="${s.id}">${s.name}</option>`;
 if(s.schedules && Array.isArray(s.schedules)) {
 s.schedules.forEach(sc => {
 if(allSchedulesByDay[sc.day]) {
@@ -1437,7 +1577,7 @@ div.setAttribute('data-day', sc.day);
 div.setAttribute('data-time', sc.time);
 div.setAttribute('data-offset', sc.offset || 0);
 if (index < daySlots.length - 1) {
-let nextSc = daySlots[index + 1];
+let nextSc = daySlots[index � 1];
 let diffMinutes = nextSc.minutes - sc.minutes;
 if (diffMinutes > 60) {
 div.classList.add('wide-slot');
@@ -1452,7 +1592,7 @@ div.ondragstart = (e) => handleDragStart(e, sc.studentId, sc.day, sc.time);
 div.onclick = (e) => {
 if (!e.defaultPrevented) openSlotModal(sc.studentId, sc.day, sc.time);
 };
-let statusSign = sc.status === 1 ? ' ✓' : (sc.status === 2 ? ' ✕' : (sc.status === 3 ? ' ⟳' : ''));
+let statusSign = sc.status === 1 ? ' ���' : (sc.status === 2 ? ' ���' : (sc.status === 3 ? ' ���' : ''));
 div.innerHTML = `<b>${sc.time}</b><br>${sc.studentName}<div class="slot-status-indicator">${statusSign}</div>`;
 document.getElementById(`slot-${sc.day}`)?.appendChild(div);
 });
@@ -1462,18 +1602,18 @@ let dates = [];
 let startDateVal = db.courseStartDate || new Date().toISOString().slice(0,10);
 let dBase = new Date(startDateVal);
 const weeksCount = getReportWeeks();
-for(let i=0; i<weeksCount; i++){
+for(let i=0; i<weeksCount; i�){
 let thu = new Date(dBase);
-thu.setDate(dBase.getDate()+5);
+thu.setDate(dBase.getDate()�);
 dates.push(new Date(thu));
-dBase.setDate(dBase.getDate()+7);
+dBase.setDate(dBase.getDate()�);
 }
 let income = Array(dates.length).fill(0);
 let grandTotal = 0;
 if(db.students) {
 grandTotal = db.students.reduce((acc, s) => {
 let lastPeriod = s.periods && s.periods.length ? s.periods[s.periods.length-1] : { price: 0 };
-return acc + (lastPeriod.price || 0);
+return acc � (lastPeriod.price || 0);
 }, 0);
 }
 let studentRowsHTML = '';
@@ -1491,24 +1631,24 @@ let activeP = s.periods && s.periods.length ? [...s.periods].reverse().find(p =>
 if (activeP && !isHol && !isDis) {
 let totalWeeks = Math.round((d - new Date(activeP.startDate)) / (1000 * 60 * 60 * 24 * 7));
 let hCount = 0;
-for (let j = 0; j <= i; j++) {
+for (let j = 0; j <= i; j�) {
 let skipped = (db.holidays || []).includes(j) || s.financialMap[j] == 3;
-if (skipped && dates[j] >= new Date(activeP.startDate)) hCount++;
+if (skipped && dates[j] >= new Date(activeP.startDate)) hCount�;
 }
 let eff = totalWeeks - hCount;
-if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] += Number(activeP.price || 0); }
+if (eff >= 0 && eff % activeP.cycle === 0) { isPay = true; income[i] �= Number(activeP.price || 0); }
 }
-let symbol = st_val == 1 ? '✓' : (st_val == 2 ? '✕' : (st_val == 3 ? '⏸' : ''));
+let symbol = st_val == 1 ? '���' : (st_val == 2 ? '���' : (st_val == 3 ? '���' : ''));
 let stClass = st_val == 1 ? 'status-paid' : st_val == 2 ? 'status-notpaid' : st_val == 3 ? 'status-disabled' : '';
-row += `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${stClass}" onclick="${isHol?'':'st('+s.id+','+i+')'}">${isHol?'':symbol}</div></td>`;
+row �= `<td class="${isHol?'is-holiday-cell':''}"><div class="box ${isPay?'is-pay-week':''} ${stClass}" onclick="${isHol?'':'st('�.id�','�')'}">${isHol?'':symbol}</div></td>`;
 });
-row += '</tr>';
-studentRowsHTML += row;
+row �= '</tr>';
+studentRowsHTML �= row;
 });
 }
 body.innerHTML = studentRowsHTML;
-document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` + dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()+1}</th>`).join('');
-totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` + income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') + `</tr>`;
+document.getElementById('accHeader').innerHTML = `<th class="sticky-name grand-total-cell">${grandTotal}</th>` � dates.map((d, i) => `<th class="${(db.holidays||[]).includes(i)?'is-holiday-col':''}" onclick="th(${i})">${d.getDate()}/${d.getMonth()�}</th>`).join('');
+totalH.innerHTML = `<tr class="total-row" style="background:#000 !important; color:#facc15 !important;"><td class="sticky-name" style="background:#000 !important; color:#facc15 !important;">TOTAL</td>` � income.map(v => `<td style="background:#000; color:#facc15;">${v||'-'}</td>`).join('') � `</tr>`;
 initColors('colorGridAdd', 'sColor');
 }
 function openSlotModal(studentId, currentDay, currentTime) {
@@ -1520,7 +1660,7 @@ let currentStatus = slot?.status || 0;
 let days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
 let daysOptions = days.map(d => `<option value="${d}" ${d === currentDay ? 'selected' : ''}>${dayNamesMap[d]}</option>`).join('');
 document.getElementById('editFields').innerHTML = `
-<h3>Edit Session Slot ⏰</h3>
+<h3>Edit Session Slot ���</h3>
 <label>Student Name</label>
 <input value="${student.name}" disabled style="background:#f1f5f9; color:#64748b;">
 <label>Day</label>
@@ -1530,14 +1670,14 @@ document.getElementById('editFields').innerHTML = `
 <label>Attendance Status</label>
 <select id="editSlotStatus">
 <option value="0" ${currentStatus === 0 ? 'selected' : ''}>Normal / Unspecified</option>
-<option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (✓)</option>
-<option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (✕)</option>
-<option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (⟳)</option>
+<option value="1" ${currentStatus === 1 ? 'selected' : ''}>Present (���)</option>
+<option value="2" ${currentStatus === 2 ? 'selected' : ''}>Absent (���)</option>
+<option value="3" ${currentStatus === 3 ? 'selected' : ''}>Cancelled (���)</option>
 </select>
 <label>Horizontal Offset (px)</label>
 <input type="number" id="editSlotOffset" value="${currentOffset}" placeholder="e.g. 20 or -10">
-<button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes 💾</button>
-<button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot 🗑️</button>
+<button class="action-btn" style="width:100%; margin-top:10px; background:var(--primary); color:white;" onclick="updateSlot(${studentId}, '${currentDay}', '${currentTime}')">Save Changes ����</button>
+<button class="action-btn" style="width:100%; margin-top:8px; background:#ef4444; color:white;" onclick="deleteSlot(${studentId}, '${currentDay}', '${currentTime}')">Delete Slot �������</button>
 `;
 document.getElementById('editModal').classList.add('active');
 document.getElementById('overlay').classList.add('active');
@@ -1583,7 +1723,7 @@ commitChange();
 let s = db.students.find(x => x.id === id);
 if(s) {
 if(!s.financialMap) s.financialMap = {};
-s.financialMap[i] = ((s.financialMap[i] || 0) + 1) % 4;
+s.financialMap[i] = ((s.financialMap[i] || 0) � 1) % 4;
 save();
 }
 }
@@ -1592,7 +1732,7 @@ function closeAll() { document.querySelectorAll('.sidebar, .modal, .overlay').fo
 function initColors(id, radioName, sel = PALETTE[0]) {
 const target = document.getElementById(id);
 if(!target) return;
-target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') + `<input type="hidden" id="hidden_${id}" value="${sel}">`;
+target.innerHTML = PALETTE.map(c => `<div class="color-circle ${c === sel ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this, '${id}', '${radioName}', '${c}')"></div>`).join('') � `<input type="hidden" id="hidden_${id}" value="${sel}">`;
 }
 function selectColor(el, cid, r, c) { document.querySelectorAll(`#${cid} .color-circle`).forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById(`hidden_${cid}`).value = c; }
 function addStudent() {
@@ -1661,44 +1801,44 @@ let defPeriodIdx = defaultPeriodIndex(periodGroups);
 let periodOptions = periodGroups.map((g, idx) => `<option value="${idx}" ${idx === defPeriodIdx ? 'selected' : ''}>Period ${g.number}: ${periodRangeText(g)}</option>`).join('');
 let periodReportHtml = periodGroups.length ? `
 <div style="background:#fffbeb; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #fcd34d;">
-<div style="font-weight:bold; font-size:12px; color:#92400e; margin-bottom:4px;">📅 Payment Period Report (for parent)</div>
-<div style="font-size:10px; color:#78716c; margin-bottom:6px;">Dates & times of all sessions in the selected period. Based on saved data — press "Save All Changes" first if you edited anything.</div>
+<div style="font-weight:bold; font-size:12px; color:#92400e; margin-bottom:4px;">���� Payment Period Report (for parent)</div>
+<div style="font-size:10px; color:#78716c; margin-bottom:6px;">Dates & times of all sessions in the selected period. Based on saved data ��� press "Save All Changes" first if you edited anything.</div>
 <select id="reportPeriodSelect" style="margin-bottom:8px;">${periodOptions}</select>
 <div style="display:flex; gap:5px;">
-<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('print', ${s.id})">🖨️ PDF</button>
-<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('image', ${s.id})">📸 Image</button>
-<button class="action-btn" style="flex:1; background:#0ea5e9; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('share', ${s.id})">📤 Share</button>
+<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('print', ${s.id})">������� PDF</button>
+<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('image', ${s.id})">���� Image</button>
+<button class="action-btn" style="flex:1; background:#0ea5e9; color:white; justify-content:center; margin:0;" onclick="runPeriodReport('share', ${s.id})">���� Share</button>
 </div>
-</div>` : `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; font-size:11px; color:#64748b;">📅 Payment period report: add a billing period (start date, price, cycle) above and save to enable it.</div>`;
-let distHtml = s.distanceKm != null ? `<span class="distance-badge">📍 ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
+</div>` : `<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; font-size:11px; color:#64748b;">���� Payment period report: add a billing period (start date, price, cycle) above and save to enable it.</div>`;
+let distHtml = s.distanceKm != null ? `<span class="distance-badge">���� ${s.distanceKm} km from your home</span>` : (s.address ? `<span class="distance-badge" style="background:#fef3c7;color:#92400e;">Distance not calculated yet</span>` : '');
 document.getElementById('editFields').innerHTML = `
 <h3>Edit Student</h3>
 <label>Name</label><input id="en" value="${s.name}">
 <div id="ecg" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
-<label style="font-size:11px; color:#64748b;">📍 Student Address/Area</label>
+<label style="font-size:11px; color:#64748b;">���� Student Address/Area</label>
 <div class="addr-row">
 <input id="eAddress" value="${s.address || ''}" placeholder="e.g. Uptown, Springfield">
-<button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">📍</button>
+<button type="button" class="loc-icon-btn" onclick="openMapPicker({type:'edit', id:${s.id}})" title="Set location on map">����</button>
 </div>
 <div style="margin:-6px 0 12px;">${distHtml}</div>
 <hr>
 <h4>Billing Periods</h4>
 <div id="editPeriods">${phtml}</div>
-<button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">+ Add Price Period</button>
+<button class="action-btn" style="width:100%; margin-bottom:10px; background:#f8fafc; border:1px solid #ddd" onclick="addNewPeriod()">� Add Price Period</button>
 <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
 <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a; margin-bottom:8px;">
 <input type="checkbox" id="includeFinancialsCheckbox" style="width:18px; height:18px; margin:0;"> Show Account & Price Details in Print/Image
 </label>
 <label style="display:flex; align-items:center; gap:8px; font-weight:bold; cursor:pointer; color:#0f172a;">
-<input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number 📱 in Print/Image
+<input type="checkbox" id="includePhoneCheckbox" checked style="width:18px; height:18px; margin:0;"> Show Teacher Phone Number ���� in Print/Image
 </label>
 </div>
-<div style="font-size:11px; font-weight:bold; color:#64748b; margin-bottom:4px;">🗓️ Weekly schedule card</div>
+<div style="font-size:11px; font-weight:bold; color:#64748b; margin-bottom:4px;">������� Weekly schedule card</div>
 <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">🖨️ PDF</button>
-<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">📸 Save Image</button>
+<button class="action-btn" style="flex:1; background:#0f172a; color:white; justify-content:center;" onclick="printSingleStudent(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">������� PDF</button>
+<button class="action-btn" style="flex:1; background:#10b981; color:white; justify-content:center;" onclick="downloadStudentImage(${s.id}, document.getElementById('includeFinancialsCheckbox').checked, document.getElementById('includePhoneCheckbox').checked)">���� Save Image</button>
 </div>
-<button class="action-btn" style="width:100%; background:#f59e0b; color:#000; justify-content:center; margin:0 0 8px;" onclick="openAccount(${s.id})">💰 Account Statement (stop / balance)</button>
+<button class="action-btn" style="width:100%; background:#f59e0b; color:#000; justify-content:center; margin:0 0 8px;" onclick="openAccount(${s.id})">���� Account Statement (stop / balance)</button>
 ${periodReportHtml}
 <button class="action-btn" style="width:100%" onclick="up(${id})">Save All Changes</button>
 <button class="action-btn" style="background:red;color:white;width:100%;margin-top:5px" onclick="del(${id})">Delete Student</button>
@@ -1711,7 +1851,7 @@ async function recomputeStudentDistance(id) {
 let s = db.students.find(x => x.id === id);
 if (!s) return;
 let address = document.getElementById('eAddress').value.trim();
-if (!address) { alert('Please enter the student\'s address first'); return; }
+if (!address) { alert('Please enter the student�'s address first'); return; }
 if (db.teacherLat == null) { alert('You need to save your home address from Settings first'); return; }
 const loc = await geocodeAddress(address);
 if (loc) {
