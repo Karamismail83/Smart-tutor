@@ -140,6 +140,35 @@ justify-content:center; font-size:17px; cursor:pointer; box-shadow:0 2px 6px rgb
 /* ===== Account statement export: landscape one page per student ===== */
 body.print-single-student #studentPrintContainer.acc-land { padding: 0 !important; }
 #studentPrintContainer.acc-land .acc-page { page-break-inside: avoid; }
+
+/* ===== Main schedule export: golden frame + one landscape page ===== */
+#printArea{position:relative;border:3px double var(--gold);border-radius:16px;padding:20px 18px;background:var(--bg-dark);
+  box-shadow:inset 0 0 0 5px var(--bg-dark),inset 0 0 0 6px rgba(250,204,21,.5),0 0 18px rgba(250,204,21,.18);}
+.fc{position:absolute;width:14px;height:14px;border:3px solid var(--gold);pointer-events:none}
+.fc.tl{top:5px;left:5px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
+.fc.tr{top:5px;right:5px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
+.fc.bl{bottom:5px;left:5px;border-right:0;border-top:0;border-radius:0 0 0 6px}
+.fc.br{bottom:5px;right:5px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+.fm{position:absolute;left:50%;transform:translateX(-50%);color:var(--gold);background:var(--bg-dark);padding:0 8px;font-size:12px;line-height:1}
+.fm.t{top:-8px}.fm.b{bottom:-8px}
+.print-fit{width:1080px!important;margin:0 auto!important;box-sizing:border-box}
+.print-fit .acc-table-wrapper{overflow:visible!important}
+.print-fit .slots{overflow:visible!important}
+.print-fit .acc-table{width:100%!important;table-layout:fixed!important}
+.print-fit .acc-table th,.print-fit .acc-table td{min-width:0!important}
+.print-fit .acc-table th{font-size:6.5px!important;padding:3px 0!important}
+.print-fit .sticky-name{position:static!important;width:90px!important;font-size:8.5px!important}
+.print-fit .sub-price{font-size:7px!important}
+.print-fit .box{width:14px!important;height:18px!important;font-size:9px!important}
+.print-fit .total-row td{font-size:7px!important}
+.print-fit .grand-total-cell{font-size:9px!important}
+.exporting{width:1400px!important;box-sizing:border-box}
+.exporting .acc-table-wrapper{overflow:visible!important}
+.exporting .slots{overflow:visible!important}
+.exporting .acc-table{width:100%!important;table-layout:fixed!important}
+.exporting .acc-table th,.exporting .acc-table td{min-width:0!important}
+.exporting .sticky-name{position:static!important;width:110px!important}
+@media print{ html,body{height:auto!important} .container{page-break-after:avoid;page-break-inside:avoid} }
 </style>
 </head>
 <body>
@@ -180,6 +209,12 @@ body.print-single-student #studentPrintContainer.acc-land { padding: 0 !importan
 </div>
 <div id="studentPrintContainer"></div>
 <div id="toast"></div>
+<div class="modal" id="exportModal" style="width:min(100%,300px)">
+<h3 style="margin-top:0">Export 🖨️</h3>
+<button class="action-btn" style="width:100%;margin:0 0 8px;padding:12px;justify-content:center;background:#0f172a;color:#fff" onclick="exportSchedule('pdf')">🖨️ PDF (Landscape)</button>
+<button class="action-btn" style="width:100%;margin:0 0 8px;padding:12px;justify-content:center;background:#10b981;color:#fff" onclick="exportSchedule('image')">📸 Image</button>
+<button class="action-btn" style="width:100%;margin:0;padding:12px;justify-content:center;background:#0ea5e9;color:#fff" onclick="exportSchedule('share')">📤 Share</button>
+</div>
 <div class="sidebar" id="sidebar">
 <h2 style="margin-top:0">Settings ⚙️</h2>
 <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
@@ -242,12 +277,14 @@ body.print-single-student #studentPrintContainer.acc-land { padding: 0 !importan
 <div style="font-weight:900">SMART<span style="color:var(--gold)">TUTOR</span></div>
 <div style="display: flex; gap: 5px; align-items: center;">
 <button class="acc-icon-btn" onclick="openAccount()" title="Account Statement" aria-label="Account Statement">💰</button>
-<button class="action-btn" onclick="printFullSchedule()">🖨️ PDF</button>
+<button class="action-btn" onclick="openExportMenu()">🖨️ EXPORT</button>
 <button class="action-btn" onclick="undo()">↩️ UNDO</button>
 <button class="action-btn" onclick="toggleSidebar()">➕ ADD</button>
 </div>
 </header>
 <div class="container">
+<div id="printArea">
+<i class="fc tl"></i><i class="fc tr"></i><i class="fc bl"></i><i class="fc br"></i><span class="fm t">✦</span><span class="fm b">✦</span>
 <div class="teacher-box">
 <div class="profile-img-container" onclick="document.getElementById('tFile').click()">
 <img id="teacherImg" class="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
@@ -262,6 +299,7 @@ body.print-single-student #studentPrintContainer.acc-land { padding: 0 !importan
 <thead id="accTotalHeader"></thead>
 <tbody id="accBody"></tbody>
 </table>
+</div>
 </div>
 </div>
 <script>
@@ -685,10 +723,68 @@ render();
 }
 function commitChange() { historyStack.push(JSON.stringify(db)); save(); }
 function undo() { if (historyStack.length) { db = JSON.parse(historyStack.pop()); save(); } }
+function openExportMenu() {
+  closeAll();
+  document.getElementById('exportModal').classList.add('active');
+  document.getElementById('overlay').classList.add('active');
+}
+function exportSchedule(kind) {
+  closeAll();
+  if (kind === 'pdf') printFullSchedule();
+  else exportScheduleImage(kind === 'share');
+}
 function printFullSchedule() {
-document.getElementById('periodPrintPageStyle')?.remove();
-document.body.classList.remove('print-single-student');
-window.print();
+  closeAll();
+  document.getElementById('periodPrintPageStyle')?.remove();
+  document.body.classList.remove('print-single-student');
+  const st = document.createElement('style');
+  st.id = 'periodPrintPageStyle';
+  st.textContent = '@media print { @page { size: A4 landscape; margin: 5mm; } }';
+  document.head.appendChild(st);
+  const a = document.getElementById('printArea');
+  a.classList.add('print-fit');
+  a.style.zoom = '';
+  const h = a.offsetHeight;
+  a.style.zoom = Math.min(1, 725 / h);
+  const cleanup = () => {
+    a.classList.remove('print-fit');
+    a.style.zoom = '';
+    st.remove();
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(() => window.print(), 150);
+}
+async function exportScheduleImage(share) {
+  if (typeof html2canvas === 'undefined') { alert('The image library could not be loaded. Please check your internet connection.'); return; }
+  showToast('Preparing image…');
+  try {
+    const a = document.getElementById('printArea');
+    const canvas = await html2canvas(a, {
+      scale: 2, useCORS: true, backgroundColor: '#0F172A', windowWidth: 1400,
+      onclone: (doc) => { doc.getElementById('printArea').classList.add('exporting'); }
+    });
+    const fileName = 'Schedule_' + new Date().toISOString().slice(0, 10) + '.png';
+    if (share && navigator.canShare && navigator.share) {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (blob) {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Smart Tutor Schedule' }); return; }
+          catch (e) { if (e && e.name === 'AbortError') return; }
+        }
+      }
+    }
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('Image saved ✅');
+  } catch (e) {
+    alert('Could not create the image. Please try again.');
+  }
 }
 function generateStudentReportHTML(student, includeFinancials = false, includePhone = false) {
 let teacherName = db.teacherName || 'Teacher';
