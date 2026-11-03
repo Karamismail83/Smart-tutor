@@ -2485,7 +2485,6 @@ hb.className='acc-icon-btn';hb.title='Appearance';hb.setAttribute('aria-label','
 hb.onclick=function(){closeAll();m.classList.add('active');document.getElementById('overlay').classList.add('active');refresh();};
 var hdr=document.querySelector('header > div:last-child');
 if(hdr)hdr.insertBefore(hb,hdr.firstChild);
-
 mo.observe(document.body,CFG);
 if(lang==='ar')walk(document.body);
 refresh();
