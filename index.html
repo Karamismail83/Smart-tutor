@@ -2380,6 +2380,116 @@ ${courses}${days}
   box.addEventListener('pointerup', () => endDrag(true));
   box.addEventListener('pointercancel', () => endDrag(false));
 })();
+ return w[1]+r+w[3];
+}
+function trHTML(h){
+ if(lang!=='ar'||!h)return h;
+ h=h.replace(/>([^<>]+)</g,function(m,t){return '>'+tr(t)+'<'});
+ h=h.replace(/text-align:\s*left/g,'text-align:@@').replace(/text-align:\s*right/g,'text-align:left').replace(/text-align:@@/g,'text-align:right');
+ return h.replace(/<div /,'<div dir="rtl" ');
+}
+
+/* ---------- DOM translation (reversible) ---------- */
+var store=new WeakMap(),AT=['placeholder','title','aria-label'];
+function doText(n){
+ var rec=store.get(n);
+ if(rec&&n.nodeValue===rec.t){if(lang!=='ar'){n.nodeValue=rec.o;store.delete(n);}return;}
+ if(rec)store.delete(n);
+ if(lang!=='ar')return;
+ var t=tr(n.nodeValue);
+ if(t!==n.nodeValue){store.set(n,{o:n.nodeValue,t:t});n.nodeValue=t;}
+}
+function doAttr(el){
+ if(!el.hasAttribute)return;
+ var o=el.__i18n||(el.__i18n={});
+ AT.forEach(function(a){
+  if(!el.hasAttribute(a))return;
+  var cur=el.getAttribute(a),rec=o[a];
+  if(rec&&cur===rec.t){if(lang!=='ar'){el.setAttribute(a,rec.o);delete o[a];}return;}
+  if(rec)delete o[a];
+  if(lang!=='ar')return;
+  var t=tr(cur);
+  if(t!==cur){o[a]={o:cur,t:t};el.setAttribute(a,t);}
+ });
+}
+function walk(root){
+ if(!root)return;
+ if(root.nodeType===3){doText(root);return;}
+ if(root.nodeType!==1||/^(SCRIPT|STYLE)$/.test(root.tagName))return;
+ doAttr(root);
+ root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(doAttr);
+ var tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,list=[];
+ while((n=tw.nextNode())){var p=n.parentNode&&n.parentNode.tagName;if(p!=='SCRIPT'&&p!=='STYLE')list.push(n);}
+ list.forEach(doText);
+}
+var CFG={childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:AT};
+var mo=new MutationObserver(function(ms){
+ if(lang!=='ar')return;
+ mo.disconnect();
+ ms.forEach(function(m){
+  if(m.type==='childList')m.addedNodes.forEach(walk);
+  else if(m.type==='characterData')walk(m.target);
+  else doAttr(m.target);
+ });
+ mo.observe(document.body,CFG);
+});
+
+/* ---------- Hooks into the app ---------- */
+window.fmtUTC=function(ms,opts){return new Date(ms).toLocaleDateString(lang==='ar'?'ar-u-nu-latn':'en-GB',Object.assign({timeZone:'UTC'},opts));};
+['generateStudentReportHTML','generatePeriodReportHTML','accLandHTML','generateAccountReportHTML'].forEach(function(n){
+ var f=window[n];if(typeof f!=='function')return;
+ window[n]=function(){return trHTML(f.apply(this,arguments));};
+});
+var oa=window.alert.bind(window),oc=window.confirm.bind(window);
+window.alert=function(m){return oa(tr(String(m)));};
+window.confirm=function(m){return oc(tr(String(m)));};
+var oR=window.render;
+window.render=function(){oR.apply(this,arguments);document.querySelectorAll('#accTotalHeader td').forEach(function(td){td.style.setProperty('color','var(--gold-bright)','important');});};
+var oE=window.exportScheduleImage;
+if(typeof oE==='function')window.exportScheduleImage=async function(){var p=R.dataset.mode;R.dataset.mode='dark';try{return await oE.apply(this,arguments);}finally{R.dataset.mode=p;}};
+
+/* ---------- Appearance modal ---------- */
+var m=document.createElement('div');
+m.className='modal';m.id='appearanceModal';m.style.width='min(100%,320px)';
+m.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Appearance 🎨</h3><div class="map-icon-btn" onclick="closeAll()">✕</div></div>'+
+'<span class="ap-lbl">Language</span><div class="ap-row" id="apLang"><button class="ap-btn" data-v="en">English</button><button class="ap-btn" data-v="ar">العربية</button></div>'+
+'<span class="ap-lbl">Mode</span><div class="ap-row" id="apMode"><button class="ap-btn" data-v="light">☀️ Light (Day)</button><button class="ap-btn" data-v="dark">🌙 Dark (Night)</button></div>'+
+'<span class="ap-lbl">Theme color</span><div class="ap-row" id="apTheme" style="flex-wrap:wrap;gap:10px">'+
+Object.keys(THEMES).map(function(k){return '<div class="color-circle" data-v="'+k+'" style="background:'+THEMES[k]+'"></div>';}).join('')+'</div>';
+document.body.appendChild(m);
+function refresh(){
+ m.querySelectorAll('#apLang .ap-btn').forEach(function(b){b.classList.toggle('on',b.dataset.v===lang);});
+ m.querySelectorAll('#apMode .ap-btn').forEach(function(b){b.classList.toggle('on',b.dataset.v===mode);});
+ m.querySelectorAll('#apTheme .color-circle').forEach(function(c){c.classList.toggle('selected',c.dataset.v===theme);});
+}
+function setLang(l,init){
+ lang=l;lsSet('tutor_lang',l);applyLook();
+ mo.disconnect();
+ if(!init){try{window.render();}catch(e){}}
+ walk(document.body);
+ mo.observe(document.body,CFG);
+ var am=document.getElementById('accountModal');
+ if(!init&&am&&am.classList.contains('active')&&window.runAccount)window.runAccount();
+ refresh();
+}
+m.addEventListener('click',function(e){
+ var b=e.target.closest('[data-v]');if(!b)return;
+ var id=b.parentElement.id,v=b.dataset.v;
+ if(id==='apLang'){setLang(v);return;}
+ if(id==='apMode'){mode=v;lsSet('tutor_mode',v);}
+ if(id==='apTheme'){theme=v;lsSet('tutor_theme',v);}
+ applyLook();refresh();
+});
+var hb=document.createElement('button');
+hb.className='acc-icon-btn';hb.title='Appearance';hb.setAttribute('aria-label','Appearance');hb.textContent='🎨';
+hb.onclick=function(){closeAll();m.classList.add('active');document.getElementById('overlay').classList.add('active');refresh();};
+var hdr=document.querySelector('header > div:last-child');
+if(hdr)hdr.insertBefore(hb,hdr.firstChild);
+
+mo.observe(document.body,CFG);
+if(lang==='ar')walk(document.body);
+refresh();
+})();
 </script>
 </body>
 </html>
