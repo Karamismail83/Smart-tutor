@@ -852,5 +852,194 @@ function handleImageUpload(input){
 
 window.onload=()=>{loadPhoto();$('cTime').innerHTML=timeOptions();render()};
 </script>
+<style>
+html[dir=rtl] .acc-table-wrapper,html[dir=rtl] #pickerMap{direction:ltr}
+html[dir=rtl] .sticky-name{direction:rtl;text-align:right!important}
+html[dir=rtl] .acc-mini .l{text-align:right}
+html[dir=rtl] .sidebar,html[dir=rtl] .modal{text-align:right}
+#langBtn{padding:6px 8px}
+</style>
+<script>
+/* ===== Smart Tutor: Arabic / English language switch ===== */
+(function(){
+let LANG='en';try{LANG=localStorage.getItem('tutor_lang')||'en'}catch(e){}
+const FULL_EN=Object.assign({},FULL);
+const FULL_AR={Sat:'السبت',Sun:'الأحد',Mon:'الاثنين',Tue:'الثلاثاء',Wed:'الأربعاء',Thu:'الخميس'};
+
+const D={
+'SMART':'المعلم ','TUTOR':'الذكي','Smart Tutor':'المعلم الذكي','Teacher':'المعلم',
+'Sat':'السبت','Sun':'الأحد','Mon':'الاثنين','Tue':'الثلاثاء','Wed':'الأربعاء','Thu':'الخميس',
+'➕ ADD':'➕ إضافة','↩️ UNDO':'↩️ تراجع','🖨️ EXPORT':'🖨️ تصدير','TOTAL':'الإجمالي',
+'Account Statement 💰':'كشف الحساب 💰','Choose student':'اختر الطالب','All students':'كل الطلاب',
+'Account up to this date (that day is included)':'الحساب حتى هذا التاريخ (يشمل ذلك اليوم)',
+'📸 Image':'📸 صورة','📤 Share':'📤 مشاركة','✅ Confirm This Location':'✅ تأكيد هذا الموقع',
+'Search, or paste coordinates / a Google Maps link...':'ابحث، أو الصق إحداثيات / رابط خرائط جوجل...',
+'Export 🖨️':'تصدير 🖨️','🖨️ PDF (Landscape)':'🖨️ PDF (أفقي)',
+'Settings ⚙️':'الإعدادات ⚙️','Teacher Phone 📱':'هاتف المعلم 📱','e.g. +1 555 0100':'مثال: +966 50 000 0000',
+'🏠 Your Home Address':'🏠 عنوان منزلك','Address / area':'العنوان / المنطقة','Teacher Name':'اسم المعلم',
+'Reset Course Start Date 📅':'إعادة تعيين تاريخ بداية الدورة 📅','Reset All Dates 🔄':'إعادة تعيين كل التواريخ 🔄',
+'End of study weeks (default 1 July):':'نهاية أسابيع الدراسة (الافتراضي 1 يوليو):',
+'Backup & Restore 💾':'النسخ الاحتياطي والاستعادة 💾','Export Backup 📤':'تصدير نسخة احتياطية 📤','Import Backup 📥':'استيراد نسخة احتياطية 📥',
+'Add Student':'إضافة طالب','Name':'الاسم','Price':'السعر','Student address / area':'عنوان / منطقة الطالب','Save Student':'حفظ الطالب',
+'Add Slot (Session)':'إضافة موعد (حصة)','Save Slot':'حفظ الموعد','Select Student':'اختر الطالب',
+'✅ Location set':'✅ تم تحديد الموقع','✅ Location saved':'✅ تم حفظ الموقع',
+/* edit slot */
+'Edit Session Slot ⏰':'تعديل موعد الحصة ⏰','Student Name':'اسم الطالب','Day':'اليوم','Time':'الوقت','Date':'التاريخ',
+'Attendance Status':'حالة الحضور','Normal / Unspecified':'عادي / غير محدد','Present (✓)':'حاضر (✓)','Absent (✕)':'غائب (✕)','Cancelled (⟳)':'ملغاة (⟳)',
+'Horizontal Offset (px)':'الإزاحة الأفقية (px)','Save Changes 💾':'حفظ التغييرات 💾','Delete Slot 🗑️':'حذف الموعد 🗑️',
+/* edit student */
+'Edit Student':'تعديل الطالب','Billing Periods':'فترات الفوترة','Start Date':'تاريخ البدء',
+'Billing Cycle (every N weeks)':'دورة الفوترة (كل N أسبوع)','+ Add Price Period':'+ إضافة فترة سعر',
+'Show Account & Price Details in Print/Image':'عرض تفاصيل الحساب والسعر في الطباعة/الصورة',
+'🗓️ Weekly schedule card':'🗓️ بطاقة الجدول الأسبوعي','📸 Save Image':'📸 حفظ صورة',
+'💰 Account Statement (stop / balance)':'💰 كشف الحساب (إيقاف / الرصيد)',
+'Save All Changes':'حفظ كل التغييرات','Delete Student':'حذف الطالب',
+'📅 Payment Period Report (for parent)':'📅 تقرير فترة الدفع (لولي الأمر)',
+'Based on saved data — press "Save All Changes" first if you edited anything.':'مبني على البيانات المحفوظة — اضغط «حفظ كل التغييرات» أولاً إن عدّلت شيئاً.',
+'📅 Add a billing period and save to enable the payment period report.':'📅 أضف فترة فوترة واحفظ لتفعيل تقرير فترة الدفع.',
+'Distance not calculated yet':'لم تُحسب المسافة بعد',
+/* account statement */
+'No payment recorded yet — counted from the start':'لا توجد دفعة مسجّلة بعد — يُحسب من البداية',
+'Nothing owed.':'لا يوجد مبلغ مستحق.','Course':'الدورة','Dates':'التواريخ','Sessions':'الحصص','Total':'الإجمالي','Cancelled':'ملغاة',
+'• Tap a session to cancel it (not charged); tap again to restore.':'• اضغط على حصة لإلغائها (لا تُحتسب)، واضغط مجدداً لاستعادتها.',
+'• To compensate a cancelled session: drag its ⠿ and drop it onto the session that will run double (×2).':'• لتعويض حصة ملغاة: اسحب ⠿ الخاص بها وأسقطه على الحصة التي ستُضاعَف (×2).',
+'• Tap a badge to unmerge.':'• اضغط على الشارة لفك الدمج.',
+/* cards */
+'Official Weekly Schedule':'الجدول الأسبوعي الرسمي','Here are the assigned weekly session times:':'مواعيد الحصص الأسبوعية المحددة:',
+'No scheduled slots found for this student.':'لا توجد مواعيد مجدولة لهذا الطالب.','Amount Due:':'المبلغ المستحق:','Amount Due':'المبلغ المستحق',
+'Billing Cycle:':'دورة الفوترة:','Payment Period Schedule':'جدول فترة الدفع','No sessions':'لا توجد حصص',
+'Due Date:':'تاريخ الاستحقاق:','Status:':'الحالة:','Paid ✓':'مدفوع ✓','Not paid ✕':'غير مدفوع ✕','Due':'مستحق',
+'Account Statement':'كشف الحساب','✦ Thank you for trusting us with your education ✦':'✦ شكراً لثقتكم بنا في تعليمكم ✦',
+/* toasts / messages */
+'Home location saved ✅':'تم حفظ موقع المنزل ✅','Student location set ✅':'تم تحديد موقع الطالب ✅','Student location updated ✅':'تم تحديث موقع الطالب ✅',
+'Cannot merge into a cancelled session':'لا يمكن الدمج في حصة ملغاة',
+'This session already has a compensation, unmerge it first':'هذه الحصة لها تعويض بالفعل، فك الدمج أولاً',
+'Preparing image…':'جارٍ تجهيز الصورة…','Image saved ✅':'تم حفظ الصورة ✅',
+'The image library could not be loaded. Check your connection.':'تعذّر تحميل مكتبة الصور. تحقق من اتصالك.',
+'The image library could not be loaded.':'تعذّر تحميل مكتبة الصور.',
+'Could not create the image. Please try again.':'تعذّر إنشاء الصورة. حاول مرة أخرى.',
+'No payment period found. Add a billing period first.':'لا توجد فترة دفع. أضف فترة فوترة أولاً.',
+'Please select a valid date first':'الرجاء اختيار تاريخ صحيح أولاً','Invalid backup file!':'ملف النسخة الاحتياطية غير صالح!',
+'Restore this backup? Current data will be replaced.':'استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية.',
+'Delete student and all their records?':'حذف الطالب وكل سجلاته؟',
+"This browser doesn't support location detection":'هذا المتصفح لا يدعم تحديد الموقع','Please pick a date.':'الرجاء اختيار تاريخ.','No students to export.':'لا يوجد طلاب للتصدير.',
+/* map */
+'⏳ Finding your location...':'⏳ جارٍ تحديد موقعك...','⚠️ Could not get your location, drag the pin':'⚠️ تعذّر تحديد موقعك، حرّك الدبوس',
+'⏳ Saving location...':'⏳ جارٍ حفظ الموقع...','✅ Jumped to the pasted location':'✅ تم الانتقال إلى الموقع الملصق',
+'⏳ Searching...':'⏳ جارٍ البحث...','No results.':'لا توجد نتائج.',
+'🔎 Not found? Open on Google Maps and paste the coordinates here':'🔎 لم تجده؟ افتح خرائط جوجل والصق الإحداثيات هنا',
+"Short Google links can't be read here. Open it in your browser and paste the full link (contains @lat,lng) or the coordinates.":'لا يمكن قراءة روابط جوجل المختصرة هنا. افتحه في المتصفح والصق الرابط الكامل (يحتوي @lat,lng) أو الإحداثيات.'
+};
+
+/* phrase rules for dynamic strings */
+const R=[
+[/Counted after last payment: Course (\d+)/g,'محسوب بعد آخر دفعة: الدورة $1'],
+[/No payment recorded yet/g,'لا توجد دفعة مسجّلة بعد'],
+[/ — owed up to /g,' — المستحق حتى '],
+[/Account up to /g,'الحساب حتى '],
+[/Merged ✅ session is now (×\d+)/g,'تم الدمج ✅ الحصة الآن $1'],
+[/Are you sure you want to reset course start date for all students to (.+)\?/g,'هل أنت متأكد من إعادة تعيين تاريخ بداية الدورة لجميع الطلاب إلى $1؟'],
+[/Holiday week/g,'أسبوع إجازة'],[/Break week/g,'أسبوع توقف'],[/no sessions/g,'بدون حصص'],
+[/Period (\d+)/g,'الفترة $1'],[/Week (\d+)/g,'الأسبوع $1'],
+[/(\d+) sessions?/g,'$1 حصة'],
+[/[Ee]very (\d+) [Ww]eeks/g,'كل $1 أسابيع'],
+[/(\S+) km from your home/g,'$1 كم من منزلك'],
+[/Coordinates:/g,'الإحداثيات:'],
+[/(\d{1,2}:\d{2}) AM/g,'$1 ص'],[/(\d{1,2}:\d{2}) PM/g,'$1 م']
+];
+function tr(s){
+  const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s),core=m[2];
+  if(!core)return s;
+  let out;
+  if(Object.prototype.hasOwnProperty.call(D,core))out=D[core];
+  else{out=core;for(const x of R)out=out.replace(x[0],x[1])}
+  return m[1]+out+m[3];
+}
+
+/* ---- DOM translation with restore ---- */
+const recs=new WeakMap();
+function procText(n){
+  const p=n.parentNode;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName))return;
+  const r=recs.get(n);
+  if(LANG==='ar'){
+    if(r&&n.nodeValue===r.t)return;
+    const o=n.nodeValue,t=tr(o);
+    if(t===o){recs.delete(n);return}
+    if(p.nodeName==='OPTION'&&!p.hasAttribute('value'))p.setAttribute('value',o.trim());
+    recs.set(n,{o,t});n.nodeValue=t;
+  }else if(r&&n.nodeValue===r.t){n.nodeValue=r.o;recs.delete(n)}
+}
+function procEl(e){
+  for(const a of['placeholder','title']){
+    if(!e.hasAttribute||!e.hasAttribute(a)&&!e.hasAttribute('data-o-'+a))continue;
+    const k='data-o-'+a;
+    if(LANG==='ar'){
+      if(!e.hasAttribute(k)){const o=e.getAttribute(a),t=tr(o);if(t!==o){e.setAttribute(k,o);e.setAttribute(a,t)}}
+    }else if(e.hasAttribute(k)){e.setAttribute(a,e.getAttribute(k));e.removeAttribute(k)}
+  }
+}
+function scan(root){
+  if(root.nodeType===3){procText(root);return}
+  if(root.nodeType!==1&&root.nodeType!==11)return;
+  if(root.nodeType===1)procEl(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n;
+  while(n=w.nextNode())n.nodeType===3?procText(n):procEl(n);
+}
+const mo=new MutationObserver(ms=>{
+  mo.disconnect();
+  ms.forEach(m=>{if(m.type==='characterData')procText(m.target);else m.addedNodes.forEach(scan)});
+  attach();
+});
+function attach(){mo.observe(document.body,{childList:true,subtree:true,characterData:true})}
+
+/* ---- exported cards (print / image) ---- */
+function trHTML(h){
+  if(LANG!=='ar')return h;
+  h=h.replace(/text-align:\s*left/g,'text-align:@@').replace(/text-align:\s*right/g,'text-align:left').replace(/text-align:@@/g,'text-align:right');
+  const t=document.createElement('template');t.innerHTML=h;
+  const w=document.createTreeWalker(t.content,NodeFilter.SHOW_TEXT);let n;
+  while(n=w.nextNode())n.nodeValue=tr(n.nodeValue);
+  const r=t.content.firstElementChild;
+  if(r)r.setAttribute('style','direction:rtl;'+(r.getAttribute('style')||''));
+  return t.innerHTML;
+}
+['studentReportHTML','periodReportHTML','accLandHTML'].forEach(name=>{
+  const f=window[name];window[name]=function(){return trHTML(f.apply(this,arguments))};
+});
+
+/* ---- dates in Arabic month names (Western digits) ---- */
+const ol=Date.prototype.toLocaleDateString;
+Date.prototype.toLocaleDateString=function(l,o){return ol.call(this,(LANG==='ar'&&l==='en-GB')?'ar-u-nu-latn':l,o)};
+
+/* ---- alert / confirm ---- */
+const oa=window.alert.bind(window),oc=window.confirm.bind(window);
+window.alert=m=>oa(LANG==='ar'?tr(String(m)):m);
+window.confirm=m=>oc(LANG==='ar'?tr(String(m)):m);
+
+/* ---- button + apply ---- */
+const btn=document.createElement('button');
+btn.id='langBtn';btn.className='action-btn';
+const hb=document.querySelector('header > div:last-child');hb.insertBefore(btn,hb.firstChild);
+btn.onclick=()=>setLang(LANG==='ar'?'en':'ar');
+
+function apply(){
+  const ar=LANG==='ar';
+  document.documentElement.lang=ar?'ar':'en';
+  document.documentElement.dir=ar?'rtl':'ltr';
+  document.title=ar?'المعلم الذكي':'Smart Tutor';
+  Object.assign(FULL,ar?FULL_AR:FULL_EN);
+  mo.disconnect();scan(document.body);attach();
+  btn.textContent=ar?'🌐 EN':'🌐 عربي';
+}
+function setLang(l){
+  LANG=l;try{localStorage.setItem('tutor_lang',l)}catch(e){}
+  const accOpen=$('accountModal').classList.contains('active');
+  closeAll();Object.assign(FULL,l==='ar'?FULL_AR:FULL_EN);
+  render();apply();
+  if(accOpen){openModal('accountModal');runAccount()}
+}
+apply();
+})();
+</script>
 </body>
 </html>
