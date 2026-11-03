@@ -2654,5 +2654,201 @@ html[dir=rtl] body{font-family:-apple-system,"Segoe UI",Tahoma,Roboto,sans-serif
   setTheme(theme); setLang(lang);
 })();
 </script>
+<!-- Smart Tutor add-on: English/Arabic switch + themes (day/night). Paste this whole block right before </body> -->
+<style id="st-addon-css">
+html[data-theme=night]{--t-surface:#1E293B;--t-text:#fff;--t-border:rgba(255,255,255,.15);--t-accent:#FACC15;--t-onaccent:#000}
+html[data-theme=google]{--t-bg:#f8f9fa;--t-surface:#fff;--t-text:#202124;--t-muted:#5f6368;--t-border:#dadce0;--t-accent:#1a73e8;--t-onaccent:#fff;--t-radius:12px;--t-btn:999px;--t-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);--t-lbg:#e8f0fe;--t-ltx:#1967d2;--t-font:"Google Sans",Roboto,Arial,sans-serif;color-scheme:light}
+html[data-theme=apple]{--t-bg:#f2f2f7;--t-surface:#fff;--t-text:#1c1c1e;--t-muted:#8e8e93;--t-border:#e5e5ea;--t-accent:#007aff;--t-onaccent:#fff;--t-radius:16px;--t-btn:12px;--t-shadow:0 1px 4px rgba(0,0,0,.08);--t-lbg:#eaf2ff;--t-ltx:#0a60d6;--t-font:-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;color-scheme:light}
+html[data-theme=notion]{--t-bg:#f7f6f3;--t-surface:#fff;--t-text:#37352f;--t-muted:#787774;--t-border:#e9e9e7;--t-accent:#2383e2;--t-onaccent:#fff;--t-radius:6px;--t-btn:4px;--t-shadow:none;--t-lbg:#f1f1ef;--t-ltx:#37352f;--t-font:ui-sans-serif,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+html[data-theme=github]{--t-bg:#0d1117;--t-surface:#161b22;--t-text:#e6edf3;--t-muted:#8b949e;--t-border:#30363d;--t-accent:#2ea043;--t-onaccent:#fff;--t-radius:6px;--t-btn:6px;--t-shadow:none;--t-lbg:#21262d;--t-ltx:#58a6ff;--t-font:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;color-scheme:dark}
+html[data-theme=x]{--t-bg:#000;--t-surface:#16181c;--t-text:#e7e9ea;--t-muted:#71767b;--t-border:#2f3336;--t-accent:#1d9bf0;--t-onaccent:#fff;--t-radius:16px;--t-btn:999px;--t-shadow:none;--t-lbg:#1d9bf0;--t-ltx:#fff;--t-font:"TwitterChirp",-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
+html[data-theme=spotify]{--t-bg:#121212;--t-surface:#1f1f1f;--t-text:#fff;--t-muted:#b3b3b3;--t-border:#2a2a2a;--t-accent:#1ed760;--t-onaccent:#000;--t-radius:10px;--t-btn:999px;--t-shadow:none;--t-lbg:#1ed760;--t-ltx:#000;--t-font:"Circular","Helvetica Neue",Helvetica,Arial,sans-serif;color-scheme:dark}
+html[data-theme]:not([data-theme=night]){--bg-dark:var(--t-bg);--slate:var(--t-surface);--gold:var(--t-accent)}
+html[data-theme]:not([data-theme=night]) body{background:var(--t-bg);color:var(--t-text);font-family:var(--t-font)}
+html[data-theme]:not([data-theme=night]) header{background:var(--t-surface);color:var(--t-text);border-bottom:1px solid var(--t-border);box-shadow:var(--t-shadow)}
+html[data-theme]:not([data-theme=night]) .action-btn{background:var(--t-accent);color:var(--t-onaccent);border-radius:var(--t-btn);font-family:inherit;font-weight:600;padding:7px 13px}
+html[data-theme]:not([data-theme=night]) .teacher-box,html[data-theme]:not([data-theme=night]) .day-row{background:var(--t-surface);border:1px solid var(--t-border);border-radius:var(--t-radius);box-shadow:var(--t-shadow)}
+html[data-theme]:not([data-theme=night]) .day-label{background:var(--t-lbg);color:var(--t-ltx);border-radius:var(--t-radius) 0 0 var(--t-radius)}
+html[data-theme]:not([data-theme=night]) .slot{background:var(--t-bg);color:var(--t-text);border:1px solid var(--t-border);border-radius:8px;box-shadow:none}
+html[data-theme]:not([data-theme=night]) #teacherName{color:var(--t-text);border-bottom-color:var(--t-border)}
+html[data-theme]:not([data-theme=night]) .acc-table-wrapper{border:1px solid var(--t-border);border-radius:var(--t-radius)}
+html[data-theme]:not([data-theme=night]) .acc-table th{background:var(--t-lbg);color:var(--t-ltx)}
+html[data-theme]:not([data-theme=night]) :is(.sidebar,.modal){background:var(--t-surface);color:var(--t-text);font-family:var(--t-font)}
+html[data-theme]:not([data-theme=night]) :is(input,select){background:var(--t-bg);color:var(--t-text);border-color:var(--t-border);border-radius:calc(var(--t-btn) > 12px ? 12px : var(--t-btn))}
+html[data-theme]:not([data-theme=night]) .period-card{background:var(--t-bg);border-color:var(--t-border)}
+html[data-theme] :is(.print-fit,.exporting){--t-bg:#0F172A;--t-surface:#1E293B;--t-text:#fff;--t-border:rgba(255,255,255,.15);--t-accent:#FACC15;--t-lbg:#FACC15;--t-ltx:#000;--t-radius:6px;--t-shadow:none;--bg-dark:#0F172A;--slate:#1E293B;--gold:#FACC15;color:#fff}
+html[dir=rtl] :is(.acc-table-wrapper,.day-row,.slots,.acc-table){direction:ltr}
+html[dir=rtl] :is(.sidebar,.modal){text-align:right}
+html[dir=rtl] body{font-family:-apple-system,"Segoe UI",Tahoma,Roboto,sans-serif}
+#stFab{padding:6px 9px !important;font-size:15px;line-height:1}
+#stPanel{position:fixed;top:56px;right:8px;z-index:3600;background:var(--t-surface,#1E293B);color:var(--t-text,#fff);border:1px solid var(--t-border,rgba(255,255,255,.15));border-radius:14px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:6px;direction:ltr;font-size:12px;width:250px;max-width:calc(100vw - 16px)}
+#stPanel[hidden]{display:none}
+#stPanel .r{display:flex;flex-wrap:wrap;gap:4px}
+#stPanel button{flex:1 1 30%;padding:7px 6px;border:1px solid var(--t-border,#475569);border-radius:8px;background:transparent;color:inherit;font-weight:700;font-size:11px;cursor:pointer;margin:0}
+#stPanel button.on{background:var(--t-accent,#FACC15);color:var(--t-onaccent,#000);border-color:transparent}
+</style>
+<script>
+(function () {
+  function get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+  function put(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  var AR = {
+    'Teacher': 'المعلم', 'Every': 'كل', 'Weeks': 'أسابيع', 'weeks': 'أسابيع', 'Name:': 'الاسم:', 'Holiday week': 'أسبوع إجازة', 'Break week': 'أسبوع استراحة',
+    'no sessions': 'بدون حصص', 'Week': 'الأسبوع', 'Period': 'الفترة', 'sessions': 'حصص', 'session': 'حصة',
+    'Counted after last payment: Course': 'محسوب بعد آخر دفعة: الدورة', 'No payment recorded yet — counted from the start': 'لا توجد دفعة مسجلة بعد — الحساب من البداية',
+    'No payment recorded yet': 'لا توجد دفعة مسجلة بعد', 'Account up to': 'الحساب حتى',
+    'Jan': 'يناير', 'Feb': 'فبراير', 'Mar': 'مارس', 'Apr': 'أبريل', 'May': 'مايو', 'Jun': 'يونيو', 'Jul': 'يوليو', 'Aug': 'أغسطس', 'Sept': 'سبتمبر', 'Sep': 'سبتمبر', 'Oct': 'أكتوبر', 'Nov': 'نوفمبر', 'Dec': 'ديسمبر',
+    'Account Statement (stop / balance)': 'كشف الحساب (إيقاف / رصيد)', 'Account Statement': 'كشف الحساب',
+    'Choose student': 'اختر الطالب', 'Select Student': 'اختر الطالب', 'All students': 'جميع الطلاب',
+    'Account up to this date (that day is included)': 'الحساب حتى هذا التاريخ (يشمل هذا اليوم)',
+    'PDF (Landscape)': 'PDF (أفقي)', 'Image': 'صورة', 'Share': 'مشاركة', 'Export': 'تصدير', 'EXPORT': 'تصدير',
+    'UNDO': 'تراجع', 'ADD': 'إضافة', 'Settings': 'الإعدادات',
+    'Confirm This Location': 'تأكيد هذا الموقع', 'Teacher Phone': 'هاتف المعلم', 'Teacher Name': 'اسم المعلم',
+    'Phone number to display under teacher name in student reports:': 'رقم الهاتف الذي يظهر تحت اسم المعلم في تقارير الطلاب:',
+    'Your Home Address (for distance calculations)': 'عنوان منزلك (لحساب المسافات)',
+    'Reset Course Start Date': 'إعادة ضبط تاريخ بدء الدورة', 'Reset All Dates': 'إعادة ضبط كل التواريخ',
+    'Course start date for all students:': 'تاريخ بدء الدورة لجميع الطلاب:',
+    'End of study weeks (dates in the accounts table run until this date, default 1 July):': 'نهاية أسابيع الدراسة (تمتد التواريخ في جدول الحسابات حتى هذا التاريخ، الافتراضي 1 يوليو):',
+    'Backup & Restore': 'نسخ احتياطي واستعادة', 'Export Backup': 'تصدير نسخة احتياطية', 'Import Backup': 'استيراد نسخة احتياطية',
+    'Add Student': 'إضافة طالب', 'Edit Student': 'تعديل الطالب', 'Save Student': 'حفظ الطالب', 'Delete Student': 'حذف الطالب',
+    'Student Address/Area (for distance)': 'عنوان/منطقة الطالب (للمسافة)', 'Student Address/Area': 'عنوان/منطقة الطالب',
+    'Add Slot (Session)': 'إضافة حصة', 'Save Slot': 'حفظ الحصة', 'Edit Session Slot': 'تعديل الحصة', 'Delete Slot': 'حذف الحصة',
+    'Student Name': 'اسم الطالب', 'Name': 'الاسم', 'Attendance Status': 'حالة الحضور',
+    'Normal / Unspecified': 'عادي / غير محدد', 'Present': 'حاضر', 'Absent': 'غائب', 'Cancelled': 'ملغاة',
+    'Horizontal Offset (px)': 'الإزاحة الأفقية (px)', 'Save Changes': 'حفظ التغييرات', 'Save All Changes': 'حفظ كل التغييرات',
+    'Start Date': 'تاريخ البدء', 'Billing Cycle (every N weeks)': 'دورة الدفع (كل N أسبوع)', 'Billing Cycle:': 'دورة الدفع:',
+    'Billing Periods': 'فترات الدفع', '+ Add Price Period': '+ إضافة فترة سعر',
+    'Payment Period Report (for parent)': 'تقرير فترة الدفع (لولي الأمر)', 'Payment Period Schedule': 'جدول فترات الدفع',
+    'Show Account & Price Details in Print/Image': 'إظهار الحساب والأسعار في الطباعة/الصورة',
+    'Show Teacher Phone Number in Print/Image': 'إظهار هاتف المعلم في الطباعة/الصورة',
+    'Weekly schedule card': 'بطاقة الجدول الأسبوعي', 'Save Image': 'حفظ الصورة', 'Distance not calculated yet': 'لم تُحسب المسافة بعد',
+    'Official Weekly Schedule': 'الجدول الأسبوعي الرسمي', 'Here are the assigned weekly session times:': 'مواعيد الحصص الأسبوعية المحددة:',
+    'Thank you for trusting us with your education': 'شكراً لثقتكم بنا في تعليمكم',
+    'No scheduled slots found for this student.': 'لا توجد حصص مجدولة لهذا الطالب.', 'No sessions': 'لا توجد حصص',
+    'Amount Due:': 'المبلغ المستحق:', 'Amount Due': 'المبلغ المستحق', 'Due Date:': 'تاريخ الاستحقاق:', 'Status:': 'الحالة:',
+    'Not paid': 'غير مدفوع', 'Paid': 'مدفوع', 'Due': 'مستحق', 'due': 'مستحق', 'Nothing owed.': 'لا يوجد مبلغ مستحق.',
+    'Course': 'الدورة', 'Dates': 'التواريخ', 'Date': 'التاريخ', 'Day': 'اليوم', 'Time': 'الوقت', 'Sessions': 'الحصص',
+    'Total': 'الإجمالي', 'TOTAL': 'الإجمالي', 'Price': 'السعر',
+    'Tap a session to cancel it (not charged); tap again to restore.': 'اضغط على حصة لإلغائها (لا تُحسب)، واضغط مرة أخرى لإرجاعها.',
+    'Tap a badge to unmerge.': 'اضغط على الشارة لفك الضم.',
+    'Search, or paste coordinates / a Google Maps link...': 'ابحث، أو الصق الإحداثيات / رابط خرائط جوجل...',
+    'Search your home, or paste coordinates / a Maps link...': 'ابحث عن منزلك، أو الصق الإحداثيات / رابط الخرائط...',
+    'Search, or paste coordinates / a Maps link...': 'ابحث، أو الصق الإحداثيات / رابط الخرائط...',
+    'Satellite view': 'عرض القمر الصناعي', 'Use my current location': 'استخدم موقعي الحالي', 'Set location on map': 'تحديد الموقع على الخريطة',
+    'Jumped to the exact pasted location': 'تم الانتقال إلى الموقع الملصق', 'Searching...': 'جاري البحث...',
+    'Something went wrong while searching': 'حدث خطأ أثناء البحث',
+    "This browser doesn't support location detection": 'هذا المتصفح لا يدعم تحديد الموقع',
+    'Home location saved': 'تم حفظ موقع المنزل', 'Student location set': 'تم تحديد موقع الطالب', 'Student location updated': 'تم تحديث موقع الطالب',
+    'Please enter your address first': 'الرجاء إدخال عنوانك أولاً', 'You need to save your home address from Settings first': 'يجب حفظ عنوان منزلك من الإعدادات أولاً',
+    'Could not locate this address, try writing it more clearly or use the map': 'تعذر تحديد هذا العنوان، اكتبه بوضوح أكثر أو استخدم الخريطة',
+    'Preparing image': 'جاري تجهيز الصورة', 'Image saved': 'تم حفظ الصورة', 'Could not create the image. Please try again.': 'تعذر إنشاء الصورة. حاول مرة أخرى.',
+    'The image library could not be loaded. Please check your internet connection.': 'تعذر تحميل مكتبة الصور. تحقق من اتصال الإنترنت.',
+    'No payment period found. Add a billing period first.': 'لا توجد فترة دفع. أضف فترة دفع أولاً.',
+    'Please pick a date.': 'الرجاء اختيار تاريخ.', 'Please select a valid date first': 'الرجاء اختيار تاريخ صحيح أولاً', 'No students to export.': 'لا يوجد طلاب للتصدير.',
+    'Are you sure you want to reset course start date for all students to': 'هل أنت متأكد من إعادة ضبط تاريخ بدء الدورة لجميع الطلاب إلى',
+    'Course start date reset for all students successfully!': 'تمت إعادة ضبط تاريخ بدء الدورة لجميع الطلاب بنجاح!',
+    'Are you sure you want to restore this backup? Current data will be replaced.': 'هل أنت متأكد من استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية.',
+    'Data restored successfully!': 'تمت استعادة البيانات بنجاح!', 'Invalid backup file!': 'ملف النسخة الاحتياطية غير صالح!',
+    'Delete student and all their records?': 'حذف الطالب وجميع سجلاته؟',
+    'Saturday': 'السبت', 'Sunday': 'الأحد', 'Monday': 'الاثنين', 'Tuesday': 'الثلاثاء', 'Wednesday': 'الأربعاء', 'Thursday': 'الخميس', 'Friday': 'الجمعة',
+    'Sat': 'سبت', 'Sun': 'أحد', 'Mon': 'اثنين', 'Tue': 'ثلاثاء', 'Wed': 'أربعاء', 'Thu': 'خميس', 'Fri': 'جمعة', 'AM': 'ص', 'PM': 'م'
+  };
+  var keys = Object.keys(AR).sort(function (a, b) { return b.length - a.length; });
+  var re = new RegExp('(?<![A-Za-z])(?:' + keys.map(function (k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![A-Za-z])', 'g');
+  function tr(s) { return s.replace(re, function (m) { return AR[m]; }); }
+
+  var THEMES = ['night', 'google', 'apple', 'notion', 'github', 'x', 'spotify'];
+  var lang = get('st_lang', 'en'), theme = get('st_theme', 'night');
+  if (theme === 'day') theme = 'google';
+  if (THEMES.indexOf(theme) < 0) theme = 'night';
+  var TN = new WeakMap(), ATTRS = ['placeholder', 'title', 'aria-label'];
+
+  function doText(n, ar) {
+    var r = TN.get(n), v = n.nodeValue;
+    if (ar) {
+      if (r && v === r.t) return;
+      var t = tr(v);
+      if (t !== v) { TN.set(n, { o: v, t: t }); n.nodeValue = t; }
+    } else if (r && v === r.t) { n.nodeValue = r.o; TN.delete(n); }
+  }
+  function doAttrs(el, ar) {
+    var m = el.__st || (el.__st = {});
+    ATTRS.forEach(function (a) {
+      var v = el.getAttribute(a); if (v == null) return;
+      var r = m[a];
+      if (ar) {
+        if (r && v === r.t) return;
+        var t = tr(v); if (t !== v) { m[a] = { o: v, t: t }; el.setAttribute(a, t); }
+      } else if (r && v === r.t) { el.setAttribute(a, r.o); delete m[a]; }
+    });
+  }
+  function walk(ar) {
+    var w = document.createTreeWalker(document.body, 5, {
+      acceptNode: function (n) {
+        return n.nodeType === 1 && (n.id === 'stPanel' || n.id === 'stFab' || /^(SCRIPT|STYLE)$/.test(n.tagName)) ? 2 : 1;
+      }
+    });
+    var n; while ((n = w.nextNode())) { n.nodeType === 3 ? doText(n, ar) : doAttrs(n, ar); }
+  }
+
+  var pend = 0, mo = new MutationObserver(function () {
+    if (lang !== 'ar' || pend) return;
+    pend = requestAnimationFrame(function () { pend = 0; run(); });
+  });
+  function run() {
+    mo.disconnect();
+    walk(lang === 'ar');
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  }
+
+  ['alert', 'confirm'].forEach(function (f) {
+    var o = window[f];
+    window[f] = function (m) { return o.call(window, lang === 'ar' && typeof m === 'string' ? tr(m) : m); };
+  });
+
+  function trHtml(h) {
+    return h.replace(/>([^<]+)</g, function (m, t) { return '>' + tr(t) + '<'; }).replace(/^\s*<(\w+)/, '<$1 dir="rtl"');
+  }
+  ['generateStudentReportHTML', 'generatePeriodReportHTML', 'accLandHTML'].forEach(function (n) {
+    var f = window[n]; if (typeof f !== 'function') return;
+    window[n] = function () {
+      var h = f.apply(this, arguments);
+      return lang === 'ar' && typeof h === 'string' ? trHtml(h) : h;
+    };
+  });
+
+  function setLang(l) {
+    lang = l; put('st_lang', l);
+    document.documentElement.lang = l; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
+    run(); mark();
+  }
+  function setTheme(t) {
+    theme = t; put('st_theme', t);
+    document.documentElement.setAttribute('data-theme', t); mark();
+  }
+  function mark() {
+    [].forEach.call(document.querySelectorAll('#stPanel button'), function (b) {
+      b.classList.toggle('on', b.dataset.l === lang || b.dataset.t === theme);
+    });
+  }
+
+  var fab = document.createElement('button'); fab.id = 'stFab'; fab.className = 'action-btn'; fab.textContent = '🌐'; fab.title = 'Language / Theme';
+  var P = document.createElement('div'); P.id = 'stPanel'; P.hidden = true;
+  P.innerHTML = '<b>Language · اللغة</b><div class="r"><button data-l="en">English</button><button data-l="ar">العربية</button></div>' +
+    '<b>Mode · الوضع</b><div class="r"><button data-t="google">☀️ Day · نهاري</button><button data-t="night">🌙 Night · ليلي</button></div>' +
+    '<b>Style · الشكل</b><div class="r"><button data-t="google">Google</button><button data-t="apple">Apple</button><button data-t="notion">Notion</button>' +
+    '<button data-t="github">GitHub</button><button data-t="x">X</button><button data-t="spotify">Spotify</button></div>';
+  fab.onclick = function () { P.hidden = !P.hidden; };
+  P.onclick = function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.l) setLang(b.dataset.l); else if (b.dataset.t) setTheme(b.dataset.t);
+  };
+  var ex = document.querySelector('header [onclick*="openExportMenu"]');
+  if (ex && ex.parentNode) ex.parentNode.insertBefore(fab, ex.nextSibling);
+  else { fab.style.cssText = 'position:fixed;top:8px;right:8px;z-index:3600'; document.body.appendChild(fab); }
+  document.body.appendChild(P);
+  setTheme(theme); setLang(lang);
+})();
+</script>
 </body>
 </html>
