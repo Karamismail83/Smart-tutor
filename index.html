@@ -1041,5 +1041,98 @@ function setLang(l){
 apply();
 })();
 </script>
+<script>
+/* ===== سحب الطالب مباشرة من اسمه لتغيير ترتيبه في جدول الحسابات ===== */
+(function(){
+  const st=document.createElement('style');
+  st.textContent=`
+  #accBody .sticky-name{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  #accBody tr.mv-dragging td{opacity:.4}
+  #accBody tr.mv-over td{box-shadow:inset 0 3px 0 #facc15}
+  #mvGhost{position:fixed;z-index:9999;pointer-events:none;background:#facc15;color:#000;font-weight:900;font-size:13px;padding:6px 12px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.5);transform:translate(-50%,-120%)}`;
+  document.head.appendChild(st);
+
+  const rows=()=>[...document.querySelectorAll('#accBody tr')];
+  let S=null, active=false, justDragged=false;
+
+  function move(from,to){
+    const n=db.students.length;
+    if(from===to||from<0||to<0||from>=n||to>=n)return;
+    history.push(JSON.stringify(db));      // يدعم زر UNDO
+    const [s]=db.students.splice(from,1);
+    db.students.splice(to,0,s);
+    save();                                 // نفس render والتنسيق والحسابات
+  }
+
+  function begin(){
+    active=true;
+    S.tr.classList.add('mv-dragging');
+    const g=document.createElement('div');g.id='mvGhost';
+    g.textContent='☰ '+db.students[S.idx].name;
+    document.body.appendChild(g);S.ghost=g;
+    if(navigator.vibrate)try{navigator.vibrate(25)}catch(_){}
+  }
+
+  function update(x,y){
+    S.ghost.style.left=x+'px';S.ghost.style.top=y+'px';
+    rows().forEach(r=>r.classList.remove('mv-over'));
+    const el=document.elementFromPoint(x,y),r=el&&el.closest?el.closest('#accBody tr'):null;
+    S.target=(r&&r!==S.tr)?r:null;
+    if(S.target)S.target.classList.add('mv-over');
+    // تمرير تلقائي قرب أطراف الشاشة
+    S.scroll=y<110?-12:(y>innerHeight-70?12:0);
+  }
+
+  function loop(){
+    if(!active)return;
+    if(S.scroll)window.scrollBy(0,S.scroll);
+    requestAnimationFrame(loop);
+  }
+
+  function finish(ok){
+    clearTimeout(S&&S.timer);
+    if(active){
+      rows().forEach(r=>r.classList.remove('mv-over','mv-dragging'));
+      S.ghost&&S.ghost.remove();
+      justDragged=true;setTimeout(()=>justDragged=false,350);
+      if(ok&&S.target)move(S.idx,rows().indexOf(S.target));
+    }
+    active=false;S=null;
+  }
+
+  document.addEventListener('pointerdown',e=>{
+    const td=e.target.closest&&e.target.closest('#accBody .sticky-name');
+    if(!td||e.button>0)return;
+    const tr=td.parentElement;
+    S={tr,idx:rows().indexOf(tr),x:e.clientX,y:e.clientY,touch:e.pointerType!=='mouse',target:null,scroll:0};
+    // باللمس: ضغطة مطوّلة 250ms (عشان التمرير العادي يفضل شغال) — بالماوس: يبدأ بمجرد التحريك
+    if(S.touch)S.timer=setTimeout(()=>{if(S){begin();update(S.x,S.y);loop()}},250);
+  });
+
+  document.addEventListener('pointermove',e=>{
+    if(!S)return;
+    if(!active){
+      const d=Math.hypot(e.clientX-S.x,e.clientY-S.y);
+      if(S.touch){if(d>10){clearTimeout(S.timer);S=null}}       // المستخدم بيمرّر الصفحة
+      else if(d>5){begin();loop()}
+      if(!active)return;
+    }
+    S.x=e.clientX;S.y=e.clientY;
+    update(e.clientX,e.clientY);
+  });
+
+  document.addEventListener('pointerup',()=>S&&finish(true));
+  document.addEventListener('pointercancel',()=>S&&finish(false));
+
+  // منع تمرير الصفحة أثناء السحب باللمس
+  document.addEventListener('touchmove',e=>{if(active)e.preventDefault()},{passive:false});
+  document.addEventListener('contextmenu',e=>{if(S&&S.touch)e.preventDefault()});
+
+  // منع فتح نافذة تعديل الطالب بعد السحب
+  document.addEventListener('click',e=>{
+    if(justDragged&&e.target.closest&&e.target.closest('#accBody .sticky-name')){e.stopPropagation();e.preventDefault()}
+  },true);
+})();
+</script>
 </body>
 </html>
