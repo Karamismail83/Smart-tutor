@@ -1134,5 +1134,21 @@ apply();
   },true);
 })();
 </script>
+  b.onclick=()=>endForm(id);
+  del?f.insertBefore(b,del):f.appendChild(b);
+};
+
+/* ----- زر الأرشيف في الإعدادات (القائمة الجانبية) ----- */
+const sb=$('sidebar'),box=document.createElement('div');
+box.className='box-card';
+box.innerHTML='<button class="action-btn" id="arcOpenBtn" style="width:100%;margin:0;justify-content:center;padding:10px;background:#0f172a;color:#facc15" onclick="__arcOpen()"></button>';
+sb.insertBefore(box,sb.children[1]);
+const label=()=>{const b=$('arcOpenBtn');if(b)b.textContent='🗄️ '+T('Archive','الأرشيف')+' ('+arch().length+')'};
+const _render=window.render;
+window.render=function(){_render.apply(this,arguments);label()};
+new MutationObserver(label).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+label();
+})();
+</script>
 </body>
 </html>
