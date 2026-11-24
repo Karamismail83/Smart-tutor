@@ -1041,5 +1041,183 @@ function setLang(l){
 apply();
 })();
 </script>
+<script>
+/* ===== Smart Tutor: أرشيف الكورسات المنتهية ===== */
+(function(){
+const T=(en,ar)=>document.documentElement.lang==='ar'?ar:en;
+const arch=()=>(db.archive=db.archive||[]);
+const DMS=86400000;
+
+const css=document.createElement('style');
+css.textContent=`
+.arc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.arc-stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;text-align:center}
+.arc-stat span{display:block;font-size:10px;color:#64748b}
+.arc-stat b{font-size:14px;color:#0f172a}
+.arc-btns{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.arc-btns .action-btn{flex:1;margin:0;justify-content:center;padding:8px 4px}
+details.arc-d summary{cursor:pointer;font-size:11px;font-weight:bold;margin:6px 0;color:#334155}`;
+document.head.appendChild(css);
+
+const stTxt=p=>p===1?T('Paid ✓','مدفوع ✓'):p===2?T('Not paid ✕','غير مدفوع ✕'):T('Due','مستحق');
+
+function snap(s,cut){
+  const r=computeStatement(s,cut),gs=getPeriods(s,true).filter(g=>g.startMs<=cut),canc=s.cancelledSessions||{};
+  const ss=(s.periods||[]).map(p=>ymdToUTC(p.startDate)).filter(x=>x!=null);
+  const startMs=ss.length?Math.min(...ss):ymdToUTC(db.courseStartDate);
+  const days=Math.max(1,Math.round((cut-startMs)/DMS)+1),weeks=Math.max(1,Math.ceil(days/7));
+  const all=[].concat(...gs.map(g=>g.sessions)).filter(se=>se.date<=cut);
+  const held=all.filter(se=>!canc[sk(se.date,se.time)]).length;
+  const paid=gs.filter(g=>g.payState===1&&!g.isPartial);
+  return{
+    startMs,endMs:cut,days,weeks,held,cancelled:all.length-held,
+    due:r.earned,paidTotal:round2(paid.reduce((a,g)=>a+g.price,0)),paidCount:paid.length,
+    lastPaid:r.lastPaid?{number:r.lastPaid.number,range:r.lastPaid.range}:null,
+    history:gs.map(g=>({number:g.number,range:periodRange(g),price:g.price,payState:g.payState,partial:!!g.isPartial})),
+    owed:r.courses.map(c=>({number:c.number,range:c.range,total:c.total,done:c.done,cancelled:c.cancelled,earned:c.earned,payState:c.payState})),
+    sessions:r.days.map(d=>({date:d.date,day:d.day,time:d.time,cancelled:d.cancelled,mult:d.mult,price:round2(d.rate*d.mult),running:d.running,to:d.to?keyLabel(d.to):null}))
+  };
+}
+const durTxt=a=>T(`${a.weeks} weeks (${a.days} days)`,`${a.weeks} أسبوع (${a.days} يوم)`);
+const sumHTML=a=>`<div class="arc-grid">
+<div class="arc-stat"><span>${T('Course duration','مدة الكورس')}</span><b>${durTxt(a)}</b></div>
+<div class="arc-stat"><span>${T('Sessions held','الحصص المنفذة')}</span><b>${a.held}${a.cancelled?` <small style="color:#b91c1c">(−${a.cancelled})</small>`:''}</b></div>
+<div class="arc-stat"><span>${T('Total paid','إجمالي المدفوع')}</span><b style="color:#047857">${money(a.paidTotal)}</b></div>
+<div class="arc-stat"><span>${T('Due at end','المستحق عند الإنهاء')}</span><b style="color:#b45309">${money(a.due)}</b></div></div>`;
+
+function endForm(id){
+  const s=db.students.find(x=>x.id===id);if(!s)return;
+  $('editFields').innerHTML=`<h3>🏁 ${T('End Course','إنهاء الكورس')}</h3>
+<div style="font-weight:900;font-size:15px;margin-bottom:8px">🎓 ${escHtml(s.name)}</div>
+<label>${T('Course end date (that day is included)','تاريخ انتهاء الكورس (يشمل ذلك اليوم)')}</label>
+<input id="endDate" type="date" value="${today()}" oninput="__arcPreview(${id})" onchange="__arcPreview(${id})">
+<div id="endPreview"></div>
+<div class="acc-note">${T('The student will be removed from the schedule and accounts table and saved in the Archive with the full account details and course duration. You can restore them from the Archive.','سيتم حذف الطالب من الجدول وجدول الحسابات وحفظه في الأرشيف بكل تفاصيل حسابه ومدة الكورس. ويمكنك استعادته من الأرشيف.')}</div>
+<button class="action-btn" style="width:100%;margin-top:8px;background:#16a34a;color:#fff;justify-content:center;padding:12px" onclick="__arcConfirm(${id})">🏁 ${T('End Course & Archive','إنهاء الكورس ونقله للأرشيف')}</button>
+<button class="action-btn" style="width:100%;margin-top:8px;background:#e2e8f0;color:#000;justify-content:center" onclick="openEdit(${id})">↩ ${T('Back','رجوع')}</button>`;
+  window.__arcPreview(id);
+}
+window.__arcPreview=id=>{
+  const s=db.students.find(x=>x.id===id),c=ymdToUTC($('endDate').value),o=$('endPreview');
+  if(!s||c==null){if(o)o.innerHTML='';return}
+  o.innerHTML=sumHTML(snap(s,c));
+};
+window.__arcConfirm=id=>{
+  const s=db.students.find(x=>x.id===id),c=ymdToUTC($('endDate').value);
+  if(!s)return;if(c==null){alert(T('Please pick a date.','الرجاء اختيار تاريخ.'));return}
+  if(!confirm(T('End this course and move the student to the archive?','إنهاء الكورس ونقل الطالب إلى الأرشيف؟')))return;
+  const a=Object.assign({id:Date.now(),name:s.name,color:s.color,archivedAt:Date.now()},snap(s,c),{student:JSON.parse(JSON.stringify(s))});
+  commitChange();
+  arch().unshift(a);
+  db.students=db.students.filter(x=>x.id!==id);
+  save();closeAll();showToast(T('Moved to archive ✅','تم النقل إلى الأرشيف ✅'));
+};
+
+function ensureModal(){
+  if($('archiveModal'))return;
+  const m=document.createElement('div');m.className='modal';m.id='archiveModal';m.style.width='min(100%,480px)';
+  m.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><h3 id="arcTitle" style="margin:0"></h3><div class="map-icon-btn" onclick="closeAll()">✕</div></div><div id="arcList"></div>';
+  document.body.appendChild(m);
+}
+function entryHTML(a){
+  const hist=a.history.length?`<table class="acc-mini"><tr><th>${T('Course','الدورة')}</th><th class="l">${T('Dates','التواريخ')}</th><th>${T('Price','السعر')}</th><th>${T('Status','الحالة')}</th></tr>${a.history.map(h=>`<tr><td>${h.number}</td><td class="l">${h.range}</td><td>${money(h.price)}</td><td>${stTxt(h.payState)}</td></tr>`).join('')}</table>`:'';
+  const owed=a.owed.length?`<table class="acc-mini"><tr><th>${T('Course','الدورة')}</th><th class="l">${T('Dates','التواريخ')}</th><th>${T('Sessions','الحصص')}</th><th>${T('Total','الإجمالي')}</th></tr>${a.owed.map(c=>`<tr><td>${c.number}</td><td class="l">${c.range}</td><td>${c.done}/${c.total}${c.cancelled?` <span class="acc-owe">(−${c.cancelled})</span>`:''}</td><td><b>${money(c.earned)}</b></td></tr>`).join('')}<tr style="background:#fef9c3;font-weight:bold"><td colspan="3" class="l">${T('Due at end','المستحق عند الإنهاء')}</td><td>${money(a.due)}</td></tr></table>`:`<div style="font-size:11px;color:#64748b">${T('Nothing owed.','لا يوجد مبلغ مستحق.')}</div>`;
+  return `<div class="acc-card" style="border-left-color:${a.color||'#3b82f6'}">
+<h4>🎓 ${escHtml(a.name)}</h4>
+<div style="font-size:11px;color:#64748b">${fmtLong(a.startMs)} → ${fmtLong(a.endMs)}</div>
+${sumHTML(a)}
+<details class="arc-d"><summary>${T('Financial details','التفاصيل المالية')}</summary>
+${a.lastPaid?`<div style="font-size:10.5px;color:#64748b;margin-bottom:4px">${T('Last payment: Course','آخر دفعة: الدورة')} ${a.lastPaid.number} (${a.lastPaid.range})</div>`:''}
+<div style="font-size:11px;font-weight:bold;margin:4px 0">${T('Payment history','سجل الدفعات')}</div>${hist}
+<div style="font-size:11px;font-weight:bold;margin:4px 0">${T('Owed at end','المستحق عند الإنهاء')}</div>${owed}</details>
+<div class="arc-btns">
+<button class="action-btn" style="background:#0f172a;color:#fff" onclick="__arcPrint(${a.id})">🖨️ PDF</button>
+<button class="action-btn" style="background:#10b981;color:#fff" onclick="__arcImg(${a.id},false)">📸 ${T('Image','صورة')}</button>
+<button class="action-btn" style="background:#0ea5e9;color:#fff" onclick="__arcImg(${a.id},true)">📤 ${T('Share','مشاركة')}</button></div>
+<div class="arc-btns">
+<button class="action-btn" style="background:#f59e0b;color:#000" onclick="__arcRestore(${a.id})">♻️ ${T('Restore','استعادة')}</button>
+<button class="action-btn" style="background:#ef4444;color:#fff" onclick="__arcDelete(${a.id})">🗑️ ${T('Delete','حذف')}</button></div></div>`;
+}
+function build(){
+  ensureModal();
+  $('arcTitle').textContent='🗄️ '+T('Archive','الأرشيف');
+  const l=arch();
+  $('arcList').innerHTML=l.length?l.map(entryHTML).join(''):`<div style="text-align:center;color:#64748b;margin-top:20px">${T('The archive is empty.','الأرشيف فارغ.')}</div>`;
+}
+window.__arcOpen=()=>{build();openModal('archiveModal')};
+const find=id=>arch().find(x=>x.id===id);
+
+function cardHTML(a){
+  const ar=document.documentElement.lang==='ar';
+  const td='padding:5px 8px;border-bottom:1px solid #334155;font-size:12px;',th='padding:6px 8px;font-size:11px;color:#facc15;text-align:start;';
+  const ph=db.teacherPhone?`<div style="font-size:11px;color:#94a3b8;font-weight:normal;margin-top:3px">📱 ${escHtml(db.teacherPhone)}</div>`:'';
+  const tb=(head,body)=>`<table style="position:relative;width:100%;border-collapse:collapse;margin-bottom:10px;background:#1e293b;border:1px solid #334155"><thead><tr style="background:#0f172a;border-bottom:2px solid #facc15">${head.map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+  const h2=t=>`<div style="position:relative;color:#facc15;font-weight:bold;font-size:12px;margin:8px 0 4px">${t}</div>`;
+  const stat=(l,v,c)=>`<div style="flex:1;background:#1e293b;border:1px solid #475569;border-radius:8px;padding:7px 6px;text-align:center"><span style="font-size:10px;color:#94a3b8;display:block">${l}</span><strong style="font-size:13px;color:${c||'#fff'}">${v}</strong></div>`;
+  const hist=tb([T('Course','الدورة'),T('Dates','التواريخ'),T('Price','السعر'),T('Status','الحالة')],
+    a.history.map(h=>`<tr><td style="${td}font-weight:bold">${h.number}</td><td style="${td}">${h.range}</td><td style="${td}">${money(h.price)}</td><td style="${td}color:${h.payState===1?'#34d399':h.payState===2?'#f87171':'#fbbf24'}">${stTxt(h.payState)}</td></tr>`).join('')||`<tr><td colspan="4" style="${td}text-align:center;color:#94a3b8">-</td></tr>`);
+  const owed=a.owed.length?tb([T('Course','الدورة'),T('Dates','التواريخ'),T('Sessions','الحصص'),T('Total','الإجمالي')],
+    a.owed.map(c=>`<tr><td style="${td}font-weight:bold">${c.number}</td><td style="${td}">${c.range}</td><td style="${td}">${c.done}/${c.total}${c.cancelled?` <span style="color:#f87171">(−${c.cancelled})</span>`:''}</td><td style="${td}font-weight:bold;color:#34d399">${money(c.earned)}</td></tr>`).join('')+`<tr style="background:#0f172a"><td colspan="3" style="${td}font-weight:bold;color:#facc15">${T('Due at end','المستحق عند الإنهاء')}</td><td style="${td}font-weight:bold;color:#facc15">${money(a.due)}</td></tr>`):`<div style="position:relative;padding:8px;text-align:center;color:#94a3b8;font-size:12px">${T('Nothing owed.','لا يوجد مبلغ مستحق.')}</div>`;
+  const ses=a.sessions.length?tb([T('Date','التاريخ'),T('Day','اليوم'),T('Time','الوقت'),T('Price','السعر'),T('Total','الإجمالي')],
+    a.sessions.map(d=>{
+      const cx=d.cancelled?'text-decoration:line-through;color:#f87171;':'';
+      const note=d.cancelled?(d.to?` <span style="color:#fbbf24">↪ ${d.to}</span>`:''):(d.mult>1?` <span style="color:#34d399;font-weight:bold">×${d.mult}</span>`:'');
+      return `<tr style="${d.cancelled?'background:#3f1d1d':''}"><td style="${td}${cx}">${fmtLong(d.date)}</td><td style="${td}${cx}">${FULL[d.day]||d.day}</td><td style="${td}${d.cancelled?cx:'color:#38bdf8'}">${d.time}</td><td style="${td}${d.cancelled?'color:#f87171':''}">${d.cancelled?T('Cancelled','ملغاة'):money(d.price)}${note}</td><td style="${td}font-weight:bold">${money(d.running)}</td></tr>`}).join('')):'';
+  return `<div style="max-width:560px;margin:0 auto;background:#0f172a;color:#fff;padding:18px;border-radius:14px;border:3px double #facc15;font-family:Arial,sans-serif;position:relative;overflow:hidden;box-sizing:border-box;${ar?'direction:rtl;':''}">${CORNERS}
+<div style="position:relative;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #facc15;padding-bottom:9px;margin-bottom:10px">
+<div><h2 style="margin:0;font-size:20px">SMART <span style="color:#facc15">TUTOR</span></h2><p style="margin:2px 0 0;color:#94a3b8;font-size:11px">${T('Course Completion Statement','كشف إنهاء الكورس')}</p></div>
+<div style="background:#1e293b;padding:6px 12px;border-radius:6px;font-weight:bold;font-size:12px;border:1px solid #334155;line-height:1.3"><div>${escHtml(db.teacherName||T('Teacher','المعلم'))}</div>${ph}</div></div>
+<div style="position:relative;background:#1e293b;padding:9px 12px;border-radius:8px;margin-bottom:8px;border:1px solid #334155;border-${ar?'right':'left'}:4px solid ${a.color||'#3b82f6'}"><h3 style="margin:0 0 3px;font-size:18px">🎓 ${escHtml(a.name)}</h3><p style="margin:0;font-size:11px;color:#94a3b8">${fmtLong(a.startMs)} → ${fmtLong(a.endMs)}</p></div>
+<div style="position:relative;display:flex;gap:6px;margin-bottom:8px">${stat(T('Course duration','مدة الكورس'),durTxt(a))}${stat(T('Sessions held','الحصص المنفذة'),a.held)}${stat(T('Total paid','إجمالي المدفوع'),money(a.paidTotal),'#34d399')}${stat(T('Due at end','المستحق'),money(a.due),'#facc15')}</div>
+${h2(T('Payment history','سجل الدفعات'))}${hist}
+${h2(T('Owed at end','المستحق عند الإنهاء'))}${owed}
+${ses?h2(T('Sessions detail','تفاصيل الحصص'))+ses:''}
+<div style="position:relative;text-align:center;border-top:1px dashed #334155;padding-top:8px;color:#64748b;font-size:11px">${T('✦ Thank you for trusting us with your education ✦','✦ شكراً لثقتكم بنا في تعليمكم ✦')}</div></div>`;
+}
+window.__arcPrint=id=>{const a=find(id);if(a)printCard(cardHTML(a),'size:A4 portrait;margin:8mm')};
+window.__arcImg=async(id,share)=>{
+  const a=find(id);if(!a)return;
+  if(typeof html2canvas==='undefined'){alert(T('The image library could not be loaded.','تعذّر تحميل مكتبة الصور.'));return}
+  showToast(T('Preparing image…','جارٍ تجهيز الصورة…'));
+  try{await saveCanvas(await cardCanvas(cardHTML(a),560),`Archive_${cleanName(a.name)}.png`,share,a.name)}
+  catch(e){alert(T('Could not create the image. Please try again.','تعذّر إنشاء الصورة. حاول مرة أخرى.'))}
+};
+window.__arcRestore=id=>{
+  const a=find(id);if(!a)return;
+  if(!confirm(T('Restore this student to the schedule and accounts?','استعادة هذا الطالب إلى الجدول والحسابات؟')))return;
+  commitChange();
+  const s=JSON.parse(JSON.stringify(a.student));
+  if(db.students.some(x=>x.id===s.id))s.id=Date.now();
+  db.students.push(s);db.archive=arch().filter(x=>x.id!==id);
+  save();build();showToast(T('Student restored ✅','تمت استعادة الطالب ✅'));
+};
+window.__arcDelete=id=>{
+  if(!confirm(T('Delete this record from the archive permanently?','حذف هذا السجل من الأرشيف نهائياً؟')))return;
+  commitChange();db.archive=arch().filter(x=>x.id!==id);save();build();
+};
+
+const _openEdit=window.openEdit;
+window.openEdit=function(id){
+  _openEdit.apply(this,arguments);
+  const f=$('editFields'),del=[...f.querySelectorAll('button')].find(b=>(b.getAttribute('onclick')||'').indexOf('delStudent')>-1);
+  const b=document.createElement('button');
+  b.className='action-btn';b.id='endCourseBtn';
+  b.style.cssText='width:100%;margin-top:8px;background:#16a34a;color:#fff;justify-content:center';
+  b.textContent='🏁 '+T('End Course (Archive)','إنهاء الكورس (أرشفة)');
+  b.onclick=()=>endForm(id);
+  del?f.insertBefore(b,del):f.appendChild(b);
+};
+
+const sb=$('sidebar'),box=document.createElement('div');
+box.className='box-card';
+box.innerHTML='<button class="action-btn" id="arcOpenBtn" style="width:100%;margin:0;justify-content:center;padding:10px;background:#0f172a;color:#facc15" onclick="__arcOpen()"></button>';
+sb.insertBefore(box,sb.children[1]);
+const label=()=>{const b=$('arcOpenBtn');if(b)b.textContent='🗄️ '+T('Archive','الأرشيف')+' ('+arch().length+')'};
+const _render=window.render;
+window.render=function(){_render.apply(this,arguments);label()};
+new MutationObserver(label).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+label();
+})();
+</script>
 </body>
 </html>
